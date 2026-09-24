@@ -1,0 +1,9 @@
+# No hostnames, passwords or insecure fallbacks in the production profile.
+server:
+  servlet:
+    session:
+      cookie:
+        secure: true
+spring:
+  jpa:
+    show-sql: false

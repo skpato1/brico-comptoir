@@ -1,0 +1,61 @@
+spring:
+  application:
+    name: bricocomptoir
+  autoconfigure:
+    exclude: org.springframework.boot.security.autoconfigure.UserDetailsServiceAutoConfiguration
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    hikari:
+      schema: bricocomptoir
+      connection-timeout: 3000
+      validation-timeout: 1000
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: bricocomptoir
+        jdbc.time_zone: UTC
+  flyway:
+    enabled: true
+    url: ${DB_URL}
+    user: ${DB_MIGRATION_USERNAME}
+    password: ${DB_MIGRATION_PASSWORD}
+    default-schema: bricocomptoir
+    clean-disabled: true
+    validate-migration-naming: true
+    placeholders:
+      applicationUser: ${DB_USERNAME}
+server:
+  port: ${SERVER_PORT:8080}
+  shutdown: graceful
+  servlet:
+    session:
+      timeout: 30m
+      cookie:
+        http-only: true
+        secure: true
+        same-site: lax
+management:
+  endpoints:
+    web:
+      base-path: /api/v1
+      discovery:
+        enabled: false
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+      show-components: never
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState,db
+  health:
+    mail:
+      enabled: false

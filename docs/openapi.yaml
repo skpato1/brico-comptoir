@@ -1,0 +1,69 @@
+openapi: 3.1.0
+info:
+  title: BricoComptoir — API du socle
+  version: 0.1.0
+  description: Seule la santé est implémentée à cette étape. Les contrats métier restent dans architecture.md.
+servers:
+  - url: /api/v1
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      summary: Santé globale de l'API, incluant PostgreSQL
+      security: []
+      responses:
+        '200':
+          $ref: '#/components/responses/Healthy'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+  /health/readiness:
+    get:
+      operationId: getReadiness
+      summary: Aptitude à recevoir des requêtes, incluant PostgreSQL
+      security: []
+      responses:
+        '200':
+          $ref: '#/components/responses/Healthy'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+  /health/liveness:
+    get:
+      operationId: getLiveness
+      summary: Vie du processus, indépendante des services externes
+      security: []
+      responses:
+        '200':
+          $ref: '#/components/responses/Healthy'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+components:
+  schemas:
+    Health:
+      type: object
+      required: [status]
+      additionalProperties: false
+      properties:
+        status:
+          type: string
+          enum: [UP, DOWN, OUT_OF_SERVICE, UNKNOWN]
+        groups:
+          type: array
+          items:
+            type: string
+  responses:
+    Healthy:
+      description: Service disponible, aucun détail interne exposé
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Health'
+          example:
+            status: UP
+    Unavailable:
+      description: Service indisponible
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Health'
+          example:
+            status: DOWN

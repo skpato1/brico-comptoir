@@ -1,0 +1,40 @@
+<main>
+  <header>
+    <span class="brand-mark" aria-hidden="true">BC</span>
+    <span class="wordmark">BricoComptoir</span>
+    <span class="environment">Développement local</span>
+  </header>
+
+  <section class="intro" aria-labelledby="page-title">
+    <p class="eyebrow">LES FONDATIONS DE LA BOUTIQUE</p>
+    <h1 id="page-title">Tout commence<br />par une base solide.</h1>
+    <p class="description">La quincaillerie pour vos projets en Tunisie.<br />Le socle technique est en cours de préparation.</p>
+  </section>
+
+  <section class="health-card" aria-labelledby="health-title">
+    <div>
+      <p class="eyebrow">CONNEXION AU SERVEUR</p>
+      <h2 id="health-title">Disponibilité de l’API</h2>
+    </div>
+    <div class="status" role="status" aria-live="polite" [attr.aria-busy]="state() === 'checking'">
+      <span class="status-dot" [class.up]="state() === 'up'" [class.down]="state() === 'down'" aria-hidden="true"></span>
+      @switch (state()) {
+        @case ('checking') { <span>Vérification en cours…</span> }
+        @case ('up') { <span>API disponible</span> }
+        @case ('down') { <span>API indisponible</span> }
+      }
+    </div>
+    @if (state() === 'down') {
+      <p class="help">Le serveur ne répond pas ou une dépendance est indisponible. Vérifiez son démarrage, puis réessayez.</p>
+    }
+    <div class="card-footer">
+      <p class="timestamp">
+        @if (checkedAt()) { Dernière vérification à {{ checkedAt() | date:'HH:mm:ss' }} }
+        @else { Vérification du serveur et de sa base de données. }
+      </p>
+      <button type="button" (click)="checkApi()" [disabled]="state() === 'checking'">Vérifier à nouveau <span aria-hidden="true">↗</span></button>
+    </div>
+  </section>
+
+  <footer>Le catalogue, les comptes et les commandes seront ajoutés aux prochaines étapes.</footer>
+</main>

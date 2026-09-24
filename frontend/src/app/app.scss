@@ -1,0 +1,34 @@
+:host { display: block; }
+main { max-width: 1000px; margin: 0 auto; padding: 32px 32px 24px; }
+header { display: flex; align-items: center; gap: 12px; padding-bottom: 28px; border-bottom: 1px solid #d9d7cf; }
+.brand-mark { display: grid; place-items: center; width: 42px; height: 42px; background: #253f32; color: white; border-radius: 9px; font-weight: 800; letter-spacing: -1px; }
+.wordmark { font-size: 21px; font-weight: 750; letter-spacing: -0.7px; }
+.environment { margin-left: auto; font-size: 12px; color: #626961; border: 1px solid #d9d7cf; border-radius: 20px; padding: 7px 12px; }
+.intro { padding: 68px 0 36px; }
+.eyebrow { color: #626961; font-size: 11px; font-weight: 700; letter-spacing: 1.8px; margin: 0 0 14px; }
+h1 { font-size: clamp(36px, 5.8vw, 60px); line-height: 1.08; letter-spacing: -2.5px; margin: 0 0 24px; font-weight: 650; }
+.description { color: #626961; line-height: 1.7; font-size: 17px; }
+.health-card { padding: 28px; border: 1px solid #d9d7cf; background: #fffefb; border-radius: 14px; }
+h2 { font-size: 22px; margin: 0 0 24px; letter-spacing: -0.5px; }
+.status { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+.status-dot { width: 9px; height: 9px; border-radius: 50%; background: #77796e; }
+.status-dot.up { background: #2d7851; box-shadow: 0 0 0 4px #e8f3e9; }
+.status-dot.down { background: #b54430; box-shadow: 0 0 0 4px #fae9e6; }
+.help { color: #8d3426; font-size: 14px; line-height: 1.5; }
+.card-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 28px; padding-top: 22px; border-top: 1px solid #e6e5df; }
+.timestamp { color: #626961; font-size: 12px; margin: 0; }
+button { background: #253f32; color: white; border: none; border-radius: 7px; padding: 12px 17px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+button span { padding-left: 12px; }
+button:hover:not(:disabled) { background: #365744; }
+button:focus-visible { outline: 3px solid #b07d27; outline-offset: 3px; }
+button:disabled { opacity: 0.55; cursor: wait; }
+footer { margin-top: 30px; color: #626961; font-size: 12px; line-height: 1.6; }
+@media (max-width: 600px) {
+  main { padding: 24px 20px; }
+  header { flex-wrap: wrap; }
+  .environment { margin-left: 0; }
+  .intro { padding-top: 42px; }
+  h1 { letter-spacing: -1.5px; }
+  .health-card { padding: 22px; }
+  .card-footer { flex-direction: column; align-items: stretch; }
+}

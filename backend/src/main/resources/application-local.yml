@@ -1,0 +1,11 @@
+# Only activate for local development. Compose overrides DB_URL inside its network.
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/bricocomptoir}
+  flyway:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/bricocomptoir}
+server:
+  servlet:
+    session:
+      cookie:
+        secure: false
