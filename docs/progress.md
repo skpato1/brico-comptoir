@@ -37,13 +37,18 @@ Vérifications réellement exécutées sur cette correction :
 | Contrôle Chromium ponctuel de l'artefact servi localement | Accueil, catalogue direct et actualisé, scripts, santé et refus CSRF vérifiés avec Spring Boot local réel ; mode API absente : 503 JSON et écran d'indisponibilité ; aucune erreur JavaScript non capturée |
 | `node scripts/check-local.mjs` | Neuf contrôles HTTP passent sur les services principaux existants |
 | `node scripts/check-repository.mjs`, `node scripts/check-release.mjs`, `git diff --check` | Contrôles des migrations, modèles sans secrets, exclusions, liens locaux et scan ciblé valides |
+| Push du commit `9bab393` sur `origin/main` et tableau de bord Vercel | Projet existant déployé en Production, **Ready**, build de 40 s ; aucune création de projet |
+| HTTP sur `https://brico-comptoir.vercel.app` après déploiement | `/`, `/catalogue`, `/packs/demo` et `/gestion` : **200 Angular** ; 13 fichiers JS/CSS : **200** ; fichier JS absent : **404** ; API en GET/POST/DELETE : **503 JSON `API_NOT_CONFIGURED`, `Cache-Control: no-store`** |
+| Navigateur sur le domaine public | Interface Angular, navigation et écran d'indisponibilité chargés ; ancienne 404 de plateforme résolue, aucun achat public annoncé comme vérifié |
 
 Le contrôle Chromium utilise un serveur de vérification du routage généré ;
 il ne constitue pas une exécution du moteur Vercel ni de sa chaîne HTTPS. Aucun
 code backend ni migration ne change : les suites PostgreSQL/achat exécutées
 lors de la publication précédente ne sont pas présentées comme relancées ici.
-La mise à jour du déploiement Git doit être suivie sur le domaine réel. L'API
-publique, PostgreSQL/S3/SMTP hébergés et la recette HTTPS/cookies/CSRF/SSE restent
+Le [déploiement du correctif](https://vercel.com/skpato1s-projects/brico-comptoir/9No99Q4xu6G9c8LqXp3evqf4JUU1)
+a aussi été vérifié sur le domaine réel comme indiqué ci-dessus. L'exploitant
+confirme ne disposer actuellement d'aucun hébergement backend. L'API publique,
+PostgreSQL/S3/SMTP hébergés et la recette HTTPS/cookies/CSRF/SSE restent
 nécessaires avant ouverture ; localhost ne remplit pas ces conditions. Voir
 [deployment.md](deployment.md) pour les paramètres et la procédure Vercel.
 
