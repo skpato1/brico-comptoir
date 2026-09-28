@@ -1,0 +1,75 @@
+<section class="checkout" aria-labelledby="checkout-title">
+  <p class="eyebrow">COMMANDE</p><h2 id="checkout-title">{{ historyOnly ? 'Vos commandes' : 'Livraison en Tunisie' }}</h2>
+  @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+  @if (busy()) { <p role="status">Traitement en cours…</p> }
+  @if (!historyOnly && buyer() && cart.view().items.length && !order()) {
+    <p>Paiement uniquement à la livraison. Les coordonnées restent en mémoire jusqu’à la commande.</p>
+    <form #addressForm="ngForm" (ngSubmit)="submitAddress(addressForm)">
+      <fieldset [disabled]="busy() || uncertain()">
+        @if (!account) {
+          <label>E-mail pour le suivi (facultatif)<input name="email" [(ngModel)]="address.email" (ngModelChange)="resetPreview()" type="email" email maxlength="254" autocomplete="email" #email="ngModel" [attr.aria-invalid]="email.invalid && (email.touched || addressForm.submitted)" aria-describedby="order-email-help" /></label>
+          <p id="order-email-help" [class.field-error]="email.invalid && (email.touched || addressForm.submitted)">Recevez la confirmation et les changements de statut. Vérifiez votre adresse.</p>
+          <p>Le suivi de commande ne vous inscrit pas aux offres marketing.</p>
+        } @else { <p>Le suivi sera envoyé à l’adresse de votre compte.</p> }
+        <label>Nom du destinataire<input name="recipient" [(ngModel)]="address.recipient" (ngModelChange)="resetPreview()" required maxlength="120" autocomplete="name" #recipient="ngModel" [attr.aria-invalid]="recipient.invalid && (recipient.touched || addressForm.submitted)" aria-describedby="recipient-error" />@if(recipient.invalid && (recipient.touched || addressForm.submitted)){<span id="recipient-error" class="field-error">Indiquez le nom du destinataire.</span>}</label>
+        <label>Téléphone tunisien<input name="phone" [(ngModel)]="address.phone" (ngModelChange)="resetPreview()" type="tel" required maxlength="20" pattern="(\+216 ?)?([0-9] ?){8}" autocomplete="tel" placeholder="+216 20123456" #phone="ngModel" [attr.aria-invalid]="phone.invalid && (phone.touched || addressForm.submitted)" aria-describedby="phone-error" />@if(phone.invalid && (phone.touched || addressForm.submitted)){<span id="phone-error" class="field-error">Saisissez huit chiffres, précédés de +216 si nécessaire.</span>}</label>
+        <label>Rue et complément d’adresse<input name="street" [(ngModel)]="address.street" (ngModelChange)="resetPreview()" required maxlength="300" autocomplete="street-address" #street="ngModel" [attr.aria-invalid]="street.invalid && (street.touched || addressForm.submitted)" aria-describedby="street-error" />@if(street.invalid && (street.touched || addressForm.submitted)){<span id="street-error" class="field-error">Indiquez la rue et les compléments utiles.</span>}</label>
+        <label>Ville<input name="city" [(ngModel)]="address.city" (ngModelChange)="resetPreview()" required maxlength="100" autocomplete="address-level2" #city="ngModel" [attr.aria-invalid]="city.invalid && (city.touched || addressForm.submitted)" aria-describedby="city-error" />@if(city.invalid && (city.touched || addressForm.submitted)){<span id="city-error" class="field-error">Indiquez la ville.</span>}</label>
+        <label>Code postal<input name="postalCode" [(ngModel)]="address.postalCode" (ngModelChange)="resetPreview()" required pattern="[0-9]{4}" maxlength="4" inputmode="numeric" autocomplete="postal-code" #postal="ngModel" [attr.aria-invalid]="postal.invalid && (postal.touched || addressForm.submitted)" aria-describedby="postal-error" />@if(postal.invalid && (postal.touched || addressForm.submitted)){<span id="postal-error" class="field-error">Le code postal contient quatre chiffres.</span>}</label>
+        <label>Gouvernorat<select name="governorate" [(ngModel)]="address.governorate" (ngModelChange)="resetPreview()">
+          @for (zone of governorates; track zone) { <option [value]="zone">{{ zone.replaceAll('_', ' ') }}</option> }
+        </select></label>
+      </fieldset>
+      <button type="submit" [disabled]="busy() || uncertain() || cart.busy() || cart.recoveryPending()">Vérifier le récapitulatif</button>
+    </form>
+  }
+  @if (summary(); as recap) {
+    <div class="recap"><h3>Récapitulatif final</h3>
+      <p>{{ recap.address.recipient }} · {{ recap.address.phone }}<br />{{ recap.address.street }}, {{ recap.address.postalCode }} {{ recap.address.city }} · {{ recap.address.governorate }} · Tunisie</p>
+      <ul>@for (line of recap.items; track line.kind + line.offerId) {
+        <li><strong>{{ line.quantity }} × {{ line.label }}</strong> — {{ line.lineTotal.amount }} TND
+          <ul>@for (component of line.components; track component.skuId) {
+            <li>{{ component.quantity }} × {{ component.label }} ({{ component.sku }}) par unité achetée</li>
+          }</ul>
+        </li>
+      }</ul>
+      <p>Articles : {{ recap.subtotal.amount }} TND<br />Livraison : {{ recap.delivery.amount }} TND</p>
+      <p class="total">À payer à la livraison : {{ recap.total.amount }} TND</p>
+      <p>Le stock sera réservé lors de la confirmation.</p>
+      <button type="button" (click)="place()" [disabled]="busy()">{{ uncertain() ? 'Réessayer la même confirmation' : 'Confirmer la commande — paiement à la livraison' }}</button>
+    </div>
+  }
+  @if (order(); as placed) {
+    <div class="recap" role="status"><h3>Commande {{ statuses[placed.status] }}</h3>
+      <p class="reference">Référence : {{ placed.id }}</p>
+      <p>Montant à payer à la livraison : {{ placed.summary.total.amount }} TND</p>
+      @if (!account) { <p>Conservez cette référence. La consultation et l’annulation invitées nécessitent cette session navigateur.</p> }
+      @if (placed.status === 'CONFIRMED') { <button type="button" (click)="transition(placed, 'cancel')" [disabled]="busy()">Annuler cette commande</button> }
+      <button type="button" (click)="order.set(null)" [disabled]="busy()">Préparer un autre achat</button>
+    </div>
+  }
+  @if (account && (buyer() || manager())) {
+    <h3>{{ manager() ? 'Traitement des commandes' : 'Mes commandes' }}</h3>
+    @if (manager()) {
+      <label>Statut<select [(ngModel)]="filter"><option value="">Tous</option>
+        @for (status of ['CONFIRMED','PREPARING','SHIPPED','DELIVERED','CANCELLED']; track status) { <option [value]="status">{{ statuses[status] }}</option> }
+      </select></label>
+    }
+    <button type="button" (click)="loadOrders()" [disabled]="busy() || uncertain()">Charger les commandes</button>
+    <ul class="orders">@for (entry of orders(); track entry.id) {
+      <li><strong class="reference">{{ entry.id }}</strong> · {{ statuses[entry.status] }} · {{ entry.summary.total.amount }} TND
+        <p>{{ entry.summary.address.recipient }} · {{ entry.summary.address.phone }} · {{ entry.summary.address.street }}, {{ entry.summary.address.city }}</p>
+        <ul>@for (line of entry.summary.items; track line.kind + line.offerId) { <li>{{ line.quantity }} × {{ line.label }}</li> }</ul>
+        @if (entry.status === 'CONFIRMED' || manager() && entry.status === 'PREPARING') { <button (click)="transition(entry, 'cancel', manager())" [disabled]="busy()">Annuler</button> }
+        @if (manager()) {
+          @if (entry.status === 'CONFIRMED') { <button (click)="transition(entry, 'prepare', true)" [disabled]="busy()">Préparer</button> }
+          @if (entry.status === 'PREPARING') { <button (click)="transition(entry, 'ship', true)" [disabled]="busy()">Expédier</button> }
+          @if (entry.status === 'SHIPPED') { <button (click)="transition(entry, 'deliver', true)" [disabled]="busy()">Marquer livrée</button> }
+        }
+      </li>
+    }</ul>
+    <button (click)="loadOrders(page - 1)" [disabled]="page === 0 || busy()">Page précédente</button>
+    <span> Page {{ page + 1 }} </span>
+    <button (click)="loadOrders(page + 1)" [disabled]="orders().length < 20 || busy()">Page suivante</button>
+  }
+</section>

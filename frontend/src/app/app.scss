@@ -1,34 +1,217 @@
-:host { display: block; }
-main { max-width: 1000px; margin: 0 auto; padding: 32px 32px 24px; }
-header { display: flex; align-items: center; gap: 12px; padding-bottom: 28px; border-bottom: 1px solid #d9d7cf; }
-.brand-mark { display: grid; place-items: center; width: 42px; height: 42px; background: #253f32; color: white; border-radius: 9px; font-weight: 800; letter-spacing: -1px; }
-.wordmark { font-size: 21px; font-weight: 750; letter-spacing: -0.7px; }
-.environment { margin-left: auto; font-size: 12px; color: #626961; border: 1px solid #d9d7cf; border-radius: 20px; padding: 7px 12px; }
-.intro { padding: 68px 0 36px; }
-.eyebrow { color: #626961; font-size: 11px; font-weight: 700; letter-spacing: 1.8px; margin: 0 0 14px; }
-h1 { font-size: clamp(36px, 5.8vw, 60px); line-height: 1.08; letter-spacing: -2.5px; margin: 0 0 24px; font-weight: 650; }
-.description { color: #626961; line-height: 1.7; font-size: 17px; }
-.health-card { padding: 28px; border: 1px solid #d9d7cf; background: #fffefb; border-radius: 14px; }
-h2 { font-size: 22px; margin: 0 0 24px; letter-spacing: -0.5px; }
-.status { display: flex; align-items: center; gap: 10px; font-weight: 600; }
-.status-dot { width: 9px; height: 9px; border-radius: 50%; background: #77796e; }
-.status-dot.up { background: #2d7851; box-shadow: 0 0 0 4px #e8f3e9; }
-.status-dot.down { background: #b54430; box-shadow: 0 0 0 4px #fae9e6; }
-.help { color: #8d3426; font-size: 14px; line-height: 1.5; }
-.card-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 28px; padding-top: 22px; border-top: 1px solid #e6e5df; }
-.timestamp { color: #626961; font-size: 12px; margin: 0; }
-button { background: #253f32; color: white; border: none; border-radius: 7px; padding: 12px 17px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
-button span { padding-left: 12px; }
-button:hover:not(:disabled) { background: #365744; }
-button:focus-visible { outline: 3px solid #b07d27; outline-offset: 3px; }
-button:disabled { opacity: 0.55; cursor: wait; }
-footer { margin-top: 30px; color: #626961; font-size: 12px; line-height: 1.6; }
-@media (max-width: 600px) {
-  main { padding: 24px 20px; }
-  header { flex-wrap: wrap; }
-  .environment { margin-left: 0; }
-  .intro { padding-top: 42px; }
-  h1 { letter-spacing: -1.5px; }
-  .health-card { padding: 22px; }
-  .card-footer { flex-direction: column; align-items: stretch; }
+:host {
+  display: block;
+}
+.topline {
+  background: #262626;
+  color: #fff;
+  padding: 9px max(5vw, 16px);
+  font-size: 0.72rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.site-header {
+  max-width: 1240px;
+  margin: auto;
+  padding: 22px 24px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 20px;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: #222;
+  font-size: 1.35rem;
+  font-weight: 850;
+  letter-spacing: -0.8px;
+}
+.brand > span > span {
+  color: #c32626;
+}
+.brand small {
+  display: block;
+  font-size: 0.55rem;
+  letter-spacing: 2.3px;
+  margin-top: 4px;
+  font-weight: 600;
+}
+.brand-mark {
+  display: grid;
+  place-content: center;
+  background: #bd2525;
+  color: white;
+  width: 42px;
+  height: 45px;
+  border-radius: 5px;
+  font-size: 1.6rem;
+  letter-spacing: -3px;
+}
+.header-search {
+  display: flex;
+  order: 3;
+  flex: 1 1 100%;
+  background: #f6f6f6;
+  border: 1px solid #dedede;
+  border-radius: 5px;
+  overflow: hidden;
+}
+.header-search input {
+  border: 0;
+  background: transparent;
+  min-width: 0;
+  flex: 1;
+}
+.header-search button {
+  border-radius: 0;
+  background: transparent;
+  color: #333;
+  font-size: 1.7rem;
+  line-height: 1;
+  padding: 6px 16px;
+}
+.header-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+.header-actions a {
+  text-decoration: none;
+}
+.cart-link span {
+  background: #bd2525;
+  color: #fff;
+  border-radius: 50%;
+  min-width: 23px;
+  height: 23px;
+  display: inline-grid;
+  place-items: center;
+  margin-left: 4px;
+  font-size: 0.7rem;
+}
+.main-nav {
+  border-block: 1px solid #e6e6e6;
+  padding: 0 max(calc((100vw - 1192px) / 2), 24px);
+  display: flex;
+  gap: 26px;
+  overflow: auto;
+  white-space: nowrap;
+}
+.main-nav a {
+  padding: 16px 0;
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 650;
+  border-bottom: 3px solid transparent;
+}
+.main-nav .active {
+  color: #b51f24;
+  border-color: #b51f24;
+}
+main {
+  max-width: 1240px;
+  margin: auto;
+  padding: 32px 24px 70px;
+  min-height: 55vh;
+  outline: none;
+}
+.site-footer {
+  border-top: 1px solid #e4e4e4;
+  padding: 40px max(calc((100vw - 1192px) / 2), 24px) 20px;
+  background: #fafafa;
+  display: grid;
+  gap: 28px;
+  font-size: 0.82rem;
+  color: #555;
+}
+.footer-brand {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #272727;
+  text-decoration: none;
+}
+.footer-brand span {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 400;
+  margin-top: 12px;
+}
+.site-footer strong {
+  color: #222;
+}
+.site-footer p {
+  line-height: 1.8;
+}
+.footer-bottom {
+  border-top: 1px solid #ddd;
+  padding-top: 20px;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 0.72rem;
+}
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 12px;
+  z-index: 20;
+  background: #fff;
+  padding: 12px;
+}
+.skip-link:focus {
+  top: 12px;
+}
+@media (min-width: 800px) {
+  .header-search {
+    order: 0;
+    flex: 1 1 200px;
+    max-width: 460px;
+    margin-inline: auto;
+  }
+  .site-header {
+    flex-wrap: nowrap;
+    padding-block: 25px;
+  }
+  .site-footer {
+    grid-template-columns: 1.3fr 1fr 1fr;
+  }
+  .footer-bottom {
+    grid-column: 1/-1;
+  }
+}
+@media (max-width: 440px) {
+  .topline > span:first-child {
+    display: none;
+  }
+  .topline {
+    justify-content: center;
+  }
+  .header-actions {
+    gap: 10px;
+  }
+  .brand {
+    font-size: 1.08rem;
+  }
+  .brand-mark {
+    width: 35px;
+    height: 40px;
+  }
+  .site-header {
+    padding: 18px 16px;
+    gap: 16px;
+  }
+  main {
+    padding: 24px 16px 48px;
+  }
+  .main-nav {
+    padding-inline: 16px;
+    gap: 22px;
+  }
 }

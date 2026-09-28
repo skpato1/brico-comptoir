@@ -1,0 +1,114 @@
+<h2>Commandes</h2>
+<form (ngSubmit)="load()">
+  <label
+    >État<select name="status" [(ngModel)]="filter">
+      <option value="">Tous</option>
+      @for (
+        status of ['CONFIRMED', 'PREPARING', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
+        track status
+      ) {
+        <option [value]="status">{{ statuses[status] }}</option>
+      }
+    </select></label
+  ><button [disabled]="busy()">Rechercher les commandes</button>
+</form>
+@if (error()) {
+  <p role="alert" class="error">{{ error() }}</p>
+}
+@if (success()) {
+  <p role="status">{{ success() }}</p>
+}
+@if (busy()) {
+  <p role="status">Chargement…</p>
+}
+@if (!busy() && !error() && !items().length) {
+  <p>Aucune commande pour ces critères.</p>
+}
+<div class="table-scroll">
+  <table>
+    <caption>
+      Commandes — page
+      {{
+        page + 1
+      }}
+    </caption>
+    <thead>
+      <tr>
+        <th>Référence / date</th>
+        <th>Destinataire</th>
+        <th>État</th>
+        <th>Total TND</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (entry of items(); track entry.id) {
+        <tr>
+          <td>{{ entry.id }}<br />{{ entry.createdAt | date: 'dd/MM/yyyy HH:mm' : '+0100' }}</td>
+          <td>{{ entry.summary.address.recipient }}</td>
+          <td>{{ statuses[entry.status] }}</td>
+          <td>{{ entry.summary.total.amount }}</td>
+          <td>
+            <button class="secondary" (click)="open(entry)" [disabled]="busy()">
+              Ouvrir
+            </button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+<nav class="actions" aria-label="Pagination des commandes">
+  <button class="secondary" (click)="load(page - 1)" [disabled]="busy() || page === 0">
+    Précédent</button
+  ><span>Page {{ page + 1 }}</span
+  ><button class="secondary" (click)="load(page + 1)" [disabled]="busy() || items().length < 20">
+    Suivant
+  </button>
+</nav>
+@if (selected(); as entry) {
+  <section class="admin-detail">
+    <h3>Commande {{ entry.id }}</h3>
+    <p>{{ statuses[entry.status] }} · Paiement à la livraison</p>
+    <p>
+      {{ entry.summary.address.recipient }} · {{ entry.summary.address.phone }}<br />{{
+        entry.summary.address.street
+      }}, {{ entry.summary.address.postalCode }} {{ entry.summary.address.city }} ·
+      {{ entry.summary.address.governorate }}
+    </p>
+    <ul>
+      @for (line of entry.summary.items; track line.kind + line.offerId) {
+        <li>
+          {{ line.quantity }} × {{ line.label }} — {{ line.lineTotal.amount }} TND
+          <ul>
+            @for (c of line.components; track c.skuId) {
+              <li>{{ c.quantity }} × {{ c.label }} ({{ c.sku }}) par unité achetée</li>
+            }
+          </ul>
+        </li>
+      }
+    </ul>
+    <p>
+      Livraison : {{ entry.summary.delivery.amount }} TND · Total :
+      {{ entry.summary.total.amount }} TND
+    </p>
+    <div class="actions">
+      @if (entry.status === 'CONFIRMED') {
+        <button (click)="transition(entry, 'prepare')" [disabled]="busy()">Préparer</button>
+      }
+      @if (entry.status === 'PREPARING') {
+        <button (click)="transition(entry, 'ship')" [disabled]="busy()">
+          Expédier et sortir le stock
+        </button>
+      }
+      @if (entry.status === 'SHIPPED') {
+        <button (click)="transition(entry, 'deliver')" [disabled]="busy()">Marquer livrée</button>
+      }
+      @if (entry.status === 'CONFIRMED' || entry.status === 'PREPARING') {
+        <button class="secondary" (click)="transition(entry, 'cancel')" [disabled]="busy()">
+          Annuler et libérer le stock
+        </button>
+      }
+    </div>
+  </section>
+}

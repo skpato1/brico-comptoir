@@ -1,34 +1,42 @@
-import { DatePipe } from '@angular/common';
-import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ApiHealth } from './core/api-health';
-
+import { filter } from 'rxjs';
+import { SessionState } from './core/session-state';
+import { CartState } from './core/cart-state';
 @Component({
   selector: 'app-root',
-  imports: [DatePipe],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, FormsModule],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
 export class App implements OnInit {
-  private readonly api = inject(ApiHealth);
+  readonly session = inject(SessionState);
+  readonly cart = inject(CartState);
+  private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
-  readonly state = signal<'checking' | 'up' | 'down'>('checking');
-  readonly checkedAt = signal<Date | null>(null);
-
+  query = '';
   ngOnInit(): void {
-    this.checkApi();
+    this.session.start();
+    this.router.events
+      .pipe(
+        filter((event) => event instanceof NavigationEnd),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(() =>
+        setTimeout(() => {
+          document.getElementById('content')?.focus({ preventScroll: true });
+          window.scrollTo({ top: 0, behavior: 'instant' });
+        }),
+      );
+    if (location.hash.startsWith('#reset='))
+      void this.router.navigateByUrl('/compte' + location.hash);
   }
-
-  checkApi(): void {
-    this.state.set('checking');
-    this.api.check().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => this.finish('up'),
-      error: () => this.finish('down'),
-    });
+  search(): void {
+    void this.router.navigate(['/catalogue'], { queryParams: { q: this.query.trim() || null } });
   }
-
-  private finish(state: 'up' | 'down'): void {
-    this.state.set(state);
-    this.checkedAt.set(new Date());
+  count(): number {
+    return this.cart.view().items.reduce((total, item) => total + item.quantity, 0);
   }
 }

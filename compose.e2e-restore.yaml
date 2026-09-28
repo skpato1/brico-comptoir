@@ -1,0 +1,10 @@
+services:
+  postgres:
+    # The restore script initializes fresh cluster roles explicitly before pg_restore.
+    # No host bind mount is needed, including with a remote Engine or Windows pipe.
+    volumes: !override
+      - postgres-data:/var/lib/postgresql
+  backend:
+    image: bricocomptoir-e2e-backend:latest
+  frontend:
+    image: bricocomptoir-e2e-frontend:latest

@@ -1,0 +1,27 @@
+spring:
+  mail:
+    host: localhost
+    port: 1025
+brico:
+  privacy:
+    archive-key: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+    legal-days: 3650
+    retention-enabled: true
+  checkout:
+    delivery-fee-tnd: '7.000'
+    governorates: TUNIS,SFAX
+  media:
+    endpoint: ${MEDIA_ENDPOINT:http://localhost:9000}
+    access-key: ${MEDIA_ACCESS_KEY:test-access}
+    secret-key: ${MEDIA_SECRET_KEY:test-secret}
+  mail:
+    from: noreply@test.invalid
+    # Test-only key, never used by a local or production runtime.
+    outbox-key: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+    worker-enabled: false
+  public-url: http://localhost:4200
+server:
+  servlet:
+    session:
+      cookie:
+        secure: false

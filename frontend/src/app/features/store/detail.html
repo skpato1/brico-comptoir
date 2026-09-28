@@ -1,0 +1,205 @@
+<nav class="breadcrumb" aria-label="Fil d’Ariane">
+  <a routerLink="/">Accueil</a><span>/</span
+  ><a [routerLink]="packMode ? '/packs' : '/catalogue'">{{
+    packMode ? 'Les packs' : 'Le catalogue'
+  }}</a
+  ><span>/</span><span>La fiche</span>
+</nav>
+@if (loading()) {
+  <p class="state-box" role="status">Chargement de la fiche…</p>
+} @else if (error()) {
+  <div class="state-box" role="alert">
+    <h1>Fiche indisponible</h1>
+    <p>{{ error() }}</p>
+    <button (click)="load()">Réessayer</button>
+  </div>
+} @else {
+  <div class="detail-layout">
+    <div class="visual">
+      @if (packMode) {
+        <div class="pack-visual">
+          <span>LE CONTENU FAIT LA DIFFÉRENCE</span
+          ><strong>Votre pack.<br />Votre variante.</strong>
+          <div aria-hidden="true">+</div>
+          <p>La liste ci-dessous décrit les articles inclus.</p>
+        </div>
+      } @else {
+        <app-product-photo
+          [image]="images()[photo]"
+          [detail]="true"
+          [alt]="product()?.name ?? ''"
+        />
+        @if (images().length > 1) {
+          <div class="thumbnails" aria-label="Photos du produit">
+            @for (image of images(); track image.id; let i = $index) {
+              <button
+                class="secondary"
+                (click)="photo = i"
+                [attr.aria-pressed]="photo === i"
+                [attr.aria-label]="'Voir la photo ' + (i + 1)"
+              >
+                <img
+                  [src]="image.cardUrl"
+                  alt=""
+                  width="64"
+                  height="64"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </button>
+            }
+          </div>
+        }
+      }
+    </div>
+    <div class="offer-info">
+      <p class="eyebrow">{{ packMode ? 'LA SOLUTION EN PACK' : 'LE COMPTOIR À L’UNITÉ' }}</p>
+      @if (pack()?.demo || product()?.demo) {
+        <p class="badge">DÉMO — exemple non validé commercialement</p>
+      }
+      <h1>{{ packMode ? pack()?.name : product()?.name }}</h1>
+      <p class="muted">{{ packMode ? pack()?.slogan : product()?.description }}</p>
+      <fieldset class="variants">
+        <legend>Choisissez votre variante</legend>
+        @for (v of packMode ? pack()?.variants : product()?.variants; track v.id) {
+          <label [class.selected]="selected === v.id"
+            ><input
+              type="radio"
+              name="variant"
+              [value]="v.id"
+              [(ngModel)]="selected"
+              (ngModelChange)="notice.set('')"
+            /><span
+              >{{ v.label }}<strong>{{ v.price.amount }} TND</strong></span
+            ></label
+          >
+        }
+      </fieldset>
+      @if (variant(); as v) {
+        <p class="offer-price">{{ v.price.amount }} <small>TND</small></p>
+      }
+      @if (packVariant(); as pv) {
+        <p [class.error]="pv.available === 0">
+          {{
+            pv.available > 0 ? 'Disponible selon les composants actuels' : 'Momentanément épuisé'
+          }}
+        </p>
+      }
+      <form #quantityForm="ngForm" (ngSubmit)="add()" class="buy">
+        <label
+          >Quantité<input
+            name="quantity"
+            type="number"
+            [(ngModel)]="quantity"
+            required
+            min="1"
+            max="999"
+            step="1"
+            pattern="[0-9]+"
+            #qty="ngModel"
+            [attr.aria-invalid]="qty.invalid && qty.touched"
+            aria-describedby="quantity-help" /></label
+        ><button
+          type="submit"
+          [disabled]="
+            quantityForm.invalid ||
+            cart.busy() ||
+            cart.recoveryPending() ||
+            !canBuy() ||
+            (packMode && packVariant()?.available === 0)
+          "
+        >
+          Ajouter au panier →
+        </button>
+      </form>
+      <p id="quantity-help" class="muted small">
+        Quantité entière de 1 à 999. Stock confirmé au moment de la commande.
+      </p>
+      @if (qty.invalid && qty.touched) {
+        <p class="error" role="alert">Saisissez une quantité entière entre 1 et 999.</p>
+      }
+      @if (!canBuy()) {
+        <p class="error">Utilisez un compte client ou une session invitée pour acheter.</p>
+      }
+      @if (cart.error()) {
+        <p class="error" role="alert">{{ cart.error() }}</p>
+      }
+      @if (notice()) {
+        <p role="status">{{ notice() }} <a routerLink="/panier">Voir mon panier →</a></p>
+      }
+      <p class="delivery-note">Paiement à la livraison · Frais calculés avec votre adresse.</p>
+    </div>
+  </div>
+  @if (packVariant(); as pv) {
+    <section class="composition">
+      <div>
+        <p class="eyebrow">PAS DE SURPRISE À L’OUVERTURE</p>
+        <h2>Dans votre pack « {{ pv.label }} »</h2>
+        <ul>
+          @for (c of pv.components; track c.variantId) {
+            <li>
+              <strong>{{ c.quantity }} ×</strong> {{ label(c.variantId) }}
+            </li>
+          }
+        </ul>
+        <p class="small muted">
+          Quantités pour un pack. Commander {{ quantity }} pack(s) multiplie chaque quantité par
+          {{ quantity }}.
+        </p>
+      </div>
+      <div class="excluded">
+        <h3>Ce qui n’est pas inclus</h3>
+        @if (omitted().length) {
+          <p>Par rapport aux autres variantes proposées :</p>
+          <ul>
+            @for (c of omitted(); track c.variantId) {
+              <li>{{ c.quantity }} × {{ label(c.variantId) }} en moins</li>
+            }
+          </ul>
+        }
+        <p>
+          Seuls les articles et les quantités listés dans cette variante sont inclus. Aucun article
+          supplémentaire n’est fourni.
+        </p>
+      </div>
+    </section>
+    <section>
+      <h2>Avant de commencer</h2>
+      <p class="guide">
+        {{ pack()?.guide || 'Aucun guide spécifique n’a encore été publié pour ce pack.' }}
+      </p>
+    </section>
+  }
+  @if (product(); as p) {
+    <section class="facts">
+      <h2>Les détails utiles</h2>
+      @if (p.characteristics | keyvalue; as facts) {
+        @if (facts.length) {
+          <dl>
+            @for (fact of facts; track fact.key) {
+              <div>
+                <dt>{{ fact.key }}</dt>
+                <dd>{{ fact.value }}</dd>
+              </div>
+            }
+          </dl>
+        } @else {
+          <p class="muted">Aucune caractéristique complémentaire publiée.</p>
+        }
+      }
+      @for (v of p.variants; track v.id) {
+        @if (v.id === selected) {
+          <p>Référence : {{ v.sku }} · Unité de vente : {{ v.unit }}</p>
+          <dl>
+            @for (fact of v.options | keyvalue; track fact.key) {
+              <div>
+                <dt>{{ fact.key }}</dt>
+                <dd>{{ fact.value }}</dd>
+              </div>
+            }
+          </dl>
+        }
+      }
+    </section>
+  }
+}

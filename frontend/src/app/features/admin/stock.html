@@ -1,0 +1,112 @@
+<h2>Stocks par SKU</h2>
+<p>
+  Physique : unités dans le dépôt. Réservé : unités promises aux commandes. Disponible = physique −
+  réservé. Les packs utilisent ces mêmes composants.
+</p>
+@if (error()) {
+  <p role="alert" class="error">{{ error() }}</p>
+}
+@if (adjustment.error()) {
+  <p role="alert" class="error">{{ adjustment.error() }}</p>
+}
+@if (adjustment.success()) {
+  <p role="status">{{ adjustment.success() }}</p>
+}
+@if (adjustment.pending()) {
+  <div role="alert">
+    <p>
+      Réponse en cours ou incertaine. Ne créez pas un nouvel ajustement : réessayez la même
+      opération.
+    </p>
+    <button (click)="retry()" [disabled]="adjustment.busy()">Réessayer le même ajustement</button>
+  </div>
+}
+<form (ngSubmit)="load()">
+  <label>Produit ou SKU<input name="q" [(ngModel)]="q" maxlength="100" /></label
+  ><button [disabled]="busy()">Rechercher / actualiser</button>
+</form>
+@if (busy()) {
+  <p role="status">Chargement des soldes…</p>
+}
+<div class="table-scroll">
+  <table>
+    <caption>
+      Stock — page de produits
+      {{
+        page + 1
+      }}
+    </caption>
+    <thead>
+      <tr>
+        <th>Produit / SKU</th>
+        <th>Physique</th>
+        <th>Réservé</th>
+        <th>Disponible</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (p of result()?.items; track p.id) {
+        @for (v of p.variants; track v.id) {
+          <tr>
+            <td>{{ p.name }}<br />{{ v.sku }} · {{ v.label }}</td>
+            @if (balances()[v.id]; as s) {
+              <td>{{ s.onHand }}</td>
+              <td>{{ s.reserved }}</td>
+              <td>{{ s.onHand - s.reserved }}</td>
+            } @else {
+              <td colspan="3">Solde indisponible</td>
+            }
+            <td>
+              <button
+                class="secondary"
+                (click)="choose(v)"
+                [disabled]="busy() || !!adjustment.pending()"
+              >
+                Ajuster {{ v.sku }}
+              </button>
+            </td>
+          </tr>
+        }
+      }
+    </tbody>
+  </table>
+</div>
+@if (result(); as r) {
+  <app-admin-pager
+    [page]="r.page"
+    [size]="r.size"
+    [total]="r.totalElements"
+    [busy]="busy()"
+    (changed)="load($event)"
+  />
+}
+@if (!busy() && result()?.totalElements === 0) {
+  <p>Aucun produit trouvé.</p>
+}
+@if (selected(); as sku) {
+  <form #f="ngForm" (ngSubmit)="submit(f)" class="admin-detail">
+    <h3>Ajuster {{ sku.sku }}</h3>
+    <fieldset [disabled]="!!adjustment.pending()">
+      <label
+        >Variation physique (+ réception, − correction)<input
+          type="number"
+          name="delta"
+          [(ngModel)]="delta"
+          required
+          step="1"
+          pattern="-?[0-9]+"
+      /></label>
+      <label
+        >Motif / référence<textarea
+          name="reason"
+          [(ngModel)]="reason"
+          required
+          maxlength="500"
+        ></textarea>
+      </label>
+      <p>Le serveur refuse toute baisse sous le stock réservé et conserve un mouvement d’audit.</p>
+      <button>Enregistrer l’ajustement</button>
+    </fieldset>
+  </form>
+}

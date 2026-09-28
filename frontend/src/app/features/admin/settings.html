@@ -1,0 +1,99 @@
+<h2>{{ kind === 'home' ? 'Contenus de l’accueil' : 'Livraison et frais' }}</h2>
+<p>
+  {{
+    kind === 'home'
+      ? 'Textes principaux en texte brut. Les liens du parcours restent fixes.'
+      : 'Forfait par commande en TND. Les changements s’appliquent aux nouveaux récapitulatifs ; les commandes existantes restent inchangées.'
+  }}
+</p>
+@if (error()) {
+  <p role="alert" class="error">{{ error() }}</p>
+}
+@if (success()) {
+  <p role="status">{{ success() }}</p>
+}
+@if (busy()) {
+  <p role="status">Chargement ou enregistrement…</p>
+}
+<button class="secondary" (click)="load()" [disabled]="busy()">Recharger les réglages</button>
+<form #form="ngForm" (ngSubmit)="save(form)" class="admin-settings">
+  <fieldset [disabled]="busy()">
+    @if (home(); as h) {
+      <label
+        >Titre principal<input name="title" [(ngModel)]="h.title" required maxlength="100"
+      /></label>
+      <label
+        >Suite du titre<input name="accent" [(ngModel)]="h.accent" required maxlength="100"
+      /></label>
+      <label
+        >Description principale<textarea
+          name="description"
+          [(ngModel)]="h.description"
+          required
+          maxlength="500"
+        ></textarea>
+      </label>
+      <label
+        >Titre de l’entrée solution<input
+          name="solutionTitle"
+          [(ngModel)]="h.solutionTitle"
+          required
+          maxlength="120"
+      /></label>
+      <label
+        >Description de l’entrée solution<textarea
+          name="solutionDescription"
+          [(ngModel)]="h.solutionDescription"
+          required
+          maxlength="500"
+        ></textarea>
+      </label>
+      <label
+        >Titre de l’entrée produit<input
+          name="productTitle"
+          [(ngModel)]="h.productTitle"
+          required
+          maxlength="120"
+      /></label>
+      <label
+        >Description de l’entrée produit<textarea
+          name="productDescription"
+          [(ngModel)]="h.productDescription"
+          required
+          maxlength="500"
+        ></textarea>
+      </label>
+    }
+    @if (delivery(); as d) {
+      <label class="check"
+        ><input type="checkbox" name="enabled" [(ngModel)]="d.enabled" /> Accepter les
+        commandes</label
+      >
+      <label
+        >Forfait livraison (TND)<input
+          name="amount"
+          [(ngModel)]="d.amountTnd"
+          required
+          pattern="[0-9]{1,6}(\.[0-9]{1,3})?"
+          inputmode="decimal"
+      /></label>
+      <fieldset>
+        <legend>Gouvernorats desservis</legend>
+        <div class="zone-grid">
+          @for (zone of zones; track zone) {
+            <label class="check"
+              ><input
+                type="checkbox"
+                [checked]="d.governorates.includes(zone)"
+                (change)="toggleZone(zone, $any($event.target).checked)"
+              />{{ zone.replaceAll('_', ' ') }}</label
+            >
+          }
+        </div>
+      </fieldset>
+    }
+    @if (home() || delivery()) {
+      <button type="submit">Enregistrer les réglages</button>
+    }
+  </fieldset>
+</form>

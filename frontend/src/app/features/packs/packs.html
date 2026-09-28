@@ -1,0 +1,275 @@
+<section class="packs" [attr.aria-labelledby]="adminOnly ? 'packs-admin-title' : 'packs-title'">
+  @if (!adminOnly) {
+    <div class="heading">
+      <div>
+        <p class="eyebrow">PACKS</p>
+        <h2 id="packs-title">Sélections prêtes à l’emploi</h2>
+      </div>
+      @if (canManage) {
+        <button type="button" class="secondary" (click)="toggleAdmin()">
+          {{ adminOpen() ? 'Fermer la gestion' : 'Gérer les packs' }}
+        </button>
+      }
+    </div>
+    @if (error()) {
+      <p role="alert">{{ error() }}</p>
+    }
+    @if (!error() && !publicPacks().length) {
+      <p>Aucun pack publié pour le moment.</p>
+    }
+    <div class="pack-list">
+      @for (pack of publicPacks(); track pack.id) {
+        <article class="pack-card">
+          <h3>{{ pack.name }}</h3>
+          @if (pack.slogan) {
+            <p class="slogan">{{ pack.slogan }}</p>
+          }
+          @if (pack.guide) {
+            <p class="guide">{{ pack.guide }}</p>
+          }
+          @if (pack.demo) {
+            <p class="demo">Démonstration fictive</p>
+          }
+          <ul>
+            @for (variant of pack.variants; track variant.id) {
+              <li>
+                <span
+                  >{{ variant.label }} · {{ variant.price.amount }}
+                  {{ variant.price.currency }}</span
+                >
+                <span>{{
+                  variant.available > 0 ? variant.available + ' disponible(s)' : 'Indisponible'
+                }}</span>
+                <button
+                  type="button"
+                  class="secondary"
+                  (click)="cart.add('PACK', variant.id)"
+                  [disabled]="cart.busy()"
+                >
+                  Ajouter au panier
+                </button>
+              </li>
+            }
+          </ul>
+        </article>
+      }
+    </div>
+  }
+  @if (adminOpen() && canManage) {
+    <section class="admin" aria-labelledby="packs-admin-title">
+      <h3 id="packs-admin-title">Gestion des packs</h3>
+      <p>
+        La publication et la composition sont vérifiées côté serveur. Les exemples DÉMO restent en
+        brouillon.
+      </p>
+      @if (adminMessage()) {
+        <p role="alert">{{ adminMessage() }}</p>
+      }
+      <form (ngSubmit)="refreshAdmin(0)">
+        <label>Rechercher un pack<input name="query" [(ngModel)]="query" maxlength="100" /></label
+        ><button>Rechercher les packs</button>
+      </form>
+      @if (listLoading()) {
+        <p role="status">Chargement des packs…</p>
+      }
+      @if (result(); as r) {
+        <div class="table-scroll">
+          <table>
+            <caption>
+              Packs
+            </caption>
+            <thead>
+              <tr>
+                <th>Pack</th>
+                <th>État</th>
+                <th>Variantes</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of r.items; track p.id) {
+                <tr>
+                  <td>{{ p.name }}{{ p.demo ? ' · DÉMO' : '' }}</td>
+                  <td>{{ p.status }}</td>
+                  <td>
+                    @for (v of p.variants; track v.id) {
+                      <p>
+                        {{ v.label }} · {{ v.price.amount }} TND
+                        <button class="secondary" (click)="editVariant(p, v)">
+                          Modifier la variante
+                        </button>
+                      </p>
+                    }
+                  </td>
+                  <td><button class="secondary" (click)="editPack(p)">Modifier le pack</button></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <app-admin-pager
+          [page]="r.page"
+          [size]="r.size"
+          [total]="r.totalElements"
+          (changed)="refreshAdmin($event)"
+        />
+        @if (!r.totalElements) {
+          <p>Aucun pack trouvé.</p>
+        }
+      }
+      <div class="admin-grid">
+        <form #packEditor="ngForm" (ngSubmit)="valid(packEditor) && savePack()">
+          <h4>{{ packId ? 'Modifier le pack' : 'Créer un pack' }}</h4>
+          @if (demo) {
+            <p class="demo">Exemple fictif · publication bloquée</p>
+          }
+          <label
+            >Code
+            <input
+              name="packCode"
+              [(ngModel)]="packForm.code"
+              required
+              maxlength="80"
+              pattern="[a-z0-9]+(-[a-z0-9]+)*"
+          /></label>
+          <label
+            >Nom <input name="packName" [(ngModel)]="packForm.name" required maxlength="180"
+          /></label>
+          <label
+            >Slogan <input name="packSlogan" [(ngModel)]="packForm.slogan" maxlength="180"
+          /></label>
+          <label
+            >Guide
+            <textarea
+              name="packGuide"
+              [(ngModel)]="packForm.guide"
+              maxlength="4000"
+              rows="4"
+            ></textarea>
+          </label>
+          <label
+            >État
+            <select name="packStatus" [(ngModel)]="packForm.status">
+              <option value="DRAFT">Brouillon</option>
+              <option value="PUBLISHED" [disabled]="demo">Publié</option>
+            </select></label
+          >
+          <div class="actions">
+            <button type="submit" [disabled]="busy()">Enregistrer</button>
+            <button type="button" class="secondary" (click)="resetPack()">Nouveau</button>
+          </div>
+          <ul class="admin-list">
+            @for (pack of adminPacks(); track pack.id) {
+              <li>
+                <button type="button" class="link" (click)="editPack(pack)">
+                  {{ pack.name }} · {{ pack.status }} · v{{ pack.version
+                  }}{{ pack.demo ? ' · DÉMO' : '' }}
+                </button>
+              </li>
+            }
+          </ul>
+        </form>
+
+        <form #variantEditor="ngForm" (ngSubmit)="valid(variantEditor) && saveVariant()">
+          <h4>{{ variantId ? 'Modifier la variante' : 'Créer une variante de pack' }}</h4>
+          <p>Pack sélectionné : {{ packId ? packForm.name : 'aucun' }}</p>
+          <label
+            >Code
+            <input
+              name="packVariantCode"
+              [(ngModel)]="variantForm.code"
+              required
+              maxlength="80"
+              pattern="[a-z0-9]+(-[a-z0-9]+)*"
+          /></label>
+          <label
+            >Libellé
+            <input name="packVariantLabel" [(ngModel)]="variantForm.label" required maxlength="120"
+          /></label>
+          <label
+            >Prix TND
+            <input
+              name="packVariantPrice"
+              [(ngModel)]="variantForm.priceTnd"
+              required
+              inputmode="decimal"
+              pattern="[0-9]+(\.[0-9]{1,3})?"
+          /></label>
+          <label
+            >État
+            <select name="packVariantStatus" [(ngModel)]="variantForm.status">
+              <option value="DRAFT">Brouillon</option>
+              <option value="PUBLISHED">Publié</option>
+            </select></label
+          >
+          <fieldset>
+            <legend>SKU obligatoires</legend>
+            @for (line of variantForm.components; track $index; let index = $index) {
+              <div class="component-line">
+                <span>{{ componentNames[line.variantId] || line.variantId }}</span>
+                <label
+                  >Quantité
+                  <input
+                    [name]="'quantity-' + index"
+                    type="number"
+                    min="1"
+                    step="1"
+                    pattern="[0-9]+"
+                    [(ngModel)]="line.quantity"
+                    required
+                /></label>
+                <button type="button" class="secondary" (click)="removeComponent(index)">
+                  Retirer
+                </button>
+              </div>
+            }
+            <div class="sku-search">
+              <label
+                >Rechercher un produit ou un SKU
+                <input name="skuQuery" [(ngModel)]="skuQuery" maxlength="100"
+              /></label>
+              <button type="button" class="secondary" (click)="searchSkus()">Rechercher</button>
+            </div>
+            <ul class="admin-list">
+              @for (product of skuProducts(); track product.id) {
+                @for (sku of product.variants; track sku.id) {
+                  <li>
+                    <button type="button" class="link" (click)="addComponent(sku.id)">
+                      Ajouter {{ product.name }} · {{ sku.sku }} · {{ sku.status }}
+                    </button>
+                  </li>
+                }
+              }
+            </ul>
+            @if (skuResult(); as r) {
+              <app-admin-pager
+                [page]="r.page"
+                [size]="r.size"
+                [total]="r.totalElements"
+                (changed)="searchSkus($event)"
+              />
+            }
+          </fieldset>
+          <div class="actions">
+            <button type="submit" [disabled]="busy() || !packId">Enregistrer</button>
+            <button type="button" class="secondary" (click)="resetVariant()">
+              Nouvelle variante
+            </button>
+          </div>
+          <ul class="admin-list">
+            @for (pack of adminPacks(); track pack.id) {
+              @for (variant of pack.variants; track variant.id) {
+                <li>
+                  <button type="button" class="link" (click)="editVariant(pack, variant)">
+                    {{ pack.name }} · {{ variant.label }} · {{ variant.price.amount }} TND ·
+                    {{ variant.status }}
+                  </button>
+                </li>
+              }
+            }
+          </ul>
+        </form>
+      </div>
+    </section>
+  }
+</section>

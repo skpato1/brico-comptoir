@@ -1,0 +1,45 @@
+<section class="cart" aria-labelledby="cart-title">
+  <div class="heading"><div><p class="eyebrow">PANIER</p><h2 id="cart-title">Votre sélection</h2></div>
+    <button type="button" class="secondary" (click)="cart.refresh()" [disabled]="cart.busy()">Actualiser</button>
+  </div>
+  <p class="scope">{{ cart.recoveryPending() ? 'Panier visiteur en attente de reprise.' : cart.connected() ? 'Panier enregistré sur votre compte.'
+    : cart.storageUnavailable() ? 'Panier temporaire : stockage du navigateur indisponible.' : 'Panier conservé dans ce navigateur.' }}</p>
+  @if (cart.error()) { <p class="error" role="alert">{{ cart.error() }}</p> }
+  @if (cart.recoveryPending()) {
+    <button type="button" (click)="cart.retryRecovery()" [disabled]="cart.busy()">Réessayer la reprise du panier</button>
+  }
+  @if (cart.busy()) { <p role="status">Mise à jour du panier…</p> }
+  @if (!cart.view().items.length && !cart.busy()) {
+    <p>Votre panier est vide. Ajoutez un article ou une variante de pack depuis le catalogue.</p>
+  }
+  @if (cart.view().items.length) {
+    <ul class="items">
+      @for (item of cart.view().items; track item.kind + item.offerId) {
+        <li>
+          <div><strong>{{ item.label ?? 'Offre indisponible ou non publiée' }}</strong>
+            <span class="kind">{{ item.kind === 'PACK' ? 'Pack' : 'Article' }}</span>
+            @if (item.unitPrice) { <span>{{ item.unitPrice.amount }} TND l’unité</span> }
+            @if (item.lineEstimate) { <span>Estimation : {{ item.lineEstimate.amount }} TND</span> }
+          </div>
+          <div class="quantity">
+            <label [for]="'quantity-' + item.kind + item.offerId">Quantité</label>
+            <input [id]="'quantity-' + item.kind + item.offerId" type="number" min="1" max="999" step="1"
+              [value]="item.quantity" (change)="quantityChanged($event, item)" [disabled]="cart.busy()" />
+            <button type="button" class="secondary" (click)="cart.change(item.kind, item.offerId, 0)"
+              [disabled]="cart.busy()">Retirer</button>
+          </div>
+        </li>
+      }
+    </ul>
+    @if (cart.view().shortages.length) {
+      <p class="error" role="alert">Certains articles ne sont pas disponibles dans les quantités demandées. Réduisez les quantités ou retirez une ligne ; un même article peut être présent dans plusieurs packs.</p>
+    }
+    @if (cart.view().subtotalEstimate; as subtotal) {
+      <p class="subtotal">Sous-total estimé : {{ subtotal.amount }} {{ subtotal.currency }}</p>
+    } @else {
+      <p>Estimation indisponible : une offre a changé ou n’est plus publiée.</p>
+    }
+    <p class="notice">Prix, composition et disponibilité seront recalculés par le serveur lors de la commande.
+      Les frais de livraison ne sont pas encore calculés et aucune unité n’est réservée.</p>
+  }
+</section>

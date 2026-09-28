@@ -1,0 +1,592 @@
+<section
+  class="catalog"
+  [attr.aria-labelledby]="adminOnly ? 'catalog-admin-title' : 'catalog-title'"
+>
+  @if (!adminOnly) {
+    <div class="catalog-heading">
+      <div>
+        <p class="eyebrow">CATALOGUE</p>
+        <h2 id="catalog-title">Articles</h2>
+      </div>
+      @if (canManage) {
+        <button type="button" class="secondary" (click)="toggleAdmin()">
+          {{ adminOpen() ? 'Fermer la gestion' : 'Gérer le catalogue' }}
+        </button>
+      }
+    </div>
+    <form class="filters" (ngSubmit)="search(true)">
+      <label
+        >Recherche
+        <input
+          name="q"
+          [(ngModel)]="filters.q"
+          maxlength="100"
+          placeholder="Nom, description ou SKU"
+      /></label>
+      <label
+        >Catégorie
+        <select name="category" [(ngModel)]="filters.categoryId">
+          <option value="">Toutes</option>
+          @for (category of categories(); track category.id) {
+            <option [value]="category.id">{{ category.name }}</option>
+          }
+        </select></label
+      >
+      <label
+        >Marque
+        <select name="brand" [(ngModel)]="filters.brandId">
+          <option value="">Toutes</option>
+          @for (brand of brands(); track brand.id) {
+            <option [value]="brand.id">{{ brand.name }}</option>
+          }
+        </select></label
+      >
+      <label
+        >Prix min. TND
+        <input name="min" [(ngModel)]="filters.minPrice" inputmode="decimal" placeholder="0.001"
+      /></label>
+      <label
+        >Prix max. TND
+        <input name="max" [(ngModel)]="filters.maxPrice" inputmode="decimal" placeholder="99.900"
+      /></label>
+      <label
+        >Trier
+        <select name="sort" [(ngModel)]="filters.sort">
+          <option value="name">Nom</option>
+          <option value="price_asc">Prix croissant</option>
+          <option value="price_desc">Prix décroissant</option>
+          <option value="newest">Plus récents</option>
+        </select></label
+      >
+      <button type="submit" [disabled]="loading()">Rechercher</button>
+    </form>
+    @if (error()) {
+      <p role="alert" class="message-error">{{ error() }}</p>
+    }
+    @if (loading()) {
+      <p role="status">Chargement du catalogue…</p>
+    }
+    @if (result(); as page) {
+      @if (!loading() && page.totalElements === 0) {
+        <p>Aucun article publié ne correspond à ces critères.</p>
+      }
+      <div class="products">
+        @for (product of page.items; track product.id) {
+          <article class="product">
+            @if (primaryImage(product.id); as image) {
+              <img
+                class="product-photo"
+                [src]="image.cardUrl"
+                [attr.srcset]="imageSrcset(image)"
+                sizes="(max-width: 700px) 90vw, 360px"
+                [alt]="product.name"
+                [width]="image.width"
+                [height]="image.height"
+                loading="lazy"
+                decoding="async"
+              />
+            }
+            <h3>{{ product.name }}</h3>
+            @if (product.demo) {
+              <span class="demo">Démonstration fictive</span>
+            }
+            @if (product.description) {
+              <p>{{ product.description }}</p>
+            }
+            @if (product.brandId) {
+              @for (brand of brands(); track brand.id) {
+                @if (brand.id === product.brandId) {
+                  <p class="meta">Marque : {{ brand.name }}</p>
+                }
+              }
+            }
+            @for (fact of product.characteristics | keyvalue; track fact.key) {
+              <p class="meta">{{ fact.key }} : {{ fact.value }}</p>
+            }
+            <ul>
+              @for (variant of product.variants; track variant.id) {
+                <li>
+                  <span>{{ variant.label }} · {{ variant.sku }} · {{ variant.unit }}</span>
+                  <strong>{{ variant.price.amount }} {{ variant.price.currency }}</strong>
+                  <button
+                    type="button"
+                    class="secondary"
+                    (click)="cart.add('PRODUCT', variant.id)"
+                    [disabled]="cart.busy()"
+                  >
+                    Ajouter au panier
+                  </button>
+                </li>
+              }
+            </ul>
+            @if (publicImages()[product.id]?.length) {
+              <button type="button" class="secondary" (click)="toggleDetail(product.id)">
+                {{ detailProductId() === product.id ? 'Masquer les photos' : 'Voir les photos' }}
+              </button>
+              @if (detailProductId() === product.id) {
+                <div class="product-gallery">
+                  @for (image of publicImages()[product.id]; track image.id) {
+                    <img
+                      [src]="image.detailUrl"
+                      [attr.srcset]="imageSrcset(image)"
+                      sizes="(max-width: 700px) 90vw, 800px"
+                      [alt]="product.name + ' — photo ' + (image.sortOrder + 1)"
+                      [width]="image.width"
+                      [height]="image.height"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  }
+                </div>
+              }
+            }
+          </article>
+        }
+      </div>
+      @if (page.totalElements > page.size) {
+        <div class="pagination">
+          <button
+            type="button"
+            class="secondary"
+            (click)="changePage(-1)"
+            [disabled]="loading() || page.page === 0"
+          >
+            Précédent
+          </button>
+          <span>Page {{ page.page + 1 }} · {{ page.totalElements }} articles</span>
+          <button
+            type="button"
+            class="secondary"
+            (click)="changePage(1)"
+            [disabled]="loading() || (page.page + 1) * page.size >= page.totalElements"
+          >
+            Suivant
+          </button>
+        </div>
+      }
+    }
+  }
+  @if (adminOpen() && canManage) {
+    <section class="admin" aria-labelledby="catalog-admin-title">
+      <h3 id="catalog-admin-title">Gestion du catalogue</h3>
+      <p>
+        Les modifications sont contrôlées par le serveur. Les brouillons ne sont pas visibles dans
+        le catalogue public.
+      </p>
+      @if (adminMessage()) {
+        <p role="alert" class="admin-message">{{ adminMessage() }}</p>
+      }
+      <form (ngSubmit)="loadAdminProducts(0)">
+        <label
+          >Rechercher un produit / SKU<input
+            name="adminQuery"
+            [(ngModel)]="adminQuery"
+            maxlength="100" /></label
+        ><button>Rechercher les produits</button>
+      </form>
+      @if (listLoading()) {
+        <p role="status">Chargement des produits…</p>
+      }
+      @if (adminResult(); as r) {
+        <div class="table-scroll">
+          <table>
+            <caption>
+              Produits, y compris brouillons
+            </caption>
+            <thead>
+              <tr>
+                <th>Produit</th>
+                <th>État</th>
+                <th>SKU / prix TND</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of r.items; track p.id) {
+                <tr>
+                  <td>{{ p.name }}{{ p.demo ? ' · DÉMO' : '' }}</td>
+                  <td>{{ p.status }}</td>
+                  <td>
+                    @for (v of p.variants; track v.id) {
+                      <p>
+                        {{ v.sku }} · {{ v.price.amount }}
+                        <button type="button" class="secondary" (click)="editVariant(p, v)">
+                          Modifier ce SKU
+                        </button>
+                      </p>
+                    }
+                  </td>
+                  <td>
+                    <button type="button" class="secondary" (click)="editProduct(p)">
+                      Modifier / photos
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <app-admin-pager
+          [page]="r.page"
+          [size]="r.size"
+          [total]="r.totalElements"
+          (changed)="loadAdminProducts($event)"
+        />
+        @if (!r.totalElements) {
+          <p>Aucun produit trouvé.</p>
+        }
+      }
+
+      <div class="admin-grid">
+        <section class="admin-panel">
+          <h4>Photos du produit</h4>
+          @if (productId) {
+            <p>
+              <strong>Produit sélectionné : {{ productForm.name }}</strong>
+            </p>
+          }
+          <p>
+            Choisissez d’abord un produit dans la liste, puis 1 à 4 photos JPEG ou PNG (6 Mio
+            maximum chacune, 320 × 320 pixels minimum).
+          </p>
+          <input
+            type="file"
+            accept="image/jpeg,image/png"
+            multiple
+            (change)="selectImages($event)"
+            aria-label="Photos du produit"
+          />
+          <button
+            type="button"
+            (click)="uploadImages()"
+            [disabled]="!productId || !selectedImages.length || adminBusy()"
+          >
+            Téléverser
+          </button>
+          <ol class="image-list">
+            @for (image of adminImages(); track image.id; let index = $index) {
+              <li>
+                <img
+                  [src]="image.cardUrl"
+                  [alt]="'Photo ' + (index + 1)"
+                  width="80"
+                  height="80"
+                  loading="lazy"
+                />
+                <span>{{ image.primary ? 'Principale' : 'Photo ' + (index + 1) }}</span>
+                <button
+                  type="button"
+                  class="secondary"
+                  (click)="moveImage(index, -1)"
+                  [disabled]="index === 0 || adminBusy()"
+                >
+                  Monter
+                </button>
+                <button
+                  type="button"
+                  class="secondary"
+                  (click)="moveImage(index, 1)"
+                  [disabled]="index === adminImages().length - 1 || adminBusy()"
+                >
+                  Descendre
+                </button>
+                @if (!image.primary) {
+                  <button
+                    type="button"
+                    class="secondary"
+                    (click)="makePrimary(image.id)"
+                    [disabled]="adminBusy()"
+                  >
+                    Image principale
+                  </button>
+                }
+              </li>
+            }
+          </ol>
+        </section>
+        <section class="admin-panel">
+          <h4>Importer des produits CSV</h4>
+          <p>Format et colonnes décrits dans la documentation. L’aperçu ne crée aucun produit.</p>
+          <input
+            type="file"
+            accept=".csv,text/csv"
+            (change)="selectImport($event)"
+            aria-label="Fichier CSV de produits"
+          />
+          <button type="button" (click)="previewCsv()" [disabled]="!importFile || adminBusy()">
+            Prévisualiser
+          </button>
+          @if (importPreview(); as preview) {
+            <p>
+              {{ preview.rowCount }} lignes · {{ preview.productCount }} produits ·
+              {{ preview.issues.length }} erreurs
+            </p>
+            @if (preview.issues.length) {
+              <ul>
+                @for (issue of preview.issues; track $index) {
+                  <li>Ligne {{ issue.line }}, {{ issue.field }} : {{ issue.message }}</li>
+                }
+              </ul>
+            } @else {
+              <ul>
+                @for (row of preview.sample; track $index) {
+                  <li>
+                    {{ row.productName }} · {{ row.sku }} · {{ row.priceTnd }} TND ·
+                    {{ row.status }}
+                  </li>
+                }
+              </ul>
+              <button type="button" (click)="applyCsv()" [disabled]="adminBusy()">
+                Appliquer cet import
+              </button>
+            }
+          }
+        </section>
+        <form #categoryEditor="ngForm" (ngSubmit)="valid(categoryEditor) && saveCategory()">
+          <h4>{{ categoryId ? 'Modifier la catégorie' : 'Créer une catégorie' }}</h4>
+          <label
+            >Nom
+            <input name="categoryName" [(ngModel)]="categoryForm.name" required maxlength="120"
+          /></label>
+          <label
+            >Slug
+            <input
+              name="categorySlug"
+              [(ngModel)]="categoryForm.slug"
+              required
+              maxlength="80"
+              pattern="[a-z0-9]+(-[a-z0-9]+)*"
+          /></label>
+          <label
+            >Parent
+            <select name="categoryParent" [(ngModel)]="categoryForm.parentId">
+              <option [ngValue]="null">Aucun</option>
+              @for (category of adminCategories(); track category.id) {
+                @if (category.id !== categoryId && category.active) {
+                  <option [ngValue]="category.id">{{ category.name }}</option>
+                }
+              }
+            </select></label
+          >
+          <label class="check"
+            ><input name="categoryActive" type="checkbox" [(ngModel)]="categoryForm.active" />
+            Active</label
+          >
+          <div class="actions">
+            <button type="submit" [disabled]="adminBusy()">Enregistrer</button
+            ><button type="button" class="secondary" (click)="resetCategory()">Nouveau</button>
+          </div>
+          <label
+            >Filtrer les catégories<input
+              name="categoryQuery"
+              [(ngModel)]="categoryQuery"
+              maxlength="100" /></label
+          ><button type="button" class="secondary" (click)="loadCategories(0)">
+            Rechercher les catégories
+          </button>
+          <ul class="admin-list">
+            @for (
+              category of adminOnly ? categoryResult()?.items : adminCategories();
+              track category.id
+            ) {
+              <li>
+                <button type="button" class="link" (click)="editCategory(category)">
+                  {{ category.name }} · v{{ category.version
+                  }}{{ category.active ? '' : ' · archivée' }}
+                </button>
+              </li>
+            }
+          </ul>
+          @if (adminOnly && categoryResult(); as r) {
+            <app-admin-pager
+              [page]="r.page"
+              [size]="r.size"
+              [total]="r.totalElements"
+              (changed)="loadCategories($event)"
+            />
+          }
+        </form>
+
+        <form #brandEditor="ngForm" (ngSubmit)="valid(brandEditor) && saveBrand()">
+          <h4>{{ brandId ? 'Modifier la marque' : 'Créer une marque' }}</h4>
+          <label
+            >Nom <input name="brandName" [(ngModel)]="brandForm.name" required maxlength="120"
+          /></label>
+          <label
+            >Slug
+            <input
+              name="brandSlug"
+              [(ngModel)]="brandForm.slug"
+              required
+              maxlength="80"
+              pattern="[a-z0-9]+(-[a-z0-9]+)*"
+          /></label>
+          <label class="check"
+            ><input name="brandActive" type="checkbox" [(ngModel)]="brandForm.active" />
+            Active</label
+          >
+          <div class="actions">
+            <button type="submit" [disabled]="adminBusy()">Enregistrer</button
+            ><button type="button" class="secondary" (click)="resetBrand()">Nouveau</button>
+          </div>
+          <label
+            >Filtrer les marques<input
+              name="brandQuery"
+              [(ngModel)]="brandQuery"
+              maxlength="100" /></label
+          ><button type="button" class="secondary" (click)="loadBrands(0)">
+            Rechercher les marques
+          </button>
+          <ul class="admin-list">
+            @for (brand of adminOnly ? brandResult()?.items : adminBrands(); track brand.id) {
+              <li>
+                <button type="button" class="link" (click)="editBrand(brand)">
+                  {{ brand.name }} · v{{ brand.version }}{{ brand.active ? '' : ' · archivée' }}
+                </button>
+              </li>
+            }
+          </ul>
+          @if (adminOnly && brandResult(); as r) {
+            <app-admin-pager
+              [page]="r.page"
+              [size]="r.size"
+              [total]="r.totalElements"
+              (changed)="loadBrands($event)"
+            />
+          }
+        </form>
+
+        <form #productEditor="ngForm" (ngSubmit)="valid(productEditor) && saveProduct()">
+          <h4>{{ productId ? 'Modifier le produit' : 'Créer un produit' }}</h4>
+          <label
+            >Nom <input name="productName" [(ngModel)]="productForm.name" required maxlength="180"
+          /></label>
+          <label
+            >Catégorie
+            <select name="productCategory" [(ngModel)]="productForm.categoryId" required>
+              <option value="">Choisir</option>
+              @for (category of adminCategories(); track category.id) {
+                @if (category.active) {
+                  <option [value]="category.id">{{ category.name }}</option>
+                }
+              }
+            </select></label
+          >
+          <label
+            >Marque
+            <select name="productBrand" [(ngModel)]="productForm.brandId">
+              <option [ngValue]="null">Sans marque</option>
+              @for (brand of adminBrands(); track brand.id) {
+                @if (brand.active) {
+                  <option [ngValue]="brand.id">{{ brand.name }}</option>
+                }
+              }
+            </select></label
+          >
+          <label
+            >Description
+            <textarea
+              name="productDescription"
+              [(ngModel)]="productForm.description"
+              maxlength="2000"
+              rows="3"
+            ></textarea>
+          </label>
+          <label
+            >Caractéristiques connues, une par ligne « nom: valeur »
+            <textarea name="productFacts" [(ngModel)]="characteristicsText" rows="3"></textarea>
+          </label>
+          <label
+            >État
+            <select name="productStatus" [(ngModel)]="productForm.status">
+              <option value="DRAFT">Brouillon</option>
+              <option value="PUBLISHED">Publié</option>
+            </select></label
+          >
+          <div class="actions">
+            <button type="submit" [disabled]="adminBusy()">Enregistrer</button
+            ><button type="button" class="secondary" (click)="resetProduct()">Nouveau</button>
+          </div>
+          <ul class="admin-list">
+            @for (product of adminProducts(); track product.id) {
+              <li>
+                <button type="button" class="link" (click)="editProduct(product)">
+                  {{ product.name }} · {{ product.status }} · v{{ product.version }}
+                </button>
+              </li>
+            }
+          </ul>
+        </form>
+
+        <form #variantEditor="ngForm" (ngSubmit)="valid(variantEditor) && saveVariant()">
+          <h4>{{ variantId ? 'Modifier la variante' : 'Créer une variante/SKU' }}</h4>
+          <label
+            >Produit
+            <select
+              name="variantProduct"
+              [(ngModel)]="variantProductId"
+              [disabled]="!!variantId"
+              required
+            >
+              <option value="">Choisir</option>
+              @for (product of adminProducts(); track product.id) {
+                <option [value]="product.id">{{ product.name }}</option>
+              }
+            </select></label
+          >
+          <label
+            >SKU
+            <input
+              name="variantSku"
+              [(ngModel)]="variantForm.sku"
+              required
+              maxlength="64"
+              pattern="[A-Z0-9][A-Z0-9_-]*"
+          /></label>
+          <label
+            >Libellé
+            <input name="variantLabel" [(ngModel)]="variantForm.label" required maxlength="120"
+          /></label>
+          <label
+            >Unité <input name="variantUnit" [(ngModel)]="variantForm.unit" required maxlength="40"
+          /></label>
+          <label
+            >Prix TND
+            <input
+              name="variantPrice"
+              [(ngModel)]="variantForm.priceTnd"
+              required
+              inputmode="decimal"
+              pattern="[0-9]+(\.[0-9]{1,3})?"
+          /></label>
+          <label
+            >Options connues, une par ligne « nom: valeur »
+            <textarea name="variantOptions" [(ngModel)]="optionsText" rows="2"></textarea>
+          </label>
+          <label
+            >État
+            <select name="variantStatus" [(ngModel)]="variantForm.status">
+              <option value="DRAFT">Brouillon</option>
+              <option value="PUBLISHED">Publié</option>
+            </select></label
+          >
+          <div class="actions">
+            <button type="submit" [disabled]="adminBusy()">Enregistrer</button
+            ><button type="button" class="secondary" (click)="resetVariant()">Nouveau</button>
+          </div>
+          <ul class="admin-list">
+            @for (product of adminProducts(); track product.id) {
+              @for (variant of product.variants; track variant.id) {
+                <li>
+                  <button type="button" class="link" (click)="editVariant(product, variant)">
+                    {{ variant.sku }} · {{ variant.price.amount }} TND · {{ variant.status }}
+                  </button>
+                </li>
+              }
+            }
+          </ul>
+        </form>
+      </div>
+    </section>
+  }
+</section>

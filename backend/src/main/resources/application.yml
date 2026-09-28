@@ -1,6 +1,10 @@
 spring:
   application:
     name: bricocomptoir
+  servlet:
+    multipart:
+      max-file-size: 6MB
+      max-request-size: 26MB
   autoconfigure:
     exclude: org.springframework.boot.security.autoconfigure.UserDetailsServiceAutoConfiguration
   datasource:
@@ -29,8 +33,54 @@ spring:
     validate-migration-naming: true
     placeholders:
       applicationUser: ${DB_USERNAME}
+  mail:
+    host: ${SMTP_HOST}
+    port: ${SMTP_PORT:25}
+    username: ${SMTP_USERNAME:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail.smtp.auth: ${SMTP_AUTH:false}
+      mail.smtp.starttls.enable: ${SMTP_STARTTLS:false}
+      mail.smtp.starttls.required: ${SMTP_STARTTLS_REQUIRED:false}
+      mail.smtp.connectiontimeout: 3000
+      mail.smtp.timeout: 5000
+      mail.smtp.writetimeout: 5000
+brico:
+  privacy:
+    archive-key: ${DATA_ARCHIVE_KEY}
+    contact-days: ${PRIVACY_CONTACT_DAYS:90}
+    cart-days: ${PRIVACY_CART_DAYS:30}
+    mail-days: ${PRIVACY_MAIL_DAYS:30}
+    audit-days: ${PRIVACY_AUDIT_DAYS:365}
+    legal-days: ${PRIVACY_LEGAL_DAYS:0}
+    retention-enabled: ${PRIVACY_RETENTION_ENABLED:false}
+  checkout:
+    delivery-fee-tnd: ${CHECKOUT_DELIVERY_FEE_TND:}
+    governorates: ${CHECKOUT_GOVERNORATES:}
+  media:
+    endpoint: ${MEDIA_ENDPOINT}
+    access-key: ${MEDIA_ACCESS_KEY}
+    secret-key: ${MEDIA_SECRET_KEY}
+    bucket: ${MEDIA_BUCKET:bricocomptoir-media}
+  mail:
+    from: ${MAIL_FROM}
+    outbox-key: ${MAIL_OUTBOX_KEY}
+    worker-enabled: ${MAIL_WORKER_ENABLED:true}
+    poll-ms: ${MAIL_POLL_MS:2000}
+  public-url: ${APP_PUBLIC_URL}
 server:
+  forward-headers-strategy: native
+  error:
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+    include-exception: false
   port: ${SERVER_PORT:8080}
+  tomcat:
+    remoteip:
+      # Trust only local peers by default. Production must identify its gateway explicitly.
+      internal-proxies: ${TRUSTED_PROXY_PATTERN:127[.]0[.]0[.]1|::1|0:0:0:0:0:0:0:1}
+    max-swallow-size: 32MB
   shutdown: graceful
   servlet:
     session:

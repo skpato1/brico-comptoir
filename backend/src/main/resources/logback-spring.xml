@@ -1,0 +1,6 @@
+<configuration>
+  <appender name="SAFE" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder class="tn.bricocomptoir.bootstrap.SafeLogEncoder"/>
+  </appender>
+  <root level="INFO"><appender-ref ref="SAFE"/></root>
+</configuration>

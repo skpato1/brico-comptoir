@@ -1,55 +1,48 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter, Router } from '@angular/router';
+import { vi } from 'vitest';
 import { App } from './app';
-
-describe('API availability page', () => {
+describe('Public shell', () => {
   let fixture: ComponentFixture<App>;
   let http: HttpTestingController;
-
   beforeEach(() => {
+    localStorage.clear();
     TestBed.configureTestingModule({
       imports: [App],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
     });
     fixture = TestBed.createComponent(App);
     http = TestBed.inject(HttpTestingController);
     fixture.detectChanges();
   });
-
   afterEach(() => http.verify());
-
-  it('keeps the check button disabled until the actual API responds', async () => {
-    expect(fixture.nativeElement.querySelector('button').disabled).toBe(true);
-    expect(fixture.nativeElement.textContent).toContain('Vérification en cours');
-    const request = http.expectOne('/api/v1/health');
-    expect(request.request.method).toBe('GET');
-    request.flush({ status: 'UP' });
-    await fixture.whenStable();
-    expect(fixture.nativeElement.textContent).toContain('API disponible');
-    expect(fixture.nativeElement.querySelector('button').disabled).toBe(false);
+  it('restores the guest session and exposes keyboard navigation and both entry points', () => {
+    http.expectOne('/api/v1/auth/me').flush({}, { status: 401, statusText: 'Unauthorized' });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.skip-link').getAttribute('href')).toBe('#content');
+    expect(fixture.nativeElement.textContent).toContain('Je cherche une solution');
+    expect(fixture.nativeElement.textContent).toContain('Je cherche un produit');
+    expect(fixture.nativeElement.querySelector('main').tabIndex).toBe(-1);
   });
-
-  it('shows an outage and can recover after a real retry', async () => {
-    http.expectOne('/api/v1/health').flush({ status: 'DOWN' }, { status: 503, statusText: 'Unavailable' });
-    await fixture.whenStable();
-    expect(fixture.nativeElement.textContent).toContain('API indisponible');
-    fixture.nativeElement.querySelector('button').click();
-    http.expectOne('/api/v1/health').flush({ status: 'UP' });
-    await fixture.whenStable();
-    expect(fixture.nativeElement.textContent).toContain('API disponible');
+  it('does not silently switch an unavailable authenticated session to guest checkout', () => {
+    http.expectOne('/api/v1/auth/me').flush({}, { status: 503, statusText: 'Unavailable' });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role=alert]').textContent).toContain(
+      'momentanément indisponible',
+    );
+    expect(fixture.nativeElement.querySelector('router-outlet')).toBeNull();
+    fixture.componentInstance.session.start();
+    http.expectOne('/api/v1/auth/me').flush({}, { status: 401, statusText: 'Unauthorized' });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('router-outlet')).not.toBeNull();
   });
-
-  it('does not report success for an unexpected response body', async () => {
-    http.expectOne('/api/v1/health').flush({ message: 'not a health response' });
-    await fixture.whenStable();
-    expect(fixture.nativeElement.textContent).toContain('API indisponible');
-  });
-
-  it('handles a network error without leaving the page loading', async () => {
-    http.expectOne('/api/v1/health').error(new ProgressEvent('error'));
-    await fixture.whenStable();
-    expect(fixture.nativeElement.textContent).toContain('API indisponible');
-    expect(fixture.nativeElement.querySelector('button').disabled).toBe(false);
+  it('sends a header search to the catalogue URL', () => {
+    http.expectOne('/api/v1/auth/me').flush({}, { status: 401, statusText: 'Unauthorized' });
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    fixture.componentInstance.query = '  vis  ';
+    fixture.componentInstance.search();
+    expect(navigate).toHaveBeenCalledWith(['/catalogue'], { queryParams: { q: 'vis' } });
   });
 });

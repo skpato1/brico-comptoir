@@ -1,0 +1,16 @@
+:host { display: block; }
+.cart { margin-top: 28px; padding: 28px; border: 1px solid #e4e4e4; border-radius: 7px; background: #fff; }
+.heading { display: flex; align-items: start; justify-content: space-between; gap: 16px; }
+.heading h2 { margin: 0 0 14px; }
+.scope, .notice, .kind { color: #626961; font-size: 13px; }
+.error { color: #8d3426; }
+.secondary { background: transparent; color: #253f32; border: 1px solid #aeb6ab; }
+.secondary:hover:not(:disabled) { background: #e8eee7; }
+.items { list-style: none; padding: 0; }
+.items li { display: flex; justify-content: space-between; gap: 18px; padding: 15px 0; border-bottom: 1px solid #e6e5df; }
+.items li > div:first-child { display: grid; gap: 5px; }
+.quantity { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.quantity label { font-size: 13px; }
+.quantity input { width: 70px; padding: 9px; border: 1px solid #aeb6ab; border-radius: 7px; font: inherit; }
+.subtotal { font-weight: 700; }
+@media (max-width: 600px) { .cart { padding: 22px; } .heading, .items li { flex-direction: column; } }

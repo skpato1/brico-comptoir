@@ -1,0 +1,146 @@
+<nav class="breadcrumb" aria-label="Fil d’Ariane">
+  <a routerLink="/">Accueil</a><span aria-hidden="true">/</span
+  ><span>{{ packMode ? 'Les solutions en pack' : 'Le catalogue' }}</span>
+</nav>
+<div class="page-intro">
+  <p class="eyebrow">
+    {{ packMode ? 'UN BESOIN, UN ENSEMBLE D’ARTICLES' : 'LES BONNES PIÈCES, À L’UNITÉ' }}
+  </p>
+  <h1>
+    {{
+      solutions
+        ? 'Je cherche une solution.'
+        : packMode
+          ? 'Les packs BricoComptoir.'
+          : 'Je cherche un produit.'
+    }}
+  </h1>
+  <p>
+    {{
+      packMode
+        ? 'Choisissez votre projet, comparez les variantes et vérifiez exactement ce qui est inclus.'
+        : 'Recherchez un article ou sa référence. Affinez par catégorie, marque et prix.'
+    }}
+  </p>
+</div>
+<form class="filters" role="search" #filtersForm="ngForm" (ngSubmit)="search()">
+  <label class="query"
+    >{{ packMode ? 'Votre besoin' : 'Produit ou référence'
+    }}<input
+      type="search"
+      name="q"
+      [(ngModel)]="filters.q"
+      maxlength="120"
+      [placeholder]="packMode ? 'Rechercher parmi les packs…' : 'Nom ou référence…'"
+  /></label>
+  @if (!packMode) {
+    <label
+      >Catégorie<select name="category" [(ngModel)]="filters.categoryId">
+        <option value="">Toutes les catégories</option>
+        @for (category of categories(); track category.id) {
+          <option [value]="category.id">{{ categoryName(category) }}</option>
+        }
+      </select></label
+    >
+    <label
+      >Marque<select name="brand" [(ngModel)]="filters.brandId">
+        <option value="">Toutes les marques</option>
+        @for (brand of brands(); track brand.id) {
+          <option [value]="brand.id">{{ brand.name }}</option>
+        }
+      </select></label
+    >
+    <label
+      >Prix minimum (TND)<input
+        name="min"
+        [(ngModel)]="filters.minPrice"
+        inputmode="decimal"
+        pattern="[0-9]+([.][0-9]{1,3})?"
+        placeholder="0.000"
+    /></label>
+    <label
+      >Prix maximum (TND)<input
+        name="max"
+        [(ngModel)]="filters.maxPrice"
+        inputmode="decimal"
+        pattern="[0-9]+([.][0-9]{1,3})?"
+        placeholder="Sans limite"
+    /></label>
+    <label
+      >Trier par<select name="sort" [(ngModel)]="filters.sort">
+        <option value="name">Nom du produit</option>
+        <option value="price_asc">Prix croissant</option>
+        <option value="price_desc">Prix décroissant</option>
+        <option value="newest">Nouveautés</option>
+      </select></label
+    >
+  }
+  <div class="actions">
+    <button type="submit" [disabled]="filtersForm.invalid">Rechercher</button
+    ><button type="button" class="secondary" (click)="reset()">Effacer</button>
+  </div>
+  @if (filtersForm.invalid) {
+    <p class="error" role="alert">
+      Saisissez les prix avec un point et trois décimales au maximum.
+    </p>
+  }
+</form>
+@if (filterError()) {
+  <p role="status">{{ filterError() }}</p>
+}
+@if (loading()) {
+  <div class="state-box" role="status" aria-live="polite">
+    Chargement {{ packMode ? 'des packs' : 'des produits' }}…
+  </div>
+} @else if (error()) {
+  <div class="state-box" role="alert">
+    <p>{{ error() }}</p>
+    <button (click)="load()">Réessayer</button>
+  </div>
+} @else if (packMode) {
+  <p class="result-count" role="status">{{ packs().length }} pack(s) pour votre recherche</p>
+  @if (!packs().length) {
+    <div class="state-box">
+      <h2>Aucun pack pour le moment.</h2>
+      <p>Essayez un autre mot ou composez votre sélection dans le catalogue.</p>
+      <a class="button secondary" routerLink="/catalogue">Voir les produits</a>
+    </div>
+  }
+  <div class="offer-grid">
+    @for (pack of packs(); track pack.id) {
+      <app-offer-card [offer]="pack" [pack]="true" [description]="pack.slogan" />
+    }
+  </div>
+} @else if (page(); as result) {
+  <p class="result-count" role="status">{{ result.totalElements }} produit(s) trouvé(s)</p>
+  @if (!result.items.length) {
+    <div class="state-box">
+      <h2>Aucun produit trouvé.</h2>
+      <p>Essayez une recherche plus simple ou retirez un filtre.</p>
+      <button class="secondary" (click)="reset()">Voir tout le catalogue</button>
+    </div>
+  }
+  <div class="offer-grid">
+    @for (product of result.items; track product.id) {
+      <app-offer-card
+        [offer]="product"
+        [description]="product.description"
+        [image]="primary(product.id)"
+      />
+    }
+  </div>
+  @if (result.totalElements > result.size) {
+    <nav class="pagination" aria-label="Pages du catalogue">
+      <button class="secondary" (click)="search(result.page - 1)" [disabled]="result.page === 0">
+        ← Précédent</button
+      ><span>Page {{ result.page + 1 }}</span
+      ><button
+        class="secondary"
+        (click)="search(result.page + 1)"
+        [disabled]="(result.page + 1) * result.size >= result.totalElements"
+      >
+        Suivant →
+      </button>
+    </nav>
+  }
+}

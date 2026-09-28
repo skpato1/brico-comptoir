@@ -1,0 +1,114 @@
+.admin-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 24px 0;
+}
+.admin-nav a {
+  padding: 12px 18px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  text-decoration: none;
+}
+.admin-nav .active {
+  background: #b51f24;
+  color: white;
+  border-color: #b51f24;
+}
+.admin-workspace {
+  border-top: 1px solid #ddd;
+  padding-top: 24px;
+}
+:host ::ng-deep .catalog,
+:host ::ng-deep .packs {
+  background: white;
+  margin-top: 0;
+  padding: 0;
+  border: 0;
+}
+:host ::ng-deep .catalog button:not(.secondary):not(.link) {
+  background: #b51f24;
+}
+:host ::ng-deep .catalog button:not(.secondary):not(.link):hover {
+  background: #951b20;
+}
+:host ::ng-deep .catalog .secondary,
+:host ::ng-deep .packs .secondary,
+:host ::ng-deep .link {
+  color: #333;
+  border-color: #ddd;
+}
+:host ::ng-deep .admin-message {
+  color: #b51f24;
+}
+:host ::ng-deep .table-scroll {
+  overflow: auto;
+  margin: 20px 0;
+}
+:host ::ng-deep table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+:host ::ng-deep caption {
+  text-align: left;
+  font-weight: 650;
+  padding: 12px 0;
+}
+:host ::ng-deep th,
+:host ::ng-deep td {
+  text-align: left;
+  padding: 12px;
+  border-bottom: 1px solid #ddd;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+:host ::ng-deep th {
+  background: #f6f6f6;
+}
+:host ::ng-deep .admin-settings {
+  max-width: 780px;
+  margin-top: 24px;
+}
+:host ::ng-deep fieldset {
+  border: 1px solid #ddd;
+  padding: 16px;
+  border-radius: 5px;
+  margin: 14px 0;
+  min-width: 0;
+}
+:host ::ng-deep .admin-detail {
+  padding: 20px;
+  border: 1px solid #ddd;
+  margin-top: 24px;
+  border-radius: 6px;
+}
+:host ::ng-deep .zone-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+}
+:host ::ng-deep .check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+:host ::ng-deep .check input {
+  width: auto;
+}
+:host ::ng-deep label {
+  display: block;
+  margin-bottom: 14px;
+}
+:host ::ng-deep label.check {
+  display: flex;
+}
+:host ::ng-deep label input,
+:host ::ng-deep label textarea,
+:host ::ng-deep label select {
+  max-width: 100%;
+}
+:host ::ng-deep input.ng-invalid.ng-touched,
+:host ::ng-deep textarea.ng-invalid.ng-touched {
+  border: 2px solid #b51f24;
+}

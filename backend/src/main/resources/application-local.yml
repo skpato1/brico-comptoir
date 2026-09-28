@@ -4,7 +4,26 @@ spring:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/bricocomptoir}
   flyway:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/bricocomptoir}
+  mail:
+    host: ${SMTP_HOST:localhost}
+    port: ${SMTP_PORT:1025}
+brico:
+  checkout:
+    # Demonstration only; same defaults as local Compose.
+    delivery-fee-tnd: ${CHECKOUT_DELIVERY_FEE_TND:7.000}
+    governorates: ${CHECKOUT_GOVERNORATES:TUNIS,SFAX}
+  media:
+    endpoint: ${MEDIA_ENDPOINT:http://localhost:9000}
+    access-key: ${MEDIA_ACCESS_KEY:${MINIO_ROOT_USER:brico_local}}
+    secret-key: ${MEDIA_SECRET_KEY:${MINIO_ROOT_PASSWORD}}
+  mail:
+    from: ${MAIL_FROM:noreply@bricocomptoir.local}
+  public-url: ${APP_PUBLIC_URL:http://localhost:4200}
 server:
+  tomcat:
+    remoteip:
+      # Local Compose is bound to loopback; Docker assigns the gateway a private address.
+      internal-proxies: ${TRUSTED_PROXY_PATTERN:127[.]0[.]0[.]1|::1|0:0:0:0:0:0:0:1|10[.].*|192[.]168[.].*|172[.](1[6-9]|2[0-9]|3[01])[.].*}
   servlet:
     session:
       cookie:

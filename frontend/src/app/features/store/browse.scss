@@ -1,0 +1,76 @@
+.page-intro {
+  max-width: 800px;
+}
+.page-intro p:not(.eyebrow) {
+  color: #666;
+}
+.page-intro h1 {
+  font-size: clamp(2rem, 4vw, 3rem);
+}
+.filters {
+  background: #f8f8f7;
+  padding: 22px;
+  border: 1px solid #e7e7e7;
+  border-radius: 6px;
+  margin: 30px 0;
+  display: grid;
+  gap: 16px;
+  align-items: end;
+}
+.filters label {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  font-size: 0.74rem;
+}
+.filters input,
+.filters select {
+  width: 100%;
+  font-size: 0.85rem;
+}
+.filters .actions {
+  gap: 7px;
+}
+.filters button {
+  padding-inline: 14px;
+  font-size: 0.8rem;
+}
+.result-count {
+  font-size: 0.8rem;
+  color: #666;
+  margin: 25px 0;
+}
+.offer-grid {
+  display: grid;
+  gap: 20px;
+}
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  margin-top: 30px;
+  font-size: 0.85rem;
+}
+@media (min-width: 600px) {
+  .filters {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .filters .query {
+    grid-column: 1/-1;
+  }
+  .offer-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1050px) {
+  .filters {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .filters .query {
+    grid-column: span 2;
+  }
+  .offer-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}

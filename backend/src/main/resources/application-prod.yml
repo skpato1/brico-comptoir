@@ -1,5 +1,8 @@
 # No hostnames, passwords or insecure fallbacks in the production profile.
 server:
+  tomcat:
+    remoteip:
+      internal-proxies: ${TRUSTED_PROXY_PATTERN}
   servlet:
     session:
       cookie:

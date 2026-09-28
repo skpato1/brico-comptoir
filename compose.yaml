@@ -3,6 +3,7 @@ name: bricocomptoir
 services:
   postgres:
     image: postgres:18.6-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-bricocomptoir}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
@@ -24,6 +25,7 @@ services:
 
   minio:
     image: bricocomptoir/minio:RELEASE.2025-10-15T17-29-55Z
+    restart: unless-stopped
     build: ./infra/minio
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-brico_local}
@@ -41,6 +43,7 @@ services:
 
   mailpit:
     image: ghcr.io/axllent/mailpit:v1.31.2
+    restart: unless-stopped
     environment:
       MP_DATABASE: /data/mailpit.db
       MP_MAX_MESSAGES: 500
@@ -57,6 +60,7 @@ services:
 
   backend:
     build: ./backend
+    restart: unless-stopped
     mem_limit: 768m
     environment:
       SPRING_PROFILES_ACTIVE: local
@@ -65,10 +69,33 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:?Local application password required}
       DB_MIGRATION_USERNAME: ${DB_MIGRATION_USERNAME:-brico_migrator}
       DB_MIGRATION_PASSWORD: ${DB_MIGRATION_PASSWORD:?Local migration password required}
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
+      MAIL_FROM: noreply@bricocomptoir.local
+      MAIL_OUTBOX_KEY: ${MAIL_OUTBOX_KEY:?Run node scripts/init-local-env.mjs}
+      DATA_ARCHIVE_KEY: ${DATA_ARCHIVE_KEY:?Run node scripts/init-local-env.mjs}
+      PRIVACY_LEGAL_DAYS: ${PRIVACY_LEGAL_DAYS:-0}
+      PRIVACY_CONTACT_DAYS: ${PRIVACY_CONTACT_DAYS:-90}
+      PRIVACY_CART_DAYS: ${PRIVACY_CART_DAYS:-30}
+      PRIVACY_MAIL_DAYS: ${PRIVACY_MAIL_DAYS:-30}
+      PRIVACY_AUDIT_DAYS: ${PRIVACY_AUDIT_DAYS:-365}
+      PRIVACY_RETENTION_ENABLED: ${PRIVACY_RETENTION_ENABLED:-false}
+      APP_PUBLIC_URL: http://localhost:${FRONTEND_PORT:-4200}
+      # Local demonstration only: validate commercial fees/zones before opening.
+      CHECKOUT_DELIVERY_FEE_TND: ${CHECKOUT_DELIVERY_FEE_TND:-7.000}
+      CHECKOUT_GOVERNORATES: ${CHECKOUT_GOVERNORATES:-TUNIS,SFAX}
+      MEDIA_ENDPOINT: http://minio:9000
+      MEDIA_ACCESS_KEY: ${MINIO_ROOT_USER:-brico_local}
+      MEDIA_SECRET_KEY: ${MINIO_ROOT_PASSWORD:?Local MinIO password required}
+      MEDIA_BUCKET: bricocomptoir-media
     ports:
       - "127.0.0.1:${API_PORT:-8080}:8080"
     depends_on:
       postgres:
+        condition: service_healthy
+      mailpit:
+        condition: service_healthy
+      minio:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8080/api/v1/health/readiness"]
@@ -79,6 +106,7 @@ services:
 
   frontend:
     build: ./frontend
+    restart: unless-stopped
     ports:
       - "127.0.0.1:${FRONTEND_PORT:-4200}:8080"
     depends_on:
@@ -101,6 +129,10 @@ services:
       DOCKER_HOST: unix:///var/run/docker.sock
       TESTCONTAINERS_HOST_OVERRIDE: host.docker.internal
       JAVA_TOOL_OPTIONS: -Xmx512m
+      MEDIA_ENDPOINT: http://minio:9000
+      MEDIA_ACCESS_KEY: ${MINIO_ROOT_USER:-brico_local}
+      MEDIA_SECRET_KEY: ${MINIO_ROOT_PASSWORD:?Local MinIO password required}
+      BRICO_LOCAL_MINIO_TEST: ${BRICO_LOCAL_MINIO_TEST:-false}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:

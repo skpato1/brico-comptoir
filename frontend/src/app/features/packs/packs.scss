@@ -1,0 +1,143 @@
+:host {
+  display: block;
+}
+.packs {
+  margin-top: 28px;
+  padding: 28px;
+  border: 1px solid #d9d7cf;
+  border-radius: 14px;
+  background: #fffefb;
+}
+.heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.heading h2 {
+  margin: 0 0 20px;
+}
+.secondary {
+  background: transparent;
+  color: #253f32;
+  border: 1px solid #aeb6ab;
+}
+.secondary:hover:not(:disabled) {
+  background: #e8eee7;
+}
+.pack-list,
+.admin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: 18px;
+}
+.pack-card,
+.admin {
+  padding: 20px;
+  border: 1px solid #d9d7cf;
+  border-radius: 10px;
+}
+.pack-card h3 {
+  margin-top: 0;
+}
+.pack-card ul {
+  padding-left: 20px;
+}
+.pack-card li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 10px 0;
+}
+.slogan {
+  font-weight: 650;
+}
+.guide {
+  white-space: pre-line;
+}
+.demo {
+  color: #8d3426;
+  font-weight: 650;
+}
+.admin {
+  margin-top: 24px;
+}
+.admin form {
+  display: grid;
+  align-content: start;
+  gap: 11px;
+}
+.admin label {
+  display: grid;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 650;
+}
+.admin input,
+.admin textarea,
+.admin select {
+  border: 1px solid #aeb6ab;
+  border-radius: 7px;
+  padding: 10px;
+  font: inherit;
+  background: white;
+  min-width: 0;
+}
+.admin fieldset {
+  min-width: 0;
+  border: 1px solid #d9d7cf;
+  border-radius: 7px;
+}
+.admin legend {
+  font-weight: 650;
+}
+.actions,
+.sku-search,
+.component-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 8px;
+}
+.component-line {
+  margin: 12px 0;
+}
+.component-line label:first-child {
+  flex: 1 1 180px;
+}
+.component-line label:nth-child(2) {
+  flex: 0 0 95px;
+}
+.sku-search label {
+  flex: 1 1 180px;
+}
+.admin-list {
+  list-style: none;
+  padding: 0;
+  max-height: 280px;
+  overflow: auto;
+}
+.admin-list li {
+  padding: 4px 0;
+}
+.link {
+  background: transparent;
+  color: #253f32;
+  padding: 0;
+  white-space: normal;
+  text-align: left;
+  text-decoration: underline;
+}
+.link:hover:not(:disabled) {
+  background: transparent;
+  color: #365744;
+}
+@media (max-width: 600px) {
+  .packs {
+    padding: 22px;
+  }
+  .heading {
+    flex-direction: column;
+  }
+}

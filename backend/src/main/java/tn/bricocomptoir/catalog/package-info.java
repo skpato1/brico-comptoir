@@ -1,2 +1,2 @@
-/** Owns products, categories and virtual packs. Implementation follows the roadmap. */
+/** Owns categories, brands, products and catalogue SKUs. */
 package tn.bricocomptoir.catalog;

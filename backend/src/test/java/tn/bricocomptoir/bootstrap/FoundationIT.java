@@ -61,6 +61,8 @@ class FoundationIT {
     @Autowired
     DataSource dataSource;
 
+    @Autowired org.springframework.security.web.csrf.CookieCsrfTokenRepository csrfRepository;
+
     private final HttpClient client = HttpClient.newHttpClient();
 
     @Test
@@ -90,9 +92,42 @@ class FoundationIT {
     }
 
     @Test
+    void spaUsesConfiguredSecureCsrfCookieEvenBehindHttpTlsTermination() throws Exception {
+        // Same repository configuration as production, over the HTTP leg behind TLS ingress.
+        csrfRepository.setCookieCustomizer(cookie -> cookie.sameSite("Lax").secure(true));
+        try {
+            var response = get("/api/v1/auth/csrf");
+            assertThat(response.statusCode()).isEqualTo(204);
+            String cookie = response.headers().allValues("set-cookie").stream()
+                    .filter(value -> value.startsWith("XSRF-TOKEN=")).findFirst().orElseThrow();
+            assertThat(cookie).contains("Secure", "SameSite=Lax").doesNotContain("HttpOnly");
+        } finally {
+            csrfRepository.setCookieCustomizer(cookie -> cookie.sameSite("Lax").secure(false));
+        }
+    }
+
+    @Test
+    void trustedGatewayPreservesSeparateClientRateLimits() throws Exception {
+        var cookies = new java.net.CookieManager(null, java.net.CookiePolicy.ACCEPT_ALL);
+        var browser = HttpClient.newBuilder().cookieHandler(cookies).build();
+        browser.send(HttpRequest.newBuilder(uri("/api/v1/auth/csrf")).GET().build(), HttpResponse.BodyHandlers.discarding());
+        String token = cookies.getCookieStore().getCookies().stream().filter(c -> c.getName().equals("XSRF-TOKEN"))
+                .findFirst().orElseThrow().getValue();
+        // Loopback is a trusted gateway in this test; the production peer allowlist is explicit.
+        for (int i = 0; i < 7; i++) {
+            var request = HttpRequest.newBuilder(uri("/api/v1/auth/password-reset/request"))
+                    .header("X-Forwarded-For", i == 6 ? "198.51.100.12" : "198.51.100.11")
+                    .header("X-XSRF-TOKEN", token).header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"email\":\"absent@test.invalid\"}")).build();
+            assertThat(browser.send(request, HttpResponse.BodyHandlers.discarding()).statusCode())
+                    .as("request %s from a distinct gateway client", i).isEqualTo(i == 5 ? 429 : 202);
+        }
+    }
+
+    @Test
     void baselineMigrationIsAppliedOnceAndCanBeValidatedAgain() {
-        assertThat(flyway.info().applied()).filteredOn(info -> info.getVersion() != null).hasSize(1);
-        assertThat(flyway.info().current().getVersion().toString()).isEqualTo("1");
+        assertThat(flyway.info().applied()).filteredOn(info -> info.getVersion() != null).hasSize(12);
+        assertThat(flyway.info().current().getVersion().toString()).isEqualTo("12");
         flyway.validate();
         assertThat(flyway.migrate().migrationsExecuted).isZero();
     }
