@@ -8,7 +8,36 @@
 **/.angular/
 **/dist/
 **/coverage/
+**/test-results/
+**/playwright-report/
 *.log
 .DS_Store
 Thumbs.db
 **/.idea/
+
+# Private keys, credentials and local operator data.
+*.key
+*.pem
+*.p12
+*.pfx
+*.jks
+*.keystore
+id_rsa
+id_ed25519
+credentials*.json
+secrets*.json
+**/secrets/
+/data/
+/uploads/
+/imports/
+/backups/
+*.dump
+*.backup
+*.sql.gz
+*.vhdx
+*.tar
+*.tar.gz
+
+# Tool caches and compiled classes; Maven wrapper configuration remains tracked.
+**/.m2/
+*.class

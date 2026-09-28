@@ -1,4 +1,4 @@
-name: Build and test
+name: Build, integration and browser tests
 
 on:
   push:
@@ -14,19 +14,52 @@ concurrency:
 jobs:
   backend:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    defaults:
-      run:
-        working-directory: backend
+    timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0 # Publication check also examines reachable Git history.
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6
         with:
           distribution: temurin
           java-version: '21'
           cache: maven
-      - name: Compile, test architecture and integrate with PostgreSQL
-        run: ./mvnw -B verify
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+      - name: Repository and configuration checks
+        run: |
+          node scripts/check-repository.mjs
+          node --test scripts/release-checks.test.mjs
+          node scripts/check-release.mjs
+          node scripts/init-local-env.mjs
+          docker compose config --quiet
+      - name: Start real MinIO
+        run: docker compose up --build --detach --wait --wait-timeout 240 minio
+      - name: Java build, unit tests, ArchUnit and PostgreSQL/MinIO integration
+        working-directory: backend
+        env:
+          BRICO_LOCAL_MINIO_TEST: 'true'
+        run: |
+          node --input-type=module -e '
+            import {loadEnvFile} from "node:process";
+            import {spawnSync} from "node:child_process";
+            loadEnvFile("../.env");
+            const env={...process.env,MEDIA_ENDPOINT:"http://localhost:9000",MEDIA_ACCESS_KEY:process.env.MINIO_ROOT_USER,MEDIA_SECRET_KEY:process.env.MINIO_ROOT_PASSWORD};
+            process.exit(spawnSync("sh",["./mvnw","-B","-ntp","verify"],{env,stdio:"inherit"}).status ?? 1);'
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        if: always()
+        with:
+          name: backend-test-reports
+          path: |
+            backend/target/surefire-reports/*.xml
+            backend/target/failsafe-reports/*.xml
+          retention-days: 7
+      - name: Stop test infrastructure
+        if: always()
+        run: docker compose down
 
   frontend:
     runs-on: ubuntu-latest
@@ -35,8 +68,10 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version-file: .node-version
           cache: npm
@@ -44,8 +79,37 @@ jobs:
       - run: npm ci
       - run: npm run test:ci
       - run: npm run build
-      - name: Validate local Compose configuration without exposing credentials
-        working-directory: .
-        run: |
-          node scripts/init-local-env.mjs
-          docker compose config --quiet
+
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+      - run: npm ci --prefix e2e
+      - name: Install the pinned Chromium browser
+        working-directory: e2e
+        run: npx playwright install --with-deps chromium
+      - name: Build and initialize isolated Compose stack
+        run: node scripts/e2e.mjs up
+      - name: Real purchases, administration, images, SMTP recovery, SSE and permissions
+        run: node scripts/e2e.mjs test
+      - name: PostgreSQL and MinIO backup/restore drill
+        run: node scripts/check-restore.mjs
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        if: always()
+        with:
+          name: browser-test-reports
+          path: |
+            e2e/playwright-report/
+            e2e/test-results/
+          retention-days: 7
+      - name: Stop isolated stack
+        if: always()
+        run: node scripts/e2e.mjs down
