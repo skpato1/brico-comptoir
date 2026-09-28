@@ -1,18 +1,22 @@
 # Architecture de BricoComptoir
 
-Statut : architecture cible, socle technique en place. Date : 24 septembre 2026.
+Statut : architecture implémentée, neuf modules métier et bootstrap. Date : 28 septembre 2026.
 
 ## 1. État constaté et périmètre
 
-Le répertoire local ne contenait que `.git`. Aucun fichier suivi, aucun commit,
-aucune branche locale matérialisée par un commit. `HEAD` désigne `main` à naître.
-L'origine est `https://github.com/skpato1/brico-comptoir.git` ;
-`git ls-remote --symref origin` a réussi sans retourner de référence.
-Le dépôt local et le distant vérifié sont donc vides au début de cette étape.
+À l'étape initiale, le répertoire ne contenait que `.git`, sans commit ni
+référence distante. À la préparation de publication du 28 septembre 2026,
+la branche active est `main`, avec le commit de socle `1084e6e` et les modules
+développés dans l'arbre de travail. L'origine est
+`https://github.com/skpato1/brico-comptoir.git` ; la lecture des branches
+distantes n'a encore retourné aucune référence. Le journal conserve les
+vérifications initiales et les résultats ultérieurs.
 
-Ce document définit la cible métier. Le socle implémente seulement le démarrage,
-la santé, les migrations initiales et la fermeture des routes non autorisées ;
-les modules métier restent à réaliser. La [roadmap](roadmap.md) organise leur réalisation et le
+Ce document décrit le code livré : identité, catalogue, médias, inventaire,
+packs, ventes, contenus, notifications et confidentialité. Les contrats figurent
+notamment dans [inventory.md](inventory.md), [packs.md](packs.md),
+[cart.md](cart.md) et [checkout.md](checkout.md). Le détail des
+[permissions et contrats identity](identity.md) complète cette section. La [roadmap](roadmap.md) organise leur réalisation et le
 [suivi](progress.md) distingue les étapes terminées des étapes prévues.
 
 BricoComptoir vend des articles de quincaillerie aux particuliers en Tunisie,
@@ -24,11 +28,14 @@ Décisions pour le premier périmètre :
 - Quantités entières dans l'unité de vente du produit : une boîte de vis peut
   être un produit. Vente au poids ou à la découpe hors premier périmètre.
 - Packs virtuels, sans stock propre, sans packs imbriqués ni substitutions.
-- Consultation publique ; compte client obligatoire pour commander.
-- Panier conservé dans le navigateur avec uniquement références et quantités.
-  Aucun stock réservé au panier, aucune promesse de prix et aucune adresse
-  conservée dans ce stockage. Synchronisation entre appareils différée.
-- Paiement à la livraison comme hypothèse initiale ; pas d'intégration bancaire
+- Consultation publique ; commande invitée ou via compte client. La propriété
+  invitée repose sur la session serveur, détaillée dans [checkout.md](checkout.md).
+- Panier visiteur conservé dans le navigateur avec uniquement références,
+  quantités et identifiant de fusion ; panier client persisté par compte dans
+  PostgreSQL. Reprise après connexion idempotente, décrite dans
+  [cart.md](cart.md). Aucun stock réservé au panier, aucune promesse de prix et
+  aucune adresse conservée dans le navigateur.
+- Paiement à la livraison uniquement au lancement ; pas d'intégration bancaire
   ni de faux écran de paiement. Tarif de livraison forfaitaire configurable
   côté serveur et obligatoire avant ouverture commerciale.
 - Les tarifs, règles fiscales, zones desservies et procédures de livraison
@@ -46,18 +53,21 @@ Spring Security 7.1.1 et Flyway 12.4.0 suivent les versions gérées par le pare
 les dépendances frontend sont résolues dans `package-lock.json`.
 
 La page Angular utilise la même origine via Nginx en Compose ou le proxy Angular
-en développement natif. Seuls `GET /api/v1/health`, `GET /api/v1/health/readiness`
-et `GET /api/v1/health/liveness` sont publics à cette étape. Aucun compte par
-défaut n'est créé. Le [contrat OpenAPI implémenté](openapi.yaml) est limité à ces
-routes. Le [README](../README.md) décrit les commandes et profils `local`, `test`, `prod`.
+en développement natif. Les routes de santé et les routes publiques d'identité
+énumérées dans [identity.md](identity.md), ainsi que les lectures publiques du
+[catalogue](catalog.md), sont ouvertes ; les autres restent
+fermées par défaut. Aucun compte par défaut n'est créé. Le [contrat OpenAPI](openapi.yaml)
+du socle décrit la santé ; les contrats identity sont dans `identity.md`. Le
+[README](../README.md) décrit les commandes et profils `local`, `test`, `prod`.
 
-MinIO et Mailpit sont ajoutés au Compose local comme outils indépendants :
-aucun adaptateur métier de stockage ou d'email n'est encore introduit.
+MinIO sert de stockage objet local privé au module `media`, via le port
+`ObjectStorage`. Mailpit sert de transport SMTP local au module `notifications`
+pour les commandes, leurs statuts et la récupération du mot de passe.
 MinIO est construit depuis la version officielle `RELEASE.2025-10-15T17-29-55Z`,
 sa distribution communautaire étant désormais fournie en sources ; Mailpit
 utilise `v1.31.2`. Voir la [publication MinIO](https://github.com/minio/minio/releases/tag/RELEASE.2025-10-15T17-29-55Z).
 
-Arborescence cible, à créer lors des étapes suivantes :
+Arborescence existante :
 
 ```text
 backend/
@@ -66,8 +76,13 @@ backend/
     bootstrap/                 # démarrage et assemblage Spring
     identity/
     catalog/
+    media/
     inventory/
+    packs/
     sales/
+    content/
+    notifications/
+    privacy/
   src/main/resources/db/migration/
   src/test/
 frontend/
@@ -90,7 +105,7 @@ Chaque module backend suit cette structure :
     service/                   # orchestration, règles d'accès applicatives
   adapter/
     in/web/                    # REST, validation du transport, DTO HTTP
-    out/persistence/           # entités JPA/SQL et mappings
+    out/persistence/           # JDBC, SQL et mappings privés
     out/module/                # appels des ports publics d'autres modules
     security/                  # intégration Spring Security si nécessaire
     transaction/               # décorateurs transactionnels Spring
@@ -103,7 +118,7 @@ flowchart LR
     IN --> APP[Services applicatifs]
     APP --> DOMAIN[Domaine Java pur]
     APP --> OUT[Ports sortants]
-    PERSIST[Adaptateurs JPA et SQL] -. implémentent .-> OUT
+    PERSIST[Adaptateurs JDBC et SQL] -. implémentent .-> OUT
     PERSIST --> DB[(PostgreSQL)]
     OTHER[Adaptateurs vers autres modules] -. implémentent .-> OUT
     OTHER --> PUBLIC[Ports entrants publics du module appelé]
@@ -114,6 +129,13 @@ interfaces définies au centre. Le câblage Spring est extérieur au domaine.
 
 ### Dépendances autorisées
 
+Le module `privacy` dépend uniquement des ports publics entrants d’`identity`,
+`sales` et `notifications`, depuis ses adaptateurs sortants de modules. Ces
+modules ne dépendent pas de `privacy`. Les politiques et l’orchestration restent
+Java pur. Les transactions réunissent retrait, coordonnées, panier, jetons,
+consentement et messages ; détails et exceptions de conservation dans
+[privacy-decisions.md](privacy-decisions.md).
+
 | Couche | Dépendances permises | Interdictions principales |
 | --- | --- | --- |
 | `domain` | JDK, domaine de son propre module | Spring, JPA, Jackson, HTTP, Angular, autres modules |
@@ -123,30 +145,43 @@ interfaces définies au centre. Le câblage Spring est extérieur au domaine.
 | `bootstrap` | Configurations et assemblage des modules | Logique métier |
 | Angular | Contrats HTTP publiés | Accès à PostgreSQL, modèle JPA, décision d'autorisation faisant foi |
 
-Les DTO HTTP, objets métier et entités JPA sont distincts ; aucun chargement JPA
-paresseux ne traverse un port. Les ports n'exposent pas `Page`, `ResponseEntity`,
+Les DTO HTTP, objets métier et lignes JDBC sont distincts. Aucune entité JPA
+métier n'est définie dans cette version ; le starter JPA reste présent, avec
+Hibernate en validation uniquement. Les ports n'exposent pas `Page`, `ResponseEntity`,
 `Authentication` ou d'autres types Spring. Pas d'annotations Spring ou JPA dans
-le domaine ni dans l'application. Les règles seront vérifiées avec ArchUnit.
+le domaine ni dans l'application. Les règles sont vérifiées avec ArchUnit.
 Pas de module `common` générique : quelques valeurs locales simples peuvent
 être dupliquées tant qu'aucun contrat partagé stable n'est nécessaire.
+
+La boutique publique Angular est désormais routée : accueil, solutions/packs,
+catalogue, fiches, panier, checkout, confirmation et compte. La session et le
+panier sont partagés par les pages ; l'administration existante reste séparée
+dans la navigation. Voir les choix d'affichage, les médias et l'accessibilité
+dans [storefront.md](storefront.md).
 
 ## 3. Modules, ports et adaptateurs
 
 | Module | Responsabilité et données possédées | Ports entrants principaux | Ports sortants principaux |
 | --- | --- | --- | --- |
-| `identity` | Comptes, profil minimal, identifiants de connexion, rôles, état actif | Inscrire un client, lire son profil, charger une identité pour l'authentification, administrer les accès | `AccountRepository`, `PasswordHasher` |
-| `catalog` | Catégories, produits, packs, compositions, prix et publication | Consulter le catalogue, obtenir un instantané d'offres vendables, administrer produits et packs | `CatalogRepository` |
-| `inventory` | Quantités physiques et réservées, réservations, mouvements | Lire la disponibilité, réceptionner/ajuster, réserver/libérer/consommer en interne | `StockRepository`, `ReservationRepository`, `MovementRepository`, `ProductReferencePort` |
-| `sales` | Commandes, lignes figées, coordonnées de livraison, politique de frais, idempotence | Prévisualiser un achat, commander, consulter ses commandes, annuler, traiter une commande | `OrderRepository`, `IdempotencyRepository`, `OfferSnapshotPort`, `StockPort`, `DeliveryFeePolicy`, `Clock` |
+| `identity` | Comptes, profil minimal, identifiants de connexion, rôles, état actif, récupération | Inscrire un client, lire son profil, charger une identité pour l'authentification, administrer les accès, réinitialiser un mot de passe | `AccountStore`, `PasswordHasher`, `ResetStore`, `ResetDelivery` |
+| `catalog` | Catégories, marques, produits/variantes, prix et publication | Consulter et administrer les SKU | `CatalogStore` |
+| `packs` | Fiches et variantes de packs, prix propres, compositions et publication | Consulter/administrer les packs, lire une offre et sa composition | `PackStore`, `CatalogSkuLookup`, `StockAvailabilityLookup` |
+| `media` | Métadonnées des photos de produit, ordre et image principale ; aucun binaire en base | Téléverser, ordonner, servir les rendus publics de produits visibles | `MediaStore`, `ObjectStorage`, `ImageProcessor`, `CatalogProductLookup` |
+| `inventory` | Quantités physiques et réservées par variante, réservations, mouvements | `InventoryOperations`, `InventoryAvailabilityQueries`, `InventoryOrderOperations` | `InventoryStore`, `VariantReferencePort` |
+| `sales` | Panier client, commandes figées, coordonnées, livraison et idempotence | Estimer/fusionner/modifier le panier, prévisualiser, placer et traiter une commande ; `PersonalSales` | `CartStore`, `OrderStore`, `OfferLookup`, `CheckoutOffers`, `OrderStock`, `StockLookup`, `DeliveryFees`, `DeliverySettingsStore`, `OrderNotifications`, `CustomerContact`, `OrderEventFeed` |
+| `content` | Textes structurés de l'accueil, sans HTML ni URL libre | Lire et modifier la fiche d'accueil versionnée | `HomeContentStore` |
+| `notifications` | Outbox chiffrée, reprises email, journal durable des nouvelles commandes | `NotificationOperations`, `OrderEventQueries` | `EmailProvider`, `OutboxStore` |
+| `privacy` | Préférence marketing, historique des choix, vérification de rectification email, conservation configurable et opérations sur les données | Consultation, export, rectification et retrait du périmètre courant ; archives et gels réservés à ADMIN | `PrivacyStore`, `PersonalData` adapté vers les ports publics des modules propriétaires |
 
-Ces noms sont des contrats conceptuels, pas une obligation de créer une classe
-par verbe. Les interfaces apparaissent avec leur premier cas d'usage réel.
+Les ports ci-dessus existent dans les modules. Les opérations REST sont
+portées par les adaptateurs entrants et des décorateurs transactionnels ;
+les services purs ne constituent pas une API réseau.
 
-Adaptateurs prévus :
+Adaptateurs livrés :
 
 - REST/JSON et filtres Spring Security pour les entrées externes.
-- JPA pour les agrégats persistés ; SQL ciblé dans l'adaptateur de stock pour
-  les verrous et mises à jour atomiques. Les modèles persistés restent privés.
+- JDBC/PostgreSQL pour les agrégats persistés, avec SQL explicite pour verrous,
+  versions et mises à jour atomiques. Les tables sont possédées par leur module.
 - `PasswordEncoder` Spring Security derrière `PasswordHasher` ; chargement des
   comptes derrière l'adaptateur d'authentification, sans exposer les hashes REST.
 - Adaptateurs internes synchrones : `sales` appelle `catalog` et `inventory` ;
@@ -154,8 +189,14 @@ Adaptateurs prévus :
   réception ou d'un ajustement administratif.
 - Horloge système et configuration des frais côté serveur pour `sales`.
 
-Graphe intermodules autorisé : `sales -> inventory -> catalog` et
-`sales -> catalog`. `identity` ne dépend d'aucun de ces trois modules.
+Graphe intermodules autorisé : `sales -> inventory -> catalog`,
+`sales -> catalog`, `sales -> packs`, `packs -> catalog`, `packs -> inventory`
+et `media -> catalog`, toujours via les ports entrants publics des modules
+appelés. S'ajoutent `sales -> identity`, `sales -> notifications` et
+`identity -> notifications`. `notifications` reste indépendant ; le flux SSE
+est un adaptateur entrant de `sales`, qui vérifie ses gestionnaires via un port
+identité et lit le journal via un port notifications. Aucun cycle ni lecture
+directe de table d'un autre module. Voir [notifications.md](notifications.md).
 Le câblage de sécurité fournit à chaque cas d'usage un acteur Java immuable
 créé depuis l'identité authentifiée ; cet acteur ne provient jamais du JSON
 client. La commande mémorise son `customerId`, sans importer le domaine identité.
@@ -163,6 +204,11 @@ client. La commande mémorise son `customerId`, sans importer le domaine identit
 Le catalogue ne dépend pas du stock. Angular combine la lecture des offres et
 leur disponibilité indicative ; la commande vérifie de nouveau le stock réel.
 Les mutations de réservation ne sont pas exposées directement en HTTP.
+Le module `content` est indépendant. L'administration routée et sa matrice de
+permissions sont détaillées dans [administration.md](administration.md).
+`sales` possède désormais `DeliverySettingsStore` : réglages versionnés en base
+après le premier enregistrement, configuration d'environnement auparavant.
+V9 conserve les instantanés de commandes et ne contient aucun tarif commercial.
 Les appels entre modules restent locaux, sans bus, requêtes HTTP internes,
 microservices, CQRS séparé ou event sourcing.
 
@@ -171,25 +217,29 @@ microservices, CQRS séparé ou event sourcing.
 | Concept | Identité et relations | Règles essentielles |
 | --- | --- | --- |
 | Compte | UUID, email normalisé unique, hash, rôles, état actif, version | Inscription = `CUSTOMER` uniquement ; désactivation conservant l'historique |
-| Catégorie | UUID, libellé, actif, version | Un produit appartient à une catégorie ; archivage interdit tant qu'elle contient des produits actifs |
-| Produit | UUID, SKU unique, catégorie, libellé, unité, prix, actif, version | Une référence vendable et stockable ; quantité entière ; archivage plutôt que suppression |
-| Pack | UUID, code unique, libellé, prix propre, actif, version | Au moins un composant ; prix indépendant de la somme des composants |
-| Composant de pack | `(packId, productId)`, quantité positive | Un produit au plus une fois par pack ; pas de référence à un autre pack |
-| Stock produit | `productId` unique, `onHand`, `reserved` | `0 <= reserved <= onHand` ; disponible = `onHand - reserved` |
-| Réservation | `(orderId, productId)` unique, quantité, état | État `ACTIVE`, `RELEASED` ou `CONSUMED` ; quantité agrégée par produit |
+| Catégorie | UUID, parent facultatif, slug unique, libellé, actif, version | Hiérarchie sans cycle ; archivage interdit si enfant ou produit la référence |
+| Marque | UUID, slug unique, libellé, actif, version | Facultative sur un produit ; archivage interdit si un produit la référence |
+| Produit | UUID, catégorie, marque facultative, fiche et caractéristiques, statut `DRAFT`/`PUBLISHED`, version | Fiche de présentation ; publique seulement avec une variante publiée ; retour en brouillon plutôt que suppression |
+| Variante | UUID, produit, SKU unique, libellé, options, unité, prix TND, statut et version | Référence vendable et référence de stock ; quantité entière ; prix décimal positif |
+| Pack | UUID, code unique, nom, slogan, guide, statut, version | Fiche publiée seulement avec au moins une variante vendable ; prix porté par la variante |
+| Variante de pack | UUID, pack, code local, libellé, prix propre TND, statut, version | Composition complète ; prix indépendant de la somme des composants |
+| Composant de pack | `(packVariantId, catalogVariantId)`, quantité positive | Un SKU agrégé au plus une fois par variante ; pas de pack imbriqué |
+| Stock variante | `variantId` unique, `onHand`, `reserved` | `0 <= reserved <= onHand` ; disponible = `onHand - reserved` |
+| Réservation | UUID de réservation, lignes `(reservationId, variantId)` uniques, quantité, état | État `ACTIVE`, `RELEASED` ou `CONSUMED` ; quantité agrégée par variante ; la commande référence la réservation |
 | Mouvement | UUID, produit, type, deltas physique/réservé, référence, acteur, date, motif | Journal append-only ; correction par mouvement compensateur |
-| Commande | UUID, numéro unique, client, statut, adresse figée, total, date | Propriété serveur, montants figés, transitions explicites |
+| Commande | UUID servant de référence unique, client facultatif/session invitée, statut, coordonnées séparées, total, date | Propriété serveur, montants figés, transitions explicites, coordonnées rectifiables avant préparation puis archivables |
 | Ligne de commande | Commande, type `PRODUCT`/`PACK`, référence, quantité | Libellé, version, prix et composition copiés au moment de l'achat |
 | Composant commandé | Ligne pack, produit, SKU/libellé figés, quantité unitaire | Explique les produits réellement réservés, même si le pack évolue |
-| Requête idempotente | `(customerId, operation, key)` unique, empreinte, commande | Empêche une deuxième commande lors d'un renvoi du même achat |
+| Requête idempotente | `(ownerScope, key)` unique pour le placement, empreinte, commande | Propriétaire client/session invitée ; empêche une deuxième commande lors d'un renvoi du même achat |
 
-Relations : catégorie `1 -> N` produits ; pack `1 -> N` composants `N -> 1`
-produit ; client `1 -> N` commandes ; commande `1 -> N` lignes ; commande
-`1 -> N` réservations produit. Les relations intermodules sont des identifiants,
+Relations : catégorie `1 -> N` sous-catégories et produits ; produit `1 -> N`
+variantes ; pack `1 -> N` composants `N -> 1` variante ; client `1 -> N`
+commandes ; commande `1 -> N` lignes ; commande `1 -> N` réservations de
+variantes. Les relations intermodules sont des identifiants,
 pas des associations JPA navigables.
 
 Les montants sont des valeurs décimales exactes en TND, avec trois décimales,
-via un objet valeur local basé sur `BigDecimal` ; jamais `float` ou `double`.
+avec `BigDecimal` et les validations propres aux modules ; jamais `float` ou `double`.
 Les saisies avec précision excessive sont rejetées. Les contrats JSON utilisent
 des chaînes décimales et la devise. Les prix de vente affichés sont les prix
 finaux à payer ; les règles fiscales détaillées restent à valider avant vente.
@@ -198,18 +248,21 @@ Pas de promotions, conversion monétaire ou moteur fiscal dans le premier lot.
 
 Un pack n'est vendable que si lui-même et tous ses composants sont actifs.
 La disponibilité d'un pack seul est le minimum de
-`floor(disponibleProduit / quantitéDansPack)` sur ses composants. Ce nombre
+`floor(disponibleVariante / quantitéDansPack)` sur ses composants. Ce nombre
 est indicatif : dans un panier mixte, toutes les demandes d'un même produit
 s'additionnent, qu'elles proviennent d'un produit seul ou de plusieurs packs.
 Une ligne de stock absente équivaut à zéro disponible.
 
-Le catalogue fournit un instantané cohérent de toutes les offres demandées
-(prix, versions, état des composants, composition), lu en une requête SQL sous
-le même instantané PostgreSQL. Toute modification de prix, composition ou
-publication incrémente la version de l'offre concernée. Une commande utilise
-la version acceptée lors de cette lecture ; une édition du catalogue commise
-ensuite ne réécrit jamais la commande. Ce choix évite de verrouiller tout le
-catalogue pendant le passage de commande.
+Le module `packs` fournit dès maintenant une valeur d'offre unitaire contenant
+prix, versions de fiche/variante et composition, lue sous un instantané
+`REPEATABLE READ` lorsqu'elle ouvre sa propre transaction. Le module
+`sales` assemble les offres d'un achat mixte dans une transaction
+commune, vérifie à nouveau leur publication et leurs versions, puis agrège
+toutes les demandes SKU avant la réservation atomique. Voir [checkout.md](checkout.md).
+Toute modification de
+fiche incrémente sa version ; prix, composition et état d'une variante
+incrémentent la sienne. La commande conserve les valeurs acceptées, sans
+réécrire son historique après une édition du catalogue ou des packs.
 
 ## 5. Authentification et RBAC
 
@@ -223,6 +276,13 @@ expiration après 30 minutes d'inactivité, déconnexion par POST et invalidatio
 serveur. Une instance backend au départ, sessions en mémoire : un redémarrage
 demande une reconnexion. Le besoin de plusieurs instances justifierait plus tard
 un stockage de sessions partagé.
+
+La passerelle écrase les en-têtes de transfert entrants. Le backend n'accepte
+leur interprétation que depuis les adresses définies par `TRUSTED_PROXY_PATTERN`
+en production ; son port reste privé. Cette frontière évite de partager le
+limiteur de connexion entre tous les clients ou d'accepter une adresse forgée.
+Une chaîne de plusieurs proxies exige une configuration de confiance explicite
+à chaque couche, détaillée dans le README.
 
 CSRF actif sur toutes les mutations, y compris connexion, inscription et logout.
 `GET /auth/csrf` délivre le cookie `XSRF-TOKEN`, lisible par Angular ; celui-ci
@@ -239,34 +299,27 @@ exception de développement doit énumérer les origines exactes. TLS obligatoir
 CSP adaptée au build Angular, pas de secrets ou mots de passe dans les logs.
 
 Les mots de passe sont hachés via `DelegatingPasswordEncoder` et un encodeur
-adaptatif Argon2id configuré et mesuré sur le serveur cible ; le format stocké
+adaptatif Argon2id ; ses paramètres devront être mesurés sur le serveur cible ; le format stocké
 permet une évolution des paramètres. Aucune cryptographie maison. Référence :
 [stockage des mots de passe Spring Security](https://docs.spring.io/spring-security/reference/features/authentication/password-storage.html).
 Limiter les essais de connexion et d'inscription, retourner une erreur de
 connexion générique, borner la taille des entrées et ne jamais sérialiser les
 identifiants techniques sensibles.
 
-Un filtre vérifie l'état actif et les rôles actuels du compte à chaque requête
-authentifiée, afin qu'une désactivation ou un retrait de rôle prenne effet sans
-attendre l'expiration de la session. Le premier administrateur est créé par
-une commande d'exploitation explicite avec secret fourni à l'exécution ;
-aucun compte/mot de passe par défaut ni endpoint public de promotion.
+Un filtre relit l'état actif et la version du compte à chaque requête
+authentifiée ; une désactivation, une modification des rôles ou du mot de passe
+invalide la session sans attendre son expiration. Le premier administrateur
+local est créé par une commande explicite avec secret fourni à l'exécution,
+limitée à `local & !prod`. Le provisionnement initial en production exige une
+procédure contrôlée de l'exploitant, décrite comme décision restante dans
+[deployment.md](deployment.md). Aucun compte par défaut ni endpoint public de promotion.
 
 ### Matrice d'accès
 
-Les rôles sont explicites et cumulables ; `ADMIN` n'implique pas `CUSTOMER`.
-
-| Action | Visiteur | `CUSTOMER` | `ADMIN` |
-| --- | --- | --- | --- |
-| Lire catalogue publié et disponibilité publique | Oui | Oui | Oui |
-| S'inscrire, se connecter, obtenir CSRF | Oui | Oui | Oui |
-| Prévisualiser un achat / passer commande | Non | Oui | Si aussi `CUSTOMER` |
-| Lire ses commandes | Non | Ses propres commandes | Via consultation administrative |
-| Annuler une commande `CONFIRMED` | Non | Sa propre commande | Toute commande autorisée |
-| Lire/gérer catalogue non publié, produits et packs | Non | Non | Oui |
-| Recevoir/ajuster le stock, lire les mouvements | Non | Non | Oui |
-| Préparer, expédier, livrer, annuler avant expédition | Non | Non | Oui |
-| Désactiver un compte ou changer ses rôles | Non | Non | Oui, contrôle du dernier administrateur actif |
+Les rôles `CUSTOMER`, `CATALOG_MANAGER`, `ORDER_MANAGER` et `ADMIN` sont
+explicites et cumulables ; `ADMIN` n'implique pas `CUSTOMER`. La matrice détaillée,
+est tenue dans [security.md](security.md), complétée par les contrats de
+[identity.md](identity.md) et des modules métier.
 
 Spring Security refuse par défaut toute route non explicitement autorisée et
 filtre les routes publiées ; les services applicatifs vérifient également
@@ -286,21 +339,25 @@ retraits concurrents ne doivent pas pouvoir contourner cette règle.
 
 Une seule source de données et un seul gestionnaire de transactions PostgreSQL.
 Un décorateur Spring autour du cas d'usage entrant ouvre la transaction ; les
-appels internes à `inventory` participent à la même transaction (`REQUIRED`,
+appels de commande à `inventory` exigent la même transaction (`MANDATORY`,
 jamais `REQUIRES_NEW` pour le stock d'une commande). Une erreur métier doit
 provoquer le rollback complet, y compris si elle est une exception vérifiée.
 Aucun appel réseau externe pendant les verrous.
 
-Isolation initiale `READ COMMITTED`, avec verrous explicites sur les lignes de
-stock, et contraintes en base. Les transactions concurrentes attendent les
-verrous puis relisent les quantités. Prendre tous les verrous de produits dans
+Le noyau inventory utilise `READ COMMITTED`. Prévisualisation et placement de
+commande utilisent `REPEATABLE READ` pour un instantané cohérent des offres,
+avec verrous explicites sur les lignes de stock et contraintes en base. Le
+placement réessaie au plus trois fois les conflits de sérialisation/verrouillage,
+puis retourne une indisponibilité. Prendre tous les verrous de SKU dans
 l'ordre croissant de leur UUID réduit les interblocages ; une erreur transitoire
 de verrouillage annule tout et autorise un nouvel essai borné de la transaction.
-Référence : [verrous PostgreSQL](https://www.postgresql.org/docs/current/explicit-locking.html).
+Le [contrat du noyau inventory](inventory.md) précise les invariants, l'ordre
+des verrous et les opérations réellement exposées. Référence :
+[verrous PostgreSQL](https://www.postgresql.org/docs/current/explicit-locking.html).
 
 ### Passer une commande
 
-1. Authentifier l'acteur client ; valider les quantités, les limites de requête
+1. Identifier l'acteur client ou la session invitée ; valider les quantités, les limites de requête
    et l'adresse. Exiger une clé `Idempotency-Key`.
 2. Dans la transaction, acquérir la clé unique portée par ce client et
    l'opération. Une collision attend la transaction précédente ; même empreinte
@@ -365,8 +422,8 @@ seul module. Pas de lecture/écriture ni jointure intermodules dans les reposito
 Les identifiants externes sont validés via ports ; les références historiques
 survivent à l'archivage. Les clés étrangères sont internes aux modules au départ.
 
-Contraintes prévues : SKU/email/codes uniques, unicité stock par produit et
-réservation par commande/produit, clés d'idempotence uniques, quantités positives,
+Contraintes implémentées : SKU/email/codes uniques, unicité stock par variante et
+lignes uniques par réservation/variante, clés d'idempotence uniques, quantités positives,
 soldes non négatifs et `reserved <= onHand`. Le journal et les soldes sont
 cohérents grâce aux écritures transactionnelles ; un contrôle de rapprochement
 permettra de détecter une anomalie d'exploitation sans réécrire l'historique.
@@ -374,7 +431,9 @@ Versions optimistes pour les éditions administratives, avec conflit explicite.
 
 Flyway est l'unique responsable du DDL, dans une séquence globale versionnée
 `V<numero>__<module>_<description>.sql`. Une migration déjà appliquée est immuable.
-JPA valide le schéma (`ddl-auto=validate`) ; pas de `update`/`create` en production.
+Hibernate reste en mode `validate` sans entités métier ; il ne valide donc pas
+les tables JDBC. Flyway contrôle les migrations et leurs checksums, les tests
+PostgreSQL leurs contraintes. Pas de `update`/`create` en production.
 Tester les migrations sur base vide et depuis la version précédente. Le compte
 de migration a les droits DDL ; le compte applicatif dispose des droits DML
 nécessaires. Les données de démonstration restent hors migrations de production.
@@ -383,25 +442,38 @@ Le socle crée le schéma par Flyway et applique V1 pour ses permissions et les
 droits par défaut des futures tables. Il n'ajoute aucune table métier factice.
 Les comptes de migration et d'application sont distincts, y compris en local.
 Les secrets locaux sont générés dans `.env` ignoré par Git ; en production ils
-doivent être injectés par l'environnement. MinIO/Mailpit ne conditionnent pas
-la santé de l'API tant qu'aucun cas d'usage ne dépend d'eux.
+doivent être injectés par l'environnement. La santé et la readiness restent
+centrées sur PostgreSQL : une panne SMTP retarde les emails dans l'outbox sans
+faire échouer une commande validée ni une demande de récupération enregistrée.
+Sa disponibilité et les échecs terminaux devront être surveillés séparément
+avant ouverture ; une panne MinIO affecte les photos sans bloquer la santé API.
+
+Le module `media` valide type décodé, taille et dimensions, puis génère des
+rendus compressés pour cartes et fiches. Les originaux sont privés dans MinIO,
+les réponses paginées ne contiennent que des URL de rendus réduits. L'import
+CSV du catalogue suit un aperçu sans mutation, puis une application atomique
+du même fichier vérifié par SHA-256. Voir les [contrats détaillés](catalog.md).
 
 Les instants sont stockés en UTC (`timestamptz`) et présentés en `Africa/Tunis`.
 Adresses et téléphones sont des chaînes structurées, pas des nombres ; le pays
 initial est `TN`, avec validation serveur du gouvernorat, code postal, adresse
 et téléphone. Sauvegardes et restauration testée sont requises avant ouverture.
 
-## 8. Contrats API à implémenter
+## 8. Contrats API livrés
 
 ### Conventions
 
 - REST JSON UTF-8 sous `/api/v1`. Le contrat OpenAPI du socle décrit la santé ;
-  il sera étendu à chaque tranche fonctionnelle.
+  les contrats fonctionnels sont détaillés dans les documents de chaque module.
 - Identifiants UUID en chaînes, dates ISO 8601 avec décalage UTC, montants
   `{"amount":"49.900","currency":"TND"}`. Aucune entité JPA en réponse.
 - Listes paginées : `page` à partir de 0, `size` de 1 à 100, défaut 20 ; tri
   sur liste blanche avec second critère stable par identifiant.
   Réponse `{items, page, size, totalElements}`.
+  La liste publique des packs, les référentiels publics et certains sélecteurs
+  administratifs restent des listes simples. Les tableaux administratifs
+  utilisent les routes paginées ; aucun journal HTTP des mouvements de stock
+  ni liste de comptes n'est livré.
 - Corps strictement validés et bornés ; maximum initial de 100 lignes par achat
   et 1 à 999 unités par ligne, contrôlés avant et après fusion des doublons.
   Rejeter les champs sensibles inconnus, notamment
@@ -412,40 +484,48 @@ et téléphone. Sauvegardes et restauration testée sont requises avant ouvertur
   la ressource, `204` pour logout/CSRF. `400` validation, `401` non connecté,
   `403` accès/CSRF, `404` absent ou non visible, `409` conflit métier/version,
   `429` limitation d'essais. Les réponses privées portent `Cache-Control: no-store`.
-- Erreurs `application/problem+json` : `type`, `title`, `status`, `detail`,
-  `instance`, plus `code`, `traceId` et éventuellement `violations` par champ.
-  Aucun SQL, secret ou stack trace en réponse.
+- Erreurs JSON avec `code` métier et, selon le module, `message` ou
+  `details`. Les refus Spring Security et erreurs techniques sont génériques.
+  Aucun contrat uniforme `problem+json`/`traceId` n'est livré ; aucun SQL,
+  secret ou stack trace ne doit apparaître en réponse.
 
 ### Endpoints et permissions
 
-Les chemins ci-dessous sont relatifs à `/api/v1` ; ils décrivent une cible,
-sans affirmer que les routes existent déjà.
+Les chemins ci-dessous sont relatifs à `/api/v1` et existent dans les
+contrôleurs. Les documents de module détaillent les corps, filtres et réponses.
 
 | Méthode et chemin | Entrée / résultat principal | Accès |
 | --- | --- | --- |
 | `GET /auth/csrf` | `204`, délivre/renouvelle le cookie CSRF | Public |
-| `POST /auth/register` | `{email,password,displayName}` -> `201` profil ; aucune connexion implicite | Public + CSRF |
+| `POST /auth/register` | `{email,password}` -> `201` compte ; aucune connexion implicite | Public + CSRF |
 | `POST /auth/login` | `{email,password}` -> `200` profil + session | Public + CSRF |
 | `POST /auth/logout` | Invalide la session -> `204` | Session + CSRF |
-| `GET /me` | `{id,email,displayName,roles}` | Connecté |
-| `GET /categories` | Catégories publiées paginées | Public |
-| `GET /products`, `GET /products/{id}` | Recherche/pagination ; offre publiée, prix et version | Public |
-| `GET /packs`, `GET /packs/{id}` | Offre publiée et composants `{productId,quantity}` | Public |
-| `GET /availability?productIds=...` | Au plus 100 références publiées : `{productId,availableQuantity}` | Public |
-| `POST /checkout/preview` | Articles + adresse -> offres/version, montants des lignes, livraison, total ; sans réservation | `CUSTOMER` |
-| `POST /orders` | Articles/version + adresse + total attendu ; en-tête `Idempotency-Key` -> `201` commande | `CUSTOMER` |
-| `GET /orders`, `GET /orders/{id}` | Commandes du client connecté uniquement | `CUSTOMER` |
-| `POST /orders/{id}/cancel` | Annulation autorisée -> `200` commande | Propriétaire `CUSTOMER` |
-| `GET /admin/products`, `GET /admin/packs`, `GET /admin/categories` | Listes incluant les entrées non publiées | `ADMIN` |
-| `POST /admin/products`, `POST /admin/packs`, `POST /admin/categories` | Création validée -> `201` | `ADMIN` |
-| `PUT /admin/products/{id}`, `PUT /admin/packs/{id}`, `PUT /admin/categories/{id}` | Données complètes + version attendue -> `200`, ou `409` ; `active=false` pour archiver | `ADMIN` |
-| `GET /admin/stock`, `GET /admin/stock/movements` | Soldes physiques/réservés ou journal paginé | `ADMIN` |
-| `POST /admin/stock/receipts` | `{operationId,productId,quantity,reason}` -> mouvement | `ADMIN` |
-| `POST /admin/stock/adjustments` | `{operationId,productId,delta,reason}` -> mouvement | `ADMIN` |
-| `GET /admin/orders`, `GET /admin/orders/{id}` | Toutes les commandes, filtre de statut | `ADMIN` |
-| `POST /admin/orders/{id}/prepare`, `/ship`, `/deliver`, `/cancel` | Transition explicite -> commande, pas de statut arbitraire | `ADMIN` |
-| `GET /admin/accounts` | Comptes paginés, sans hash | `ADMIN` |
-| `PUT /admin/accounts/{id}/access` | `{active,roles,version}` -> profil ; préserver un admin actif | `ADMIN` |
+| `GET /auth/me`, `GET /accounts/{id}` | `{id,email,roles,active}` ; accès ciblé propriétaire ou ADMIN | Connecté |
+| `POST /auth/password-reset/request`, `/complete` | Demande générique et récupération à jeton unique | Public + CSRF |
+| `GET /categories`, `GET /brands` | Catégories et marques actives ; parent présent dans le résultat | Public |
+| `GET /products`, `GET /products/{id}` | Recherche/pagination ; fiche et variantes publiées, prix TND et versions | Public |
+| `GET /packs`, `GET /packs/{id}` | Offres publiées, variantes/composants et disponibilité indicative ; voir [packs.md](packs.md) | Public |
+| `GET /availability/{variantId}` | Variante publiée : `{variantId,available}` | Public |
+| `POST /cart/estimate` | Estimation indicative des lignes produit/pack, sans livraison ni réservation ; voir [cart.md](cart.md) | Public + CSRF |
+| `GET /cart`, `PUT /cart`, `POST /cart/merge` | Panier client persisté, remplacement versionné et reprise idempotente | `CUSTOMER` ; CSRF pour écriture |
+| `POST /checkout/preview` | Articles/version + adresse -> récapitulatif, frais, total et empreinte ; voir [checkout.md](checkout.md) | Invité ou `CUSTOMER`, CSRF |
+| `POST /orders` | Articles/version + adresse + empreinte ; `Idempotency-Key` -> `201` commande | Invité ou `CUSTOMER`, CSRF |
+| `GET /orders` | Historique du compte, pagination serveur | `CUSTOMER` |
+| `GET /orders/{id}`, `POST /orders/{id}/cancel` | Lecture/annulation du propriétaire, y compris session invitée | Propriétaire ; CSRF pour annulation |
+| `/admin/catalog/**` | Gestion des catégories, marques, fiches et variantes ; détails dans [catalog.md](catalog.md) | `CATALOG_MANAGER` ou `ADMIN` |
+| `/admin/packs/**` | Gestion des fiches, variantes et compositions ; voir [packs.md](packs.md) | `CATALOG_MANAGER` ou `ADMIN` |
+| `GET /admin/stock/{variantId}` | Soldes physiques, réservés et disponibles | `ADMIN` |
+| `POST /admin/stock/adjustments` | `{operationId,variantId,delta,reason}` -> soldes ; réception via delta positif | `ADMIN` |
+| `GET /admin/orders`, `GET /admin/orders/{id}` | Toutes les commandes, pagination et filtre de statut | `ORDER_MANAGER` ou `ADMIN` |
+| `POST /admin/orders/{id}/prepare`, `/ship`, `/deliver`, `/cancel` | Transition explicite -> commande, pas de statut arbitraire | `ORDER_MANAGER` ou `ADMIN` |
+| `POST /admin/internal-accounts`, `PUT /admin/accounts/{id}/roles`, `PATCH /admin/accounts/{id}/active` | Gestion ciblée des comptes, dernier ADMIN protégé | `ADMIN` |
+| `/admin/catalog/products/{id}/images`, `GET /media/{id}/card`, `/detail` | Upload/ordre réservé ; dérivés publics si produit publié | Catalogue ou ADMIN pour écriture |
+| `POST /admin/catalog/imports/preview`, `/apply` | CSV validé avant application atomique | Catalogue ou ADMIN |
+| `GET /content/home`, `GET/PUT /admin/content/home` | Contenus principaux versionnés ; voir [administration.md](administration.md) | Lecture publique ; catalogue ou ADMIN pour gestion |
+| `GET/PUT /admin/delivery` | Forfait et zones ; voir [checkout.md](checkout.md) | `ADMIN` |
+| `GET /admin/order-events`, `/stream` | Événements durables et SSE ; voir [notifications.md](notifications.md) | Commandes ou ADMIN |
+| `/admin/mail-outbox`, `POST /admin/mail-outbox/{id}/retry` | État paginé et reprise contrôlée | `ADMIN` |
+| `/privacy/**`, `/admin/privacy/**` | Export, consentement, rectification, retrait, conservation et archives ; voir [privacy-decisions.md](privacy-decisions.md) | Propriétaire ; ADMIN pour opérations réservées |
 
 Toutes les mutations de ce tableau exigent CSRF. Les prévisualisations sont
 privées même si elles ne réservent rien. Les disponibilités publiques excluent
@@ -454,10 +534,9 @@ les offres non publiées, sans divulguer les quantités réservées ni le journa
 ### Exemple de passage de commande
 
 Exemple de format uniquement : les identifiants ne désignent pas des produits
-existants. `/checkout/preview` reçoit les mêmes articles sans `expectedVersion`
-ni `expectedTotal`, et renvoie les versions et montants calculés à confirmer.
-Les lignes de même type/référence sont fusionnées avant contrôle des limites
-et calcul de l'empreinte idempotente.
+existants. `/checkout/preview` reçoit le même corps sans `quoteHash` et renvoie
+le récapitulatif calculé. Les lignes du panier sont déjà agrégées ; le checkout
+refuse les doublons ambigus. Les deux versions de fiche/variante sont requises.
 
 ```http
 POST /api/v1/orders
@@ -469,27 +548,27 @@ X-XSRF-TOKEN: <jeton obtenu du serveur>
 ```json
 {
   "items": [
-    {"kind": "PRODUCT", "offerId": "67b6678e-6638-4e6e-9233-a0a8c370a9f2", "quantity": 2, "expectedVersion": 3},
-    {"kind": "PACK", "offerId": "da5398cc-01d8-453e-910c-6b01eb2f6a30", "quantity": 1, "expectedVersion": 2}
+    {"kind": "PRODUCT", "offerId": "67b6678e-6638-4e6e-9233-a0a8c370a9f2", "quantity": 2, "offerVersion": 3, "parentVersion": 5},
+    {"kind": "PACK", "offerId": "da5398cc-01d8-453e-910c-6b01eb2f6a30", "quantity": 1, "offerVersion": 2, "parentVersion": 1}
   ],
-  "deliveryAddress": {
+  "address": {
     "recipient": "Exemple de destinataire",
-    "line1": "10 rue Exemple",
+    "street": "10 rue Exemple",
     "city": "Tunis",
-    "governorate": "Tunis",
+    "governorate": "TUNIS",
     "postalCode": "1000",
     "country": "TN",
     "phone": "+21620000000"
   },
-  "paymentMethod": "CASH_ON_DELIVERY",
-  "expectedTotal": {"amount": "49.900", "currency": "TND"}
+  "quoteHash": "<empreinte SHA-256 renvoyée par la prévisualisation>"
 }
 ```
 
-Le serveur retourne `{id, number, status, items, deliveryAddress, paymentMethod,
-subtotal, deliveryFee, total, createdAt}` ; chaque ligne inclut les instantanés
-décrits au modèle conceptuel. Le premier succès vaut `201` avec `Location` ;
-un rejeu identique vaut `200` avec le même identifiant et sans effet supplémentaire.
+Le serveur retourne `{id, status, paymentMethod, createdAt, summary}` ; `summary`
+contient l'adresse, les lignes/composants figés, `subtotal`, `delivery`, `total`
+et `quoteHash`. Le succès et le rejeu identique valent `201` avec `Location`,
+le même identifiant et sans effet supplémentaire. L'UUID est la référence de
+commande initiale ; aucun générateur de numéros métier séparé n'est nécessaire.
 La même clé avec un autre corps normalisé donne `409 IDEMPOTENCY_CONFLICT`.
 La création de commande ne prétend pas que le paiement a été encaissé.
 
@@ -536,17 +615,17 @@ tests d'intégration ciblent une base isolée, jamais les données de production
 
 | Décision | Bénéfice / coût accepté | Quand la reconsidérer |
 | --- | --- | --- |
-| Quatre modules dans un backend | Transactions locales et exploitation simple ; discipline des frontières nécessaire | Équipe ou charge imposant une séparation démontrée |
+| Neuf modules métier dans un backend | Transactions locales et exploitation simple ; discipline des frontières nécessaire | Équipe ou charge imposant une séparation démontrée |
 | Packs virtuels, prix propre | Une seule vérité de stock ; disponibilité dérivée et composition figée à l'achat | Préassemblage physique ou substitutions demandés |
 | Session serveur, même origine | Authentification navigateur simple ; reconnexion après redémarrage initial | Plusieurs instances ou clients externes |
-| Panier navigateur | Pas de module/persistance panier au départ ; panier propre à cet appareil | Synchronisation demandée |
+| Panier visiteur navigateur, panier client PostgreSQL | Reprise après connexion et synchronisation du client, sans adresse ni prix dans le stockage visiteur | Besoin de panier visiteur multi-appareils |
 | Réservation à confirmation, paiement à la livraison | Pas de workflow bancaire ; commandes en attente à traiter | Paiement en ligne réel ou expiration nécessaire |
 | Verrous de lignes et transaction unique | Pas de survente ni compensation distribuée ; contention possible | Mesures montrant une limite de débit |
 | Instantané catalogue à la lecture | Commande cohérente sans long verrou catalogue ; une édition ultérieure vaut pour l'achat suivant | Exigence métier plus stricte sur la fermeture immédiate d'une offre |
 | Pas de broker, cache distribué, moteur de recherche ni abstraction fournisseur spéculative | Moins d'exploitation et de code sans usage | Besoin concret et mesuré |
 
-Les emails transactionnels, récupération autonome de mot de passe, paiement en
-ligne, transporteurs, retours, promotions et multi-dépôts sont des extensions.
-Ils exigent des contrats et intégrations réels avant d'être exposés comme
-disponibles. Une procédure de récupération de compte devra être définie avant
-ouverture, même si elle est d'abord opérée manuellement de façon sécurisée.
+Les emails transactionnels et le flux gestionnaire SSE sont livrés avec
+V10 et les contrats de [notifications.md](notifications.md). Paiement en
+ligne, transporteurs, retours, promotions et multi-dépôts restent des extensions.
+La livraison d'emails en production nécessite un SMTP fiable,
+un domaine public validé et des paramètres Argon2id mesurés avant ouverture.

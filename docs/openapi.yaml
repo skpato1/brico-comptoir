@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
-  title: BricoComptoir — API du socle
+  title: BricoComptoir — API de santé
   version: 0.1.0
-  description: Seule la santé est implémentée à cette étape. Les contrats métier restent dans architecture.md.
+  description: Contrat de santé. Les routes identity implémentées sont documentées dans identity.md ; les contrats métier futurs restent dans architecture.md.
 servers:
   - url: /api/v1
 paths:
