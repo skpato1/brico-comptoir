@@ -480,6 +480,18 @@ une procédure universelle de sauvegarde S3. Chiffrer les sauvegardes, restreind
 les accès, conserver une copie hors hôte, fixer fréquence/rétention/RPO/RTO et
 répéter une restauration complète. Ces services externes restent à configurer.
 
+## Déploiement sur Vercel
+
+La [procédure Vercel](docs/deployment.md) utilise la racine du dépôt, le preset
+**Other**, Node **24.x** et le `vercel.json` fourni. Il compile Angular et prépare
+les routes directes. Renseigner **`BRICO_API_ORIGIN`** avec l'origine HTTPS d'un
+backend Spring Boot hébergé ; une API sur **localhost** ne peut pas servir la
+boutique publique. Sans cette variable, les API retournent 503 et la page affiche
+une indisponibilité explicite. PostgreSQL, stockage S3 et SMTP doivent être
+configurés sur l'hébergement backend ; le Compose local ne les déploie pas sur
+Vercel. La procédure explique également les cookies/CSRF et contrôles avant
+ouverture. Aucun secret ni fichier `.vercel/` n'est versionné.
+
 ## Configuration requise avant production
 
 Le Compose livré utilise le profil local et des tarifs de démonstration.
@@ -532,7 +544,7 @@ Les décisions juridiques, notice/contact et formalités sont suivies dans
 | Symptôme | Vérification et action |
 | --- | --- |
 | `localhost:4200` ne répond pas | `docker version`, `docker compose ps`, puis `docker compose start --wait --wait-timeout 180` et `node scripts/check-local.mjs`. Si Docker lui-même expire, vérifier l'espace disque et redémarrer Desktop en tenant compte des autres conteneurs. Ne pas réinitialiser les volumes. |
-| Port déjà utilisé | Choisir un autre `*_PORT` dans `.env`, puis `docker compose up -d --wait`. Recréer les conteneurs conserve les volumes. Le proxy Angular natif vise le port API indiqué dans `frontend/proxy.conf.json`. |
+| Port déjà utilisé | Choisir un autre `*_PORT` dans `.env`, puis `docker compose up -d --wait`. Recréer les conteneurs conserve les volumes. Le proxy Angular natif vise le port API indiqué dans `frontend/proxy.conf.cjs`. |
 | API absente ou démarrage refusé | Vérifier PostgreSQL sain, paramètres obligatoires et migrations. `docker compose logs --tail=100 backend postgres` ; les logs applicatifs masquent les détails sensibles. Ne pas désactiver Flyway ni supprimer les données pour contourner une erreur. |
 | Connexion ou écriture refusée | Vérifier le rôle et la propriété de la ressource. Renouveler le CSRF après connexion/déconnexion ; `401` exige une reconnexion, `403` indique permission ou CSRF. Un compte interne sans CUSTOMER n'achète pas. |
 | Aucun produit ou pack visible | Base initialement vide ; vérifier publication des fiches, variantes et composants. Les packs DÉMO sont volontairement brouillons. Charger les exemples est une action explicite, jamais une migration de production. |

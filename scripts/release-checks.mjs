@@ -14,7 +14,7 @@ export function sensitiveRules(text, knownSecrets = []) {
 
 export function privatePath(name) {
   return /(^|\/)\.env(?:$|\.)/.test(name) && !name.endsWith('.example')
-    || /(^|\/)(?:\.local|node_modules|target|dist|coverage|test-results|playwright-report|backups|uploads|imports|secrets)(\/|$)/.test(name)
+    || /(^|\/)(?:\.local|\.vercel|node_modules|target|dist|coverage|test-results|playwright-report|backups|uploads|imports|secrets)(\/|$)/.test(name)
     || /\.(?:key|pem|p12|pfx|jks|keystore|dump|backup|vhdx|class|tar|tar\.gz|sql\.gz)$/i.test(name)
     || /(^|\/)(?:id_rsa|id_ed25519|credentials[^/]*\.json|secrets[^/]*\.json)$/.test(name);
 }

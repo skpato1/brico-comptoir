@@ -78,7 +78,12 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
       - run: npm run test:ci
-      - run: npm run build
+      - name: Deployment routing regression tests
+        run: node --test ../scripts/vercel-output.test.mjs
+      - name: Angular production build and Vercel artifact
+        env:
+          BRICO_API_ORIGIN: https://api.example.com
+        run: node ../scripts/build-vercel.mjs
 
   browser:
     runs-on: ubuntu-latest

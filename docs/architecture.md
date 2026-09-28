@@ -127,6 +127,19 @@ flowchart LR
 Les flèches pleines représentent les appels ; les adaptateurs implémentent les
 interfaces définies au centre. Le câblage Spring est extérieur au domaine.
 
+### Déploiement du navigateur sur Vercel
+
+Angular reste une application statique ; `vercel.json` et
+`scripts/build-vercel.mjs` génèrent les fichiers navigateur et le routage
+Build Output API v3 depuis la racine du monorepo. `/api` est traité avant le
+repli SPA, vers l'origine HTTPS `BRICO_API_ORIGIN`. Cookies et CSRF restent sous
+la même origine publique. Sans origine, la réponse est 503, sans API fictive.
+Les réponses API ne sont pas mises en cache par le CDN. Le backend Spring Boot
+et ses dépendances restent des services durables hébergés séparément ; sessions
+en mémoire et worker planifié ne sont pas migrés vers un runtime à mise en veille.
+Cette configuration ne touche ni le domaine ni les ports des modules. Les
+paramètres et contrôles effectifs sont dans [deployment.md](deployment.md).
+
 ### Dépendances autorisées
 
 Le module `privacy` dépend uniquement des ports publics entrants d’`identity`,

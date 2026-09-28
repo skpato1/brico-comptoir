@@ -6,6 +6,7 @@
 **/target/
 **/node_modules/
 **/.angular/
+**/.vercel/
 **/dist/
 **/coverage/
 **/test-results/

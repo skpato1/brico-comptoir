@@ -19,6 +19,76 @@ privilégié. Les tests sont exécutés séparément par `verify` et la CI, car 
 construction du JAR dans l'image saute les tests. Déployer des images validées
 identifiées par commit/digest et garder la version des migrations correspondante.
 
+## Angular sur Vercel, API Spring Boot hébergée séparément
+
+Le dépôt est un monorepo : Angular se trouve dans `frontend/`, tandis que la
+racine n'est pas une application Node. Le [vercel.json](../vercel.json) fourni
+installe son lockfile et appelle [build-vercel.mjs](../scripts/build-vercel.mjs).
+Ce build compile Angular en production puis génère `.vercel/output/` selon la
+[Build Output API v3](https://vercel.com/docs/build-output-api), avec seulement
+les fichiers navigateur. La configuration générée rétablit les URL Angular
+directes (`/catalogue`, `/packs/{id}`, `/gestion`, etc.) sans transformer une
+erreur API ou un fichier JavaScript absent en réponse HTML réussie.
+
+Dans **le projet Vercel BricoComptoir**, importer `skpato1/brico-comptoir` et
+sélectionner la branche `main`. Régler **Root Directory sur la racine du dépôt**
+(champ vide), **Framework Preset : Other**, **Node.js : 24.x**. Les commandes
+d'installation/build viennent du fichier ; supprimer les anciens overrides et
+laisser **Output Directory sans override** : Vercel consomme `.vercel/output`.
+Ne pas choisir `frontend/` comme Root Directory avec cette configuration.
+Le projet et son domaine doivent appartenir à l'équipe Vercel connectée.
+
+Ajouter `BRICO_API_ORIGIN` dans les environnements Vercel appropriés, puis
+redéployer : une origine DNS publique HTTPS, par exemple `https://api.example.com`
+(exemple fictif), sans `/api`, paramètres ni identifiants. Cette variable ne
+contient aucun secret. Le build refuse localhost, adresses IP, HTTP et URL avec
+identifiants. Ne pas mettre les secrets PostgreSQL/S3/SMTP dans le frontend.
+Pour vérifier le même artefact localement depuis la racine :
+
+```sh
+npm ci --prefix frontend
+node --test scripts/vercel-output.test.mjs
+# Injecter BRICO_API_ORIGIN dans l'environnement, sans secret.
+node scripts/build-vercel.mjs
+```
+
+Le navigateur continue d'utiliser `/api/v1/...`. La
+[réécriture externe](https://vercel.com/docs/routing/rewrites) vers Spring
+conserve ce préfixe et la même origine publique pour cookies/session et CSRF ;
+aucune désactivation de CSRF ni ouverture générale de CORS n'est ajoutée.
+Les réponses API sont exclues des caches navigateur/CDN. Sans
+`BRICO_API_ORIGIN`, le frontend peut être déployé mais toutes les routes API
+retournent **503 `API_NOT_CONFIGURED`** ; l'interface annonce son indisponibilité.
+Ce mode ne constitue pas une boutique opérationnelle.
+
+**Une API sur localhost n'est pas accessible depuis Vercel.** Héberger le
+backend Java 21 comme service durable avec `backend/Dockerfile`, sous `prod`,
+PostgreSQL, S3 privé et SMTP configurés comme ci-dessous. Renseigner
+`APP_PUBLIC_URL` avec l'URL HTTPS de la boutique. Les sessions et limiteurs
+actuels sont en mémoire ; conserver une seule instance applicative et le
+worker d'outbox actif jusqu'à une évolution explicitement testée. La perte de
+session lors d'un redémarrage impose une reconnexion, sans perte des commandes.
+Les runtimes
+[OCI Vercel en bêta](https://vercel.com/docs/functions/container-images) existent,
+mais leur mise en veille/scaling n'est pas la procédure validée pour ces
+sessions et tâches planifiées. Docker Compose ne provisionne pas ces services
+sur Vercel ; aucun tunnel public du développement local n'est fourni.
+
+Avant ouverture, vérifier sur le domaine réel : santé PostgreSQL, connexion et
+déconnexion, cookies `Secure`/`HttpOnly`/`SameSite`, refus d'écriture sans CSRF,
+commande et idempotence, lot de quatre photos de 6 Mio, images, SSE et reconnexion,
+envoi SMTP/outbox. Vérifier les limites de taille/durée du proxy du prestataire
+et sa chaîne de confiance : l'origin API doit être protégé, les en-têtes client
+réécrits et les pairs ingress précisément approuvés. Ne pas faire confiance à
+tout Internet pour `TRUSTED_PROXY_PATTERN`. Ces contrôles HTTPS ne sont pas
+remplacés par les tests du routage généré ou les tests locaux Docker.
+
+Un `NOT_FOUND` Vercel sur `/` indique qu'aucun frontend valide n'est servi :
+vérifier projet/domaine/équipe, Root Directory, commandes et deployment Ready.
+Un 503 `API_NOT_CONFIGURED` demande de renseigner l'origine puis redéployer.
+Un 502/504 avec origine configurée demande de vérifier le backend et le réseau,
+sans remplacer l'API réelle par des données de démonstration.
+
 ## Variables à injecter
 
 [.env.example](../.env.example) décrit le local ;
@@ -29,6 +99,7 @@ jamais d'un fichier committé, d'un argument visible ou d'Angular.
 
 | Variables | Usage et décision |
 | --- | --- |
+| `BRICO_API_ORIGIN` | Vercel uniquement : origine HTTPS publique du backend ; absente = API indisponible, pas de secrets |
 | `SPRING_PROFILES_ACTIVE=prod`, `SERVER_PORT` | Profil sécurisé et port backend privé |
 | `DB_URL` | JDBC PostgreSQL, base/région choisies ; TLS vérifié (`sslmode=verify-full`) et certificat de confiance |
 | `DB_USERNAME`, `DB_PASSWORD` | Rôle applicatif DML, sans superutilisateur ni droit de migration |

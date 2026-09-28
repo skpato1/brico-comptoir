@@ -2,6 +2,51 @@
 
 Dernière mise à jour : 28 septembre 2026.
 
+## Correction du déploiement Vercel — 28 septembre 2026
+
+Diagnostic établi : `https://brico-comptoir.vercel.app/`, `/catalogue` et
+`/api/v1/health` retournaient le `404 NOT_FOUND` de la plateforme. Le backend
+reste sur localhost, confirmé par l'exploitant. Le connecteur ne listait que
+l'autre projet de l'équipe ; sa tentative générique de déploiement a été
+refusée automatiquement car la destination n'était pas vérifiable. Aucune
+création ni modification de cet autre projet n'a été effectuée.
+
+Le tableau de bord authentifié a ensuite confirmé **le projet existant
+`skpato1s-projects/brico-comptoir`**, son domaine, son dépôt GitHub et sa branche
+`main`. Son déploiement du commit `6998f91` était Ready avec racine vide,
+preset Other, Node 24.x et aucune commande de build/install personnalisée.
+Il servait donc une racine sans build Angular. Cette preuve permet de cibler
+le projet existant par sa connexion Git, sans en créer un nouveau.
+
+Correctif : `vercel.json` installe le lockfile frontend, puis le build Angular
+génère les fichiers et routes Build Output API v3. Les routes navigateur
+directes fonctionnent ; `/api` est prioritaire et exclu des caches. L'origine
+HTTPS est fournie par `BRICO_API_ORIGIN`, sans secret ; HTTP, localhost et les
+URL avec identifiants sont refusés. Sans origine, l'API retourne une
+indisponibilité 503 explicite et l'interface n'annonce pas une boutique active.
+`.vercel/` est ignoré et refusé par le contrôle de publication. La CI frontend
+compile désormais cet artefact et teste les régressions de routage.
+
+Vérifications réellement exécutées sur cette correction :
+
+| Commande ou contrôle | Résultat |
+| --- | --- |
+| `node --test scripts/vercel-output.test.mjs scripts/release-checks.test.mjs` | **8/8 passent**, après correction d'un échappement du motif SPA détecté au premier passage |
+| `BRICO_API_ORIGIN=https://api.example.com node scripts/build-vercel.mjs` dans la copie identique sur D: | Build Angular production réussi, 389,15 ko initiaux ; artefact et routes Vercel générés ; origine fictive de test, aucun appel à ce domaine |
+| `npm run test:ci` dans cette copie | **44 tests / 10 fichiers passent** |
+| Contrôle Chromium ponctuel de l'artefact servi localement | Accueil, catalogue direct et actualisé, scripts, santé et refus CSRF vérifiés avec Spring Boot local réel ; mode API absente : 503 JSON et écran d'indisponibilité ; aucune erreur JavaScript non capturée |
+| `node scripts/check-local.mjs` | Neuf contrôles HTTP passent sur les services principaux existants |
+| `node scripts/check-repository.mjs`, `node scripts/check-release.mjs`, `git diff --check` | Contrôles des migrations, modèles sans secrets, exclusions, liens locaux et scan ciblé valides |
+
+Le contrôle Chromium utilise un serveur de vérification du routage généré ;
+il ne constitue pas une exécution du moteur Vercel ni de sa chaîne HTTPS. Aucun
+code backend ni migration ne change : les suites PostgreSQL/achat exécutées
+lors de la publication précédente ne sont pas présentées comme relancées ici.
+La mise à jour du déploiement Git doit être suivie sur le domaine réel. L'API
+publique, PostgreSQL/S3/SMTP hébergés et la recette HTTPS/cookies/CSRF/SSE restent
+nécessaires avant ouverture ; localhost ne remplit pas ces conditions. Voir
+[deployment.md](deployment.md) pour les paramètres et la procédure Vercel.
+
 ## État de reprise et préparation de publication
 
 Le code a été comparé aux documents et vérifié à nouveau, sans considérer les
