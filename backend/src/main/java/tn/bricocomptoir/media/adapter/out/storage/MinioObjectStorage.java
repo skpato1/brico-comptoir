@@ -8,10 +8,12 @@ import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import io.minio.RemoveObjectArgs;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import tn.bricocomptoir.media.application.port.out.ObjectStorage;
 
 @Component
+@ConditionalOnProperty(name = "brico.media.provider", havingValue = "minio", matchIfMissing = true)
 public class MinioObjectStorage implements ObjectStorage {
     private final MinioClient client;
     private final String bucket;

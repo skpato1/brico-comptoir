@@ -1348,3 +1348,65 @@ pour V13 sans réduire la validation ni le contrôle de non-réexécution. Les
 7 tests `FoundationIT` sont ensuite exécutés sur PostgreSQL/Testcontainers réel
 et réussissent localement. Le correctif déclenchera une nouvelle CI complète ;
 elle n'est pas présentée comme réussie avant son résultat.
+
+## CI finale et tentative B2 — 29 septembre 2026
+
+Le correctif `d1ac31a` est poussé sur `origin/main`. La
+[CI 36590703796](https://github.com/skpato1/brico-comptoir/actions/runs/36590703796)
+réussit ses trois jobs : backend (44 tests unitaires/ArchUnit et 59 tests
+d'intégration, zéro échec/erreur/ignoré), frontend (52 tests Angular et cinq
+tests de routage Vercel, builds réussis), navigateur (quatre parcours réels
+réussis en 49,7 s). La restauration vérifie le nombre de commandes, une
+commande authentifiée figée, le démarrage Flyway et une image MinIO identique.
+Render confirme le commit `d1ac31a` Live ; Vercel signale son déploiement réussi.
+
+Après l'annonce d'activation du stockage par l'exploitant, le premier
+téléversement réel du PNG des gants retourne HTTP 500. Aucune répétition
+aveugle n'est effectuée. Une nouvelle lecture authentifiée confirme les quatre
+fiches en brouillon sans variante et zéro métadonnée d'image pour chacune ;
+la lecture publique des médias du pack reste vide. Le fichier n'est donc
+pas déclaré importé.
+
+La page Environment de Render, actualisée après cet échec, affiche toujours
+`MEDIA_ENDPOINT=https://A_REMPLACER_ENDPOINT_S3`. L'activation du compte B2
+ne suffit pas à relier l'application : l'exploitant doit renseigner dans Render
+le véritable endpoint S3, le bucket et les deux accès, puis déployer ces valeurs.
+Aucun accès n'est copié dans Git. L'import et la lecture des rendus JPEG
+de production restent à exécuter après cette configuration ; aucun succès B2
+ni aucune photographie de résultat réel ne sont annoncés.
+
+## Intégration Supabase Storage — 29 septembre 2026
+
+À la demande de l'exploitant, ajout d'un adaptateur S3 compatible avec le
+préfixe `/storage/v1/s3` de Supabase, via le port `ObjectStorage` existant.
+`MEDIA_PROVIDER=minio` conserve le local ; `s3` active AWS SDK Java 2.55.7
+avec `MEDIA_REGION`, adressage par chemin, Signature V4 et reprises bornées
+à deux tentatives/60 secondes par appel. Il exige un bucket précréé et ne
+modifie ni les autorisations applicatives ni les métadonnées PostgreSQL.
+Configuration et limites dans [supabase-storage.md](supabase-storage.md),
+avec accès S3 exclusivement côté serveur, bucket privé et sauvegarde objet
+distincte. Les clés S3 Supabase couvrent tous les buckets du projet et
+contournent les RLS : cette limite est explicite, un projet dédié est prévu.
+
+Vérifications réellement exécutées sur la copie native du backend sur D: :
+test ciblé `S3ObjectStorageTest` (trois tests réussis), puis `mvn -B -ntp verify`
+avec `MEDIA_PROVIDER=s3`, région `us-east-1` et `BRICO_LOCAL_MINIO_TEST=true` :
+BUILD SUCCESS, 54 tests unitaires/ArchUnit et 60 tests d'intégration, aucun
+échec, erreur ou test ignoré. Le test HTTP vérifie signature/région, préfixe
+Supabase, octets, type, absence de checksum/chunking AWS optionnels et reprises.
+Les tests réels PostgreSQL/MinIO vérifient les téléversements de produits et
+packs, les rendus JPEG, métadonnées, brouillons et permissions ; le nouvel
+adaptateur réalise aussi un aller-retour binaire avec le MinIO existant.
+L'arbre local inclut toujours les diagnostics de démarrage préexistants,
+hors du commit stockage. Les 13 migrations ne changent pas. Contrôles dépôt,
+publication/secrets/liens locaux et `git diff --check` réussis.
+
+État de provisionnement : le connecteur Supabase liste « skpato1's Org »
+avec deux autres projets actifs. Son devis de création est de 0 par mois ;
+le choix explicite de l'organisation et la confirmation du coût restent
+nécessaires avant création. Le tableau de bord est déconnecté ; l'exploitant
+a indiqué qu'il allait se connecter. Aucun projet, bucket ou accès Supabase
+n'est encore déclaré créé, et aucune valeur Render n'est remplacée par un
+secret fictif. L'import des quatre illustrations et la lecture réellement
+hébergée restent à terminer après provisionnement et déploiement. Les fiches
+restent en brouillon et l'avant/après du kit reste identifié comme simulé.

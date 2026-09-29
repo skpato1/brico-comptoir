@@ -16,6 +16,7 @@
   <properties>
     <java.version>21</java.version>
     <archunit.version>1.4.1</archunit.version>
+    <aws-sdk.version>2.55.7</aws-sdk.version>
   </properties>
   <dependencies>
     <dependency>
@@ -67,6 +68,20 @@
       <groupId>io.minio</groupId>
       <artifactId>minio</artifactId>
       <version>9.0.3</version>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>s3</artifactId>
+      <version>${aws-sdk.version}</version>
+      <exclusions>
+        <exclusion><groupId>software.amazon.awssdk</groupId><artifactId>apache-client</artifactId></exclusion>
+        <exclusion><groupId>software.amazon.awssdk</groupId><artifactId>netty-nio-client</artifactId></exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>url-connection-client</artifactId>
+      <version>${aws-sdk.version}</version>
     </dependency>
     <dependency>
       <groupId>com.squareup.okhttp3</groupId>

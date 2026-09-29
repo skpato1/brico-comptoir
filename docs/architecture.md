@@ -63,6 +63,10 @@ du socle décrit la santé ; les contrats identity sont dans `identity.md`. Le
 MinIO sert de stockage objet local privé au module `media`, via le port
 `ObjectStorage`. Les [photos de packs](pack-media.md) reprennent la validation
 et les rendus des produits, avec visibilité contrôlée par `PackPhotoQueries`.
+Le fournisseur peut être sélectionné avec `MEDIA_PROVIDER` : MinIO pour le
+local, adaptateur AWS S3 pour les endpoints avec préfixe de chemin, dont
+Supabase. Région, endpoint et accès restent dans l'infrastructure ; aucune
+métadonnée métier ni identité n'est déplacée. Voir [supabase-storage.md](supabase-storage.md).
 Mailpit sert de transport SMTP local au module `notifications`
 pour les commandes, leurs statuts et la récupération du mot de passe.
 MinIO est construit depuis la version officielle `RELEASE.2025-10-15T17-29-55Z`,

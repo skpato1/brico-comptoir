@@ -190,9 +190,17 @@ prestataire SMTP de production. Les photos originales sont privées, les dériv�
 réencodés ; l’exploitant doit vérifier les photos et métadonnées originales avant
 publication et gérer leur suppression avec les objets.
 
-Aucun hébergeur, région de données, fournisseur SMTP commercial, transporteur,
-outil de support ou sous-traitant de production n’est choisi. Renseigner pour
-chacun : société/contact, rôle, finalités, données transmises, pays de stockage et
+Le frontend public est hébergé sur Vercel et le backend/PostgreSQL sur Render.
+Supabase Storage est retenu pour les photos dans cette tranche ; le projet,
+sa région, les accès et le transfert réel doivent encore être confirmés dans
+[progress.md](progress.md). Il est destiné à recevoir les fichiers originaux et dérivés ainsi
+que ses métadonnées techniques, sans transfert des comptes ou commandes vers
+Supabase Auth/Data API. Aucune suppression du stockage antérieur n'est déduite
+du seul changement de configuration.
+
+Le fournisseur SMTP commercial, le transporteur et les outils de support ne
+sont pas validés par cette intégration. Renseigner pour chaque prestataire,
+y compris Vercel/Render/Supabase : société/contact, rôle, finalités, données transmises, pays de stockage et
 d’accès à distance, sous-traitants ultérieurs, durée, garanties contractuelles,
 sécurité, export/suppression et procédure d’incident. Le stockage interchangeable
 et le port `EmailProvider` facilitent un choix validé ; ils ne valident pas ce choix.

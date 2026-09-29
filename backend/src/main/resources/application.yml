@@ -58,6 +58,8 @@ brico:
     delivery-fee-tnd: ${CHECKOUT_DELIVERY_FEE_TND:}
     governorates: ${CHECKOUT_GOVERNORATES:}
   media:
+    provider: ${MEDIA_PROVIDER:minio}
+    region: ${MEDIA_REGION:us-east-1}
     endpoint: ${MEDIA_ENDPOINT}
     access-key: ${MEDIA_ACCESS_KEY}
     secret-key: ${MEDIA_SECRET_KEY}

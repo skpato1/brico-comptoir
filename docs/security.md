@@ -84,6 +84,12 @@ bucket privés. Les listes utilisent les dérivés. La route Nginx d'import phot
 autorise 26 Mio, sans augmenter les autres routes. Le CSV est analysé côté
 serveur, validé avant application et traité transactionnellement.
 
+Pour Supabase Storage, le bucket doit rester privé et les clés S3 doivent
+rester dans Render. Ces clés contournent les RLS et couvrent tous les buckets
+du projet : prévoir un projet dédié, sans clé dans Angular ni politique publique.
+Les API BricoComptoir continuent à vérifier rôle, propriété et publication des
+produits/packs. Voir [supabase-storage.md](supabase-storage.md).
+
 ## Données personnelles et secrets
 
 Consentement marketing explicite, distinct de la commande, jamais précoché.

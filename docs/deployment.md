@@ -104,7 +104,8 @@ jamais d'un fichier committé, d'un argument visible ou d'Angular.
 | `DB_URL` | JDBC PostgreSQL, base/région choisies ; TLS vérifié (`sslmode=verify-full`) et certificat de confiance |
 | `DB_USERNAME`, `DB_PASSWORD` | Rôle applicatif DML, sans superutilisateur ni droit de migration |
 | `DB_MIGRATION_USERNAME`, `DB_MIGRATION_PASSWORD` | Propriétaire du schéma et des migrations, secret séparé |
-| `MEDIA_ENDPOINT`, `MEDIA_ACCESS_KEY`, `MEDIA_SECRET_KEY`, `MEDIA_BUCKET` | Stockage S3 compatible privé, compte restreint au bucket |
+| `MEDIA_PROVIDER`, `MEDIA_REGION` | `minio` par défaut ; `s3` pour Supabase et ses endpoints avec chemin, région réelle du fournisseur |
+| `MEDIA_ENDPOINT`, `MEDIA_ACCESS_KEY`, `MEDIA_SECRET_KEY`, `MEDIA_BUCKET` | Stockage S3 compatible privé ; vérifier la portée des accès, les clés S3 Supabase couvrant tous les buckets du projet |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD` | Fournisseur SMTP choisi, accès et délivrabilité vérifiés |
 | `SMTP_AUTH`, `SMTP_STARTTLS`, `SMTP_STARTTLS_REQUIRED` | Activer authentification et TLS selon le fournisseur ; pas de Mailpit commercial |
 | `MAIL_FROM`, `APP_PUBLIC_URL` | Expéditeur validé, URL publique HTTPS utilisée dans les liens |
@@ -119,6 +120,10 @@ Les paramètres `POSTGRES_*`, `MINIO_ROOT_*` et les ports hôte du Compose
 initialisent uniquement l'environnement local. Les réglages de livraison
 enregistrés via ADMIN en base prennent priorité sur les variables ; vérifier
 les données persistées après une restauration.
+
+Le [guide Supabase Storage](supabase-storage.md) décrit le bucket privé,
+la paire S3 réservée au backend, le provisionnement, les sauvegardes objet
+et la distinction entre configuration préparée et transfert réellement vérifié.
 
 ## PostgreSQL et Flyway
 
