@@ -215,3 +215,10 @@ main {
     gap: 22px;
   }
 }
+
+/* The home hero spans the viewport; inner home sections retain their own gutters. */
+main:has(app-home) {
+  max-width: none;
+  padding-inline: 0;
+  padding-top: 0;
+}

@@ -1,67 +1,42 @@
 @if (contentError()) {
-  <p role="alert">
+  <p class="state-box" role="alert">
     Les contenus d’accueil sont momentanément indisponibles.
     <button class="secondary" (click)="loadContent()">Réessayer</button>
   </p>
 }
 @if (content(); as copy) {
-  <section class="hero">
-    <div class="hero-copy">
-      <p class="eyebrow">UN PROJET EN TÊTE ?</p>
-      <h1>
-        {{ copy.title }}<br /><em>{{ copy.accent }}</em>
-      </h1>
-      <p>
-        {{ copy.description }}
-      </p>
-      <div class="actions">
-        <a class="button" routerLink="/solutions"
-          >Trouver ma solution <span aria-hidden="true">→</span></a
-        ><a class="text-link" routerLink="/catalogue">Explorer les produits ↗</a>
-      </div>
-      <div class="hero-note">
-        <span aria-hidden="true">✓</span> Paiement à la livraison <span class="dot">·</span> Prix en
-        dinars tunisiens
-      </div>
-    </div>
-    <div class="hero-art" aria-hidden="true">
-      <div class="art-grid"></div>
-      <span class="art-label">LE PLAISIR DE FAIRE SOI-MÊME</span>
-      <div class="box box-back"><span>01</span></div>
-      <div class="box box-front">
-        <div class="tape"></div>
-        <strong>brico<br />comptoir<span>+</span></strong
-        ><small>VOTRE PROCHAIN PROJET<br />COMMENCE ICI.</small>
-      </div>
-      <span class="art-plus">+</span>
-      <div class="art-caption">Une idée. Les bonnes pièces.</div>
-    </div>
-  </section>
+  <app-hero-carousel />
   <section aria-labelledby="start-title">
     <div class="section-heading">
       <div>
         <p class="eyebrow">ON COMMENCE PAR OÙ ?</p>
-        <h2 id="start-title">Deux façons de trouver votre bonheur.</h2>
+        <h2 id="start-title">{{ copy.title }} {{ copy.accent }}</h2>
+        <p class="muted">{{ copy.description }}</p>
       </div>
     </div>
     <div class="pathways">
       <a routerLink="/solutions"
         ><span class="path-number">01 / LES PACKS</span>
-        <h3>{{ copy.solutionTitle }} <span>↗</span></h3>
+        <h3>{{ copy.solutionTitle }} <span aria-hidden="true">↗</span></h3>
         <p>
           {{ copy.solutionDescription }}
-        </p></a
+        </p>
+        <span class="path-action">Découvrir les packs <span aria-hidden="true">→</span></span></a
       ><a routerLink="/catalogue"
         ><span class="path-number">02 / LE CATALOGUE</span>
-        <h3>{{ copy.productTitle }} <span>↗</span></h3>
+        <h3>{{ copy.productTitle }} <span aria-hidden="true">↗</span></h3>
         <p>
           {{ copy.productDescription }}
-        </p></a
+        </p>
+        <span class="path-action">Parcourir le catalogue <span aria-hidden="true">→</span></span></a
       >
     </div>
   </section>
 } @else if (!contentError()) {
-  <p role="status">Chargement de l’accueil…</p>
+  <div class="hero-loading" role="status">
+    <p>Chargement de l’accueil…</p>
+    <div class="loading-lines" aria-hidden="true"><span></span><span></span><span></span></div>
+  </div>
 }
 <section aria-labelledby="discover-title">
   <div class="section-heading">
@@ -69,7 +44,9 @@
       <p class="eyebrow">LE COMPTOIR</p>
       <h2 id="discover-title">À découvrir dans le catalogue.</h2>
     </div>
-    <a routerLink="/catalogue">Tout voir →</a>
+    <a class="text-link" routerLink="/catalogue"
+      >Tout voir <span class="sr-only">dans le catalogue</span><span aria-hidden="true">→</span></a
+    >
   </div>
   @if (loading()) {
     <p class="state-box" role="status">Chargement des articles…</p>
@@ -95,9 +72,9 @@
     </div>
   }
 </section>
-<section class="how">
+<section class="how" aria-labelledby="how-title">
   <p class="eyebrow">SIMPLE, DU DÉBUT À LA FIN</p>
-  <h2>Votre projet, en trois étapes.</h2>
+  <h2 id="how-title">Votre projet, en trois étapes.</h2>
   <div>
     <article>
       <span>1</span>

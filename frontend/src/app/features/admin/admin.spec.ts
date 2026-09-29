@@ -168,8 +168,8 @@ describe('Administration réelle', () => {
       .expectOne((r) => r.url === '/api/v1/products')
       .flush({ items: [], page: 0, size: 4, totalElements: 0 });
     f.detectChanges();
-    expect(f.nativeElement.querySelector('h1').textContent).toContain('<b>Texte</b>');
-    expect(f.nativeElement.querySelector('h1 b')).toBeNull();
+    expect(f.nativeElement.querySelector('#start-title').textContent).toContain('<b>Texte</b>');
+    expect(f.nativeElement.querySelector('#start-title b')).toBeNull();
   });
   it('uploads selected photos with CSRF and displays a denied operation without replacing metadata', () => {
     const f = TestBed.createComponent(CatalogComponent);

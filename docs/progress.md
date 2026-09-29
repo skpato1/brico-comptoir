@@ -1135,3 +1135,131 @@ en attente de compilation et de tests d'intégration**.
 Pour chaque étape : date, périmètre terminé, fichiers/contrats modifiés,
 vérifications réellement exécutées et résultats, limites ou blocages, puis
 prochaine étape. Cocher uniquement ce qui satisfait les critères de la roadmap.
+
+## Accueil et hero — 29 septembre 2026
+
+Lecture des styles existants et application de `angular-ui-ux-skill.md` local.
+Hiérarchie du hero renforcée, actions et cartes packs/catalogue clarifiées,
+espacements et grille responsive ajustés, état de chargement visuel et titres
+sémantiques ajoutés. Rouge `--red`, neutres, typographie, focus global et
+illustration des cartons conservés. Illustration décorative isolée dans
+`HomeArt` (HTML/SCSS encapsulés), sans données ni interactions ; `HomePage`
+conserve les signals, contrats et chargements API existants. Aucun changement
+d'architecture métier, de style global ou de dépendance déclarée.
+
+Vérifications : build Angular de production réussi sans dépassement des budgets
+après extraction du composant ; 44 tests Angular passent dans 10 fichiers.
+Dépendances locales réutilisées via une jonction vers le répertoire existant
+sur D: ; lockfiles identiques, aucune nouvelle installation. Les refus de lecture
+Windows du premier essai ont nécessité une exécution hors bac à sable.
+Chromium : largeurs 320/390/768/1440 px sans débordement horizontal, navigation
+vers les solutions au clavier, focus visible, erreur d'accueil et réessai validés,
+aucune erreur JavaScript observée. Captures bureau/mobile relues ; hauteur de
+l'illustration mobile ajustée pour séparer les cartons de leur légende.
+
+Limite : API locale inaccessible pendant cette session. Les vérifications
+visuelles utilisent exclusivement des réponses interceptées dans le navigateur
+de test (textes initiaux de V9, catalogue vide), sans modifier l'application ou
+la base. Elles ne valident pas le parcours connecté au backend. Aucun test
+backend requis par ces modifications de présentation, aucun déploiement effectué.
+
+## Activation locale du nouvel accueil — 29 septembre 2026
+
+Après autorisation, redémarrage de Docker Desktop et fermeture complète de son
+WSL bloqué. Le moteur 29.6.1 répond de nouveau ; les cinq services existants
+BricoComptoir sont sains. Aucune suppression de volume ou réinitialisation
+manuelle du stockage. Backend relancé avec son image existante ; frontend
+reconstruit depuis les sources modifiées puis recréé seul sur localhost:4200.
+
+Vérifications : build Docker Angular réussi, neuf contrôles HTTP de
+`node scripts/check-local.mjs` réussis après activation, cinq conteneurs healthy.
+Chromium sans interception réseau confirme `app-home-art`, le titre réel du
+hero et deux cartes produits provenant du catalogue local. La limite API
+indisponible de la vérification visuelle précédente est levée pour cet accueil.
+Ce redémarrage ne constitue pas une validation des modifications backend non
+reconstruites. Aucun déploiement distant effectué.
+
+## Hero photographique et carrousel — 29 septembre 2026
+
+Application du skill UI UX Pro Max demandé, lu depuis son dépôt officiel
+(`nextlevelbuilder/ui-ux-pro-max-skill`) dans `.local/` : recherches ciblées
+réduction des animations et signals Angular. La version locale annoncée n’a
+pas été trouvée dans les dossiers de skills examinés. La charte existante et
+Angular 21 sont conservés ; aucune dépendance ajoutée.
+
+`HeroCarousel` remplace l’illustration CSS statique. Trois ambiances : outils,
+quincaillerie, kits/packs. Message principal et CTA restent fixes ; défilement
+à 6,5 secondes, transition de 450 ms, sélection directe, précédent/suivant,
+pause/reprise, geste horizontal et flèches clavier. Pause temporaire au survol,
+arrêt sur focus et navigation manuelle ; pas de rotation avec animations
+réduites ou onglet masqué. Nettoyage du timer et des écouteurs à la destruction.
+Les diapositives inactives sont `inert` et masquées aux lecteurs d’écran ;
+annonces actives seulement hors rotation. Repli textuel si une image échoue.
+
+Trois images générées avec l’outil imagegen intégré, six fichiers WebP
+responsives dans `frontend/public/images/hero/` (47 à 255 ko par fichier).
+Mention visible de leur nature illustrative/IA ; aucun pack commercial,
+prix ou stock inventé. Prompts exacts et provenance : [hero-images.md](hero-images.md).
+Les textes principaux de l’accueil et les produits restent issus des API.
+Aucun changement d’architecture métier ou de contrat serveur.
+
+Vérifications exécutées : build Angular natif et Docker réussis, budgets
+respectés ; 49 tests passent dans 11 fichiers, dont cinq tests du carrousel
+(timer/nettoyage, focus/clavier, réduction du mouvement, onglet masqué/swipe,
+erreur image). Chromium avec API locale réelle : 320/390/768/1024/1440 px sans
+débordement, images décodées, navigation clavier et lien packs, réduction du
+mouvement et absence d’erreur JavaScript. Captures relues sur mobile et bureau.
+Les premières assertions navigateur ont nécessité d’attendre le décodage et
+le rendu Angular ; aucune panne applicative déduite de ces attentes prématurées.
+Pas de test backend relancé pour cette modification de présentation.
+
+Activation finale : image frontend reconstruite et conteneur seul recréé sur
+localhost:4200, neuf contrôles HTTP réussis. Chromium sur 4200 confirme le
+chargement des photos, le passage automatique à la deuxième diapositive,
+la pause et la sélection directe. `git diff --check` réussi. Aucun déploiement distant.
+
+## Hero pleine largeur — 29 septembre 2026
+
+Refonte selon la capture fournie : photo en fond sur toute la largeur réelle,
+texte blanc superposé avec voile de contraste, CTA rouge et lien vers tous les
+packs. Première diapositive consacrée aux kits ; les deux suivantes orientent
+vers quincaillerie et outils. Aucun assortiment commercial inventé. Fondu
+600 ms, entrée du texte et très léger zoom photo ; réduction du mouvement,
+pause, clavier, swipe et éléments inactifs inertes conservés.
+
+Le conteneur principal enlève ses limites uniquement en présence d’`app-home`
+avec un sélecteur local dans `app.scss`. Les autres sections d’accueil gardent
+une largeur maximale et leurs marges responsives. Les textes administrables
+(title/accent/description) sont maintenant dans l’introduction sous le hero ;
+le test d’échappement HTML vise cet emplacement, conservant sa vérification.
+Les contrats API et l’architecture métier ne changent pas.
+
+Vérifications : build Angular réussi, 49 tests réussis après adaptation du
+sélecteur de titre éditorial. Chromium mesure x=0 et largeur=viewport pour le
+hero à 320/390/768/1440/1920 px, sans débordement horizontal. Captures mobile
+et bureau relues ; navigation suivante et préférence de mouvement réduit
+vérifiées. Images existantes réutilisées, mention illustrative conservée.
+
+Activation : build Docker final sans dépassement CSS après suppression de
+règles redondantes ; frontend recréé seul, neuf contrôles HTTP réussis.
+Chromium sur localhost:4200 confirme la largeur complète et le lien vers
+`/packs`. `git diff --check` passé ; aucun déploiement distant.
+
+## Publication du hero sur GitHub / Vercel — 29 septembre 2026
+
+Périmètre du commit : frontend, images du hero et documentation associée.
+Les modifications préexistantes de configuration/démarrage du backend et
+leurs documents restent locales, hors de cette publication de l’interface.
+
+Validation avant commit : 49 tests Angular réussis à l’étape précédente ;
+`node scripts/build-vercel.mjs` réussi sur les sources finales, budgets respectés,
+artefact Build Output API v3 et images produits ; cinq tests
+`vercel-output.test.mjs` réussis. Contrôles dépôt, publication/secrets/liens et
+`git diff --check` réussis. Le build ne présente pas de défaut reproduit ;
+la configuration Vercel existante est conservée.
+
+Le connecteur Vercel ne donne pas accès au projet BricoComptoir (403) ;
+le projet existant est relié à `origin/main`, comme confirmé lors du précédent
+déploiement. Le domaine public sert Angular en HTTP 200, mais la requête de
+santé API expire après 15 secondes. Ce problème distant n’est pas assimilé à
+un échec de compilation. Le backend public et ses dépendances restent à vérifier.

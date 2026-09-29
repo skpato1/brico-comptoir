@@ -2,11 +2,12 @@ import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CatalogApi, Product, ProductImage } from '../../core/catalog-api';
+import { HeroCarousel } from './hero-carousel';
 import { OfferCard } from '../../shared/offer-card';
 import { AdminApi, HomeContent } from '../../core/admin-api';
 @Component({
   selector: 'app-home',
-  imports: [RouterLink, OfferCard],
+  imports: [RouterLink, OfferCard, HeroCarousel],
   templateUrl: './home.html',
   styleUrl: './home.scss',
 })

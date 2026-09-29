@@ -1,0 +1,115 @@
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
+import { RouterLink } from '@angular/router';
+
+@Component({
+  selector: 'app-hero-carousel',
+  imports: [RouterLink],
+  templateUrl: './hero-carousel.html',
+  styleUrl: './hero-carousel.scss',
+})
+export class HeroCarousel implements OnInit {
+  private readonly document = inject(DOCUMENT);
+  private readonly destroy = inject(DestroyRef);
+  readonly slides = [
+    {
+      image: 'kits',
+      label: 'Kits & packs',
+      title: 'Le bon kit.\nLe début de votre projet.',
+      description:
+        'Découvrez les packs publiés, comparez leur contenu et choisissez la composition adaptée à votre besoin.',
+      alt: 'Illustration : boîte de projet avec outils et sachets de fixations.',
+      link: '/solutions',
+      action: 'Découvrir les kits',
+      detail: 'Compositions détaillées · Variantes à comparer',
+    },
+    {
+      image: 'hardware',
+      label: 'Fixations & quincaillerie',
+      title: 'Chaque pièce\na son importance.',
+      description:
+        'Vis, chevilles, accessoires : consultez les références du catalogue pour compléter votre sélection.',
+      alt: 'Illustration : vis, chevilles, rondelles et équerres sur un établi.',
+      link: '/catalogue',
+      action: 'Explorer la quincaillerie',
+      detail: 'Références et caractéristiques dans chaque fiche',
+    },
+    {
+      image: 'tools',
+      label: 'Outils & équipement',
+      title: 'À vous de faire.\nÀ nous d’équiper.',
+      description:
+        'Un article à l’unité ou un pack : partez de votre projet et retrouvez les produits publiés au comptoir.',
+      alt: 'Illustration : perceuse, marteau, pince et tournevis sur un établi.',
+      link: '/catalogue',
+      action: 'Voir les produits',
+      detail: 'À l’unité ou en pack · Prix en dinars tunisiens',
+    },
+  ];
+  readonly active = signal(0);
+  readonly paused = signal(false);
+  readonly hovered = signal(false);
+  readonly reducedMotion = signal(false);
+  readonly hidden = signal(false);
+  readonly failedImages = signal<ReadonlySet<number>>(new Set());
+  readonly rotating = computed(
+    () => !this.paused() && !this.hovered() && !this.reducedMotion() && !this.hidden(),
+  );
+  private pointerStart?: { x: number; y: number };
+
+  ngOnInit(): void {
+    const view = this.document.defaultView;
+    if (!view || typeof view.matchMedia !== 'function') return;
+    const media = view.matchMedia('(prefers-reduced-motion: reduce)');
+    const syncMotion = () => this.reducedMotion.set(media.matches);
+    const syncVisibility = () => this.hidden.set(this.document.hidden);
+    syncMotion();
+    syncVisibility();
+    media.addEventListener('change', syncMotion);
+    this.document.addEventListener('visibilitychange', syncVisibility);
+    const timer = view.setInterval(() => {
+      if (this.rotating()) this.active.update((index) => (index + 1) % this.slides.length);
+    }, 6500);
+    this.destroy.onDestroy(() => {
+      view.clearInterval(timer);
+      media.removeEventListener('change', syncMotion);
+      this.document.removeEventListener('visibilitychange', syncVisibility);
+    });
+  }
+
+  select(index: number): void {
+    this.paused.set(true);
+    this.active.set((index + this.slides.length) % this.slides.length);
+  }
+  toggleRotation(): void {
+    this.paused.update((value) => !value);
+  }
+  onFocus(event: FocusEvent): void {
+    // The rotation button must keep its action stable between focus and click.
+    if (!(event.target as HTMLElement).closest('[data-rotation]')) this.paused.set(true);
+  }
+  onKey(event: KeyboardEvent): void {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+    event.preventDefault();
+    this.select(this.active() + (event.key === 'ArrowRight' ? 1 : -1));
+  }
+  pointerDown(event: PointerEvent): void {
+    if (event.pointerType === 'mouse') return;
+    this.pointerStart = { x: event.clientX, y: event.clientY };
+  }
+  pointerUp(event: PointerEvent): void {
+    const start = this.pointerStart;
+    this.pointerStart = undefined;
+    if (!start) return;
+    const dx = event.clientX - start.x;
+    const dy = event.clientY - start.y;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5)
+      this.select(this.active() + (dx < 0 ? 1 : -1));
+  }
+  cancelPointer(): void {
+    this.pointerStart = undefined;
+  }
+  imageFailed(index: number): void {
+    this.failedImages.update((failed) => new Set([...failed, index]));
+  }
+}

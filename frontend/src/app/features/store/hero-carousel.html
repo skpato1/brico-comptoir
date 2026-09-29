@@ -1,0 +1,123 @@
+<section
+  class="carousel"
+  aria-roledescription="carrousel"
+  aria-label="Kits, quincaillerie et outils pour vos projets"
+  (mouseenter)="hovered.set(true)"
+  (mouseleave)="hovered.set(false)"
+  (focusin)="onFocus($event)"
+  (keydown)="onKey($event)"
+  (pointerdown)="pointerDown($event)"
+  (pointerup)="pointerUp($event)"
+  (pointercancel)="cancelPointer()"
+>
+  <div class="slides" [attr.aria-live]="rotating() ? 'off' : 'polite'" aria-atomic="false">
+    @for (slide of slides; track slide.image; let i = $index) {
+      <article
+        class="slide"
+        [class.active]="active() === i"
+        [attr.aria-hidden]="active() !== i"
+        [attr.inert]="active() !== i ? '' : null"
+        role="group"
+        aria-roledescription="diapositive"
+        [attr.aria-label]="i + 1 + ' sur 3 : ' + slide.label"
+      >
+        <div class="photo">
+          @if (!failedImages().has(i)) {
+            <img
+              [src]="'/images/hero/' + slide.image + '-1440.webp'"
+              [srcset]="
+                '/images/hero/' +
+                slide.image +
+                '-720.webp 720w, /images/hero/' +
+                slide.image +
+                '-1440.webp 1440w'
+              "
+              sizes="100vw"
+              width="1440"
+              height="960"
+              [alt]="slide.alt"
+              [attr.fetchpriority]="i === 0 ? 'high' : 'low'"
+              decoding="async"
+              draggable="false"
+              (error)="imageFailed(i)"
+            />
+          }
+        </div>
+        <div class="caption">
+          <p class="eyebrow">{{ slide.label }}</p>
+          <h1>{{ slide.title }}</h1>
+          <p class="description">{{ slide.description }}</p>
+          <div class="hero-actions">
+            <a class="button" [routerLink]="slide.link"
+              >{{ slide.action }}
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg
+            ></a>
+            @if (i === 0) {
+              <a class="secondary-link" routerLink="/packs">Voir tous les packs</a>
+            }
+          </div>
+          <p class="detail">{{ slide.detail }}</p>
+          @if (failedImages().has(i)) {
+            <p class="image-fallback">Visuel momentanément indisponible</p>
+          }
+        </div>
+      </article>
+    }
+  </div>
+  <button
+    class="arrow previous"
+    type="button"
+    aria-label="Diapositive précédente"
+    (click)="select(active() - 1)"
+  >
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6" /></svg>
+  </button>
+  <button
+    class="arrow next"
+    type="button"
+    aria-label="Diapositive suivante"
+    (click)="select(active() + 1)"
+  >
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6" /></svg>
+  </button>
+  <div class="controls">
+    <div class="selectors" role="group" aria-label="Choisir une ambiance">
+      @for (slide of slides; track slide.image; let i = $index) {
+        <button
+          type="button"
+          [class.selected]="active() === i"
+          [attr.aria-pressed]="active() === i"
+          (click)="select(i)"
+        >
+          <span class="index" aria-hidden="true">0{{ i + 1 }}</span
+          ><span>{{ slide.label }}</span>
+        </button>
+      }
+    </div>
+    <button
+      class="rotation"
+      type="button"
+      data-rotation
+      [disabled]="reducedMotion()"
+      [attr.aria-label]="
+        reducedMotion()
+          ? 'Défilement désactivé : animations réduites'
+          : paused()
+            ? 'Reprendre le défilement'
+            : 'Mettre le défilement en pause'
+      "
+      (click)="toggleRotation()"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        @if (paused() || reducedMotion()) {
+          <path d="m9 5 10 7-10 7Z" />
+        } @else {
+          <path d="M9 5v14M15 5v14" />
+        }
+      </svg>
+    </button>
+  </div>
+</section>
+<p class="image-note">
+  Visuels d’ambiance générés par IA · consultez les fiches pour le contenu exact des packs.
+</p>
