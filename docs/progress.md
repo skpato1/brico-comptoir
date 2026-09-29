@@ -1263,3 +1263,23 @@ le projet existant est relié à `origin/main`, comme confirmé lors du précéd
 déploiement. Le domaine public sert Angular en HTTP 200, mais la requête de
 santé API expire après 15 secondes. Ce problème distant n’est pas assimilé à
 un échec de compilation. Le backend public et ses dépendances restent à vérifier.
+
+## Correction du test panier en CI — 29 septembre 2026
+
+Le run GitHub Actions `36504925414` réussissait les jobs backend et frontend,
+mais échouait dans le parcours mobile connecté : une seule ligne de panier
+était retrouvée après un rechargement immédiat suivant l'ajout du produit.
+Le test déclenchait `page.goto` pendant l'enregistrement asynchrone (CSRF puis
+PUT), susceptible d'être interrompu par la navigation complète.
+
+Le parcours attend désormais la réponse réelle PUT `/api/v1/cart`, exige
+HTTP 200 et deux lignes enregistrées avant de recharger. Les assertions de
+persistance après rechargement, commande, stock et expédition sont conservées.
+Aucun délai arbitraire, retry supplémentaire ou API simulée n'est ajouté.
+
+Validation locale : quatre tests Playwright réussis en 59,5 secondes sur
+Compose E2E isolé ; syntaxe JavaScript, contrôles dépôt et publication,
+relecture du diff et `git diff --check` réussis. Cette exécution locale utilise
+le backend de l'arbre de travail, qui contient des modifications préexistantes
+non incluses dans ce correctif. Le pipeline distant vérifiera le commit seul.
+Aucun changement d'architecture ni de code applicatif dans ce correctif.

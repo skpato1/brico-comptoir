@@ -46,7 +46,16 @@ for (const connected of [false, true]) {
       expect(mediaRequests.filter(url => /\/media\/[0-9a-f-]+\//.test(url)).every(url => /\/(card|detail)$/.test(url))).toBe(true);
       expect((await page.request.get(`/api/v1/media/${data.image.id}/original`)).status()).toBeGreaterThanOrEqual(400);
       expect((await page.request.get('http://localhost:19000/bricocomptoir-media')).status()).toBe(403);
-      if (connected) await page.getByRole('button', { name: 'Ajouter au panier' }).click();
+      if (connected) {
+        // A full-page navigation cancels pending requests, including the CSRF
+        // lookup before PUT. Wait for the real persisted cart before reloading.
+        const savedCart = page.waitForResponse(response =>
+          new URL(response.url()).pathname === '/api/v1/cart' && response.request().method() === 'PUT');
+        await page.getByRole('button', { name: 'Ajouter au panier' }).click();
+        const response = await savedCart;
+        expect(response.status()).toBe(200);
+        expect((await response.json()).items).toHaveLength(2);
+      }
       await page.goto('/panier');
       await expect(page.locator('app-cart .items > li')).toHaveCount(connected ? 2 : 1);
       const order = await checkout(page, connected ? null : email, connected ? '20.000' : '15.000');
