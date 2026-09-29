@@ -71,3 +71,7 @@ après le jeu catalogue fictif. Aucune donnée de démonstration n'est injectée
 dans une migration de production. Une fiche `demo=true` ne peut pas être
 publiée par la route d'administration ordinaire ; une offre réelle devra être
 créée avec des données commerciales validées.
+
+Les [photos de packs](pack-media.md) sont détenues par `media`, avec ses
+contrôles de fichiers, rendus privés/publics et visibilité via le contrat
+`PackPhotoQueries`. La composition et les prix ne sont pas modifiés par une photo.

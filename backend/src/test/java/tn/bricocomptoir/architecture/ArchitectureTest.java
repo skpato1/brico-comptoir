@@ -19,7 +19,7 @@ class ArchitectureTest {
     private static final List<String> MODULES = List.of("identity", "catalog", "media", "inventory", "packs", "sales", "content", "notifications", "privacy");
     private static final Map<String, Set<String>> ALLOWED = Map.of(
             "privacy",Set.of("identity","sales","notifications"),
-            "identity", Set.of("notifications"), "notifications",Set.of(), "catalog", Set.of(), "content", Set.of(), "media", Set.of("catalog"),
+            "identity", Set.of("notifications"), "notifications",Set.of(), "catalog", Set.of(), "content", Set.of(), "media", Set.of("catalog", "packs"),
             "inventory", Set.of("catalog"), "packs", Set.of("catalog", "inventory"),
             "sales", Set.of("catalog", "inventory", "packs", "identity", "notifications"));
     private final JavaClasses production = new ClassFileImporter()

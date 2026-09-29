@@ -117,6 +117,70 @@
           <p>Aucun pack trouvé.</p>
         }
       }
+      @if (packId) {
+        <section class="pack-photos" aria-labelledby="pack-photos-title">
+          <h4 id="pack-photos-title">Photos de {{ packForm.name }}</h4>
+          <p>
+            1 à 4 JPEG ou PNG par envoi, 6 Mio par photo, 320 à 6000 pixels, 24 MP maximum. Les
+            brouillons restent privés.
+          </p>
+          <label
+            >Ajouter des photos
+            <input
+              type="file"
+              accept="image/jpeg,image/png"
+              multiple
+              (change)="uploadImages($event)"
+              [disabled]="busy() || imagesLoading()"
+            />
+          </label>
+          @if (imagesLoading()) {
+            <p role="status">Chargement des photos…</p>
+          }
+          <div class="photo-list">
+            @for (image of images(); track image.id; let index = $index) {
+              <article>
+                <app-product-photo
+                  [image]="image"
+                  [alt]="packForm.name + ' — photo ' + (index + 1)"
+                />
+                <p>Photo {{ index + 1 }}{{ image.primary ? ' · Image principale' : '' }}</p>
+                <div class="actions">
+                  <button
+                    type="button"
+                    class="secondary"
+                    (click)="moveImage(index, -1)"
+                    [disabled]="busy() || index === 0"
+                    [attr.aria-label]="'Avancer la photo ' + (index + 1)"
+                  >
+                    ←
+                  </button>
+                  <button
+                    type="button"
+                    class="secondary"
+                    (click)="moveImage(index, 1)"
+                    [disabled]="busy() || index === images().length - 1"
+                    [attr.aria-label]="'Reculer la photo ' + (index + 1)"
+                  >
+                    →
+                  </button>
+                  <button
+                    type="button"
+                    class="secondary"
+                    (click)="mainImage(image.id)"
+                    [disabled]="busy() || image.primary"
+                  >
+                    Image principale
+                  </button>
+                </div>
+              </article>
+            }
+          </div>
+          @if (!imagesLoading() && !images().length) {
+            <p>Aucune photo enregistrée pour ce pack.</p>
+          }
+        </section>
+      }
       <div class="admin-grid">
         <form #packEditor="ngForm" (ngSubmit)="valid(packEditor) && savePack()">
           <h4>{{ packId ? 'Modifier le pack' : 'Créer un pack' }}</h4>

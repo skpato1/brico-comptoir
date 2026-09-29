@@ -3,20 +3,27 @@ package tn.bricocomptoir.packs.adapter.transaction;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import tn.bricocomptoir.packs.application.port.in.PackOfferQueries;
+import tn.bricocomptoir.packs.application.port.in.PackPhotoQueries;
 import tn.bricocomptoir.packs.application.service.PackService;
 import tn.bricocomptoir.packs.domain.PackModels.*;
 
 @Primary
 @Service
-public class PackTransactions implements PackOfferQueries {
+public class PackTransactions implements PackOfferQueries, PackPhotoQueries {
     private final PackService service;
     public PackTransactions(PackService service) { this.service = service; }
+
+    @Override @Transactional(readOnly = true)
+    public boolean exists(UUID id) { return service.exists(id); }
+    @Override @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
+    public Set<UUID> visibleIds(List<UUID> ids) { return service.visibleIds(ids); }
 
     @Transactional(readOnly = true) public List<Pack> packs(boolean admin) { return service.packs(admin); }
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)

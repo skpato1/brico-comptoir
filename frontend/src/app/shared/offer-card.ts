@@ -1,7 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Product, ProductImage } from '../core/catalog-api';
-import { Pack } from '../core/packs-api';
+import { Pack, PackImage } from '../core/packs-api';
 import { ProductPhoto } from './product-photo';
 export function minimumPrice(offer: Product | Pack): string {
   return offer.variants.reduce(
@@ -20,7 +20,7 @@ export function minimumPrice(offer: Product | Pack): string {
       [routerLink]="[pack ? '/packs' : '/produits', offer.id]"
       [attr.aria-label]="'Voir ' + offer.name"
     >
-      @if (pack) {
+      @if (pack && !image) {
         <div class="pack-art" aria-hidden="true">
           <span>PACK</span><strong>+</strong><small>Un projet, plusieurs articles.</small>
         </div>
@@ -154,7 +154,7 @@ export function minimumPrice(offer: Product | Pack): string {
 export class OfferCard {
   @Input({ required: true }) offer!: Product | Pack;
   @Input() pack = false;
-  @Input() image?: ProductImage;
+  @Input() image?: ProductImage | PackImage;
   @Input() description = '';
   price(): string {
     return minimumPrice(this.offer);

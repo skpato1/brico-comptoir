@@ -7,8 +7,10 @@ import { Observable } from 'rxjs';
 import { CatalogApi, Product, ProductFilters, Page } from '../../core/catalog-api';
 import { Account } from '../../core/identity-api';
 import { CartState } from '../../core/cart-state';
+import { ProductPhoto } from '../../shared/product-photo';
 import {
   Pack,
+  PackImage,
   PackComponentLine,
   PackInput,
   PacksApi,
@@ -18,7 +20,7 @@ import {
 
 @Component({
   selector: 'app-packs',
-  imports: [FormsModule, AdminPager],
+  imports: [FormsModule, AdminPager, ProductPhoto],
   templateUrl: './packs.html',
   styleUrl: './packs.scss',
 })
@@ -44,6 +46,9 @@ export class PacksComponent implements OnInit {
   readonly adminMessage = signal('');
   readonly adminOpen = signal(false);
   readonly busy = signal(false);
+  readonly images = signal<PackImage[]>([]);
+  readonly imagesLoading = signal(false);
+  private imageGeneration = 0;
   packId = '';
   demo = false;
   packForm: PackInput = { code: '', name: '', slogan: '', guide: '', status: 'DRAFT' };
@@ -108,6 +113,7 @@ export class PacksComponent implements OnInit {
       });
   }
   editPack(pack: Pack): void {
+    if (this.busy()) return;
     this.packId = pack.id;
     this.demo = pack.demo;
     this.componentNames = { ...pack.componentNames };
@@ -120,14 +126,20 @@ export class PacksComponent implements OnInit {
       version: pack.version,
     };
     this.resetVariant();
+    this.loadImages(pack.id);
   }
   resetPack(): void {
+    if (this.busy()) return;
+    this.imageGeneration++;
+    this.images.set([]);
+    this.imagesLoading.set(false);
     this.packId = '';
     this.demo = false;
     this.packForm = { code: '', name: '', slogan: '', guide: '', status: 'DRAFT' };
     this.resetVariant();
   }
   editVariant(pack: Pack, variant: PackVariant): void {
+    if (this.busy()) return;
     this.editPack(pack);
     this.variantId = variant.id;
     this.variantForm = {
@@ -142,6 +154,84 @@ export class PacksComponent implements OnInit {
   resetVariant(): void {
     this.variantId = '';
     this.variantForm = { code: '', label: '', priceTnd: '', status: 'DRAFT', components: [] };
+  }
+  private loadImages(id: string): void {
+    const generation = ++this.imageGeneration;
+    this.images.set([]);
+    this.imagesLoading.set(true);
+    this.api
+      .adminImages(id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (images) => {
+          if (generation !== this.imageGeneration || id !== this.packId) return;
+          this.images.set(images);
+          this.imagesLoading.set(false);
+        },
+        error: (e) => {
+          if (generation !== this.imageGeneration || id !== this.packId) return;
+          this.imagesLoading.set(false);
+          this.adminMessage.set(adminError(e, 'Les photos du pack sont indisponibles.'));
+        },
+      });
+  }
+  uploadImages(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []);
+    input.value = '';
+    if (!this.canManage || !this.packId || this.busy() || this.imagesLoading() || !files.length)
+      return;
+    if (files.length > 4 || files.some((file) => file.size > 6 * 1024 * 1024)) {
+      this.adminMessage.set('Choisissez 1 à 4 photos, de 6 Mio maximum chacune.');
+      return;
+    }
+    this.saveImages(this.api.uploadImages(this.packId, files));
+  }
+  moveImage(index: number, offset: number): void {
+    const images = [...this.images()];
+    const next = index + offset;
+    if (next < 0 || next >= images.length || this.busy()) return;
+    [images[index], images[next]] = [images[next], images[index]];
+    const primary = images.find((image) => image.primary);
+    if (primary)
+      this.saveImages(
+        this.api.orderImages(
+          this.packId,
+          images.map((image) => image.id),
+          primary.id,
+        ),
+      );
+  }
+  mainImage(id: string): void {
+    if (!this.images().some((image) => image.id === id)) return;
+    this.saveImages(
+      this.api.orderImages(
+        this.packId,
+        this.images().map((image) => image.id),
+        id,
+      ),
+    );
+  }
+  private saveImages(operation: Observable<PackImage[]>): void {
+    if (!this.canManage || !this.packId || this.busy() || this.imagesLoading()) return;
+    const id = this.packId;
+    this.busy.set(true);
+    this.adminMessage.set('');
+    operation.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (images) => {
+        this.busy.set(false);
+        if (id !== this.packId) return;
+        this.images.set(images);
+        this.adminMessage.set('Photos enregistrées.');
+      },
+      error: (e) => {
+        this.busy.set(false);
+        if (id === this.packId)
+          this.adminMessage.set(
+            adminError(e, 'Téléversement refusé. Vérifiez les fichiers et le stockage d’images.'),
+          );
+      },
+    });
   }
   searchSkus(page = 0): void {
     this.skuPage = page;

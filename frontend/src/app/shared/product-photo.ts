@@ -1,5 +1,6 @@
 import { Component, Input, OnChanges, signal } from '@angular/core';
 import { ProductImage } from '../core/catalog-api';
+import { PackImage } from '../core/packs-api';
 @Component({
   selector: 'app-product-photo',
   template: ` <div class="photo" [class.detail]="detail">
@@ -73,7 +74,7 @@ import { ProductImage } from '../core/catalog-api';
   ],
 })
 export class ProductPhoto implements OnChanges {
-  @Input() image?: ProductImage;
+  @Input() image?: ProductImage | PackImage;
   @Input() alt = '';
   @Input() detail = false;
   readonly failed = signal(false);

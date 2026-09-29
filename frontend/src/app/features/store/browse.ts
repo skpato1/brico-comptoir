@@ -11,7 +11,7 @@ import {
   ProductImage,
   Page,
 } from '../../core/catalog-api';
-import { Pack, PacksApi } from '../../core/packs-api';
+import { Pack, PackImage, PacksApi } from '../../core/packs-api';
 import { OfferCard } from '../../shared/offer-card';
 @Component({
   selector: 'app-browse',
@@ -34,7 +34,7 @@ export class BrowsePage implements OnInit {
   readonly brands = signal<Brand[]>([]);
   readonly page = signal<Page<Product> | null>(null);
   readonly packs = signal<Pack[]>([]);
-  readonly images = signal<Record<string, ProductImage[]>>({});
+  readonly images = signal<Record<string, (ProductImage | PackImage)[]>>({});
   filters: ProductFilters = {
     q: '',
     categoryId: '',
@@ -105,6 +105,15 @@ export class BrowsePage implements OnInit {
               ),
             );
             this.loading.set(false);
+            this.packsApi
+              .publicImages(this.packs().map((p) => p.id))
+              .pipe(takeUntilDestroyed(this.destroy))
+              .subscribe({
+                next: (images) => {
+                  if (generation === this.generation) this.images.set(images);
+                },
+                error: () => {},
+              });
           },
           error: () => {
             if (generation === this.generation) {
@@ -158,7 +167,7 @@ export class BrowsePage implements OnInit {
   reset(): void {
     void this.router.navigate([], { relativeTo: this.route, queryParams: {} });
   }
-  primary(id: string): ProductImage | undefined {
+  primary(id: string): ProductImage | PackImage | undefined {
     const images = this.images()[id] ?? [];
     return images.find((i) => i.primary) ?? images[0];
   }

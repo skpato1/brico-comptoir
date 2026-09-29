@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 @org.springframework.core.annotation.Order(0)
-@RestControllerAdvice(assignableTypes = MediaController.class)
+@RestControllerAdvice(assignableTypes = {MediaController.class, PackImageController.class})
 public class MediaErrors {
     @ExceptionHandler(IllegalArgumentException.class)
     ResponseEntity<ProblemDetail> invalid(IllegalArgumentException error) {

@@ -57,6 +57,7 @@ describe('Storefront routes and real API contracts', () => {
         provideHttpClientTesting(),
         provideRouter([
           { path: 'catalogue', component: BrowsePage },
+          { path: 'packs', component: BrowsePage, data: { kind: 'packs' } },
           { path: 'packs/:id', component: DetailPage, data: { kind: 'packs' } },
           { path: 'confirmation/:id', component: ConfirmationPage },
         ]),
@@ -106,7 +107,26 @@ describe('Storefront routes and real API contracts', () => {
   it('explains pack contents, missing quantities and variant changes before adding to the cart', async () => {
     const page = await harness.navigateByUrl('/packs/pack', DetailPage);
     http.expectOne('/api/v1/packs/pack').flush(pack);
+    http
+      .expectOne('/api/v1/media/packs?ids=pack')
+      .flush({
+        pack: [
+          {
+            id: 'photo',
+            packId: 'pack',
+            cardUrl: '/kit-card.jpg',
+            detailUrl: '/kit-detail.jpg',
+            width: 1586,
+            height: 992,
+            sortOrder: 0,
+            primary: true,
+          },
+        ],
+      });
     harness.detectChanges();
+    const image = harness.routeNativeElement!.querySelector('app-product-photo img')!;
+    expect(image.getAttribute('srcset')).toBe('/kit-card.jpg 360w, /kit-detail.jpg 1200w');
+    expect(image.getAttribute('loading')).toBe('lazy');
     expect(harness.routeNativeElement?.textContent).toContain('Fixations test');
     expect(harness.routeNativeElement?.textContent).toContain('Ce qui n’est pas inclus');
     expect(page.omitted()).toEqual([
@@ -143,9 +163,35 @@ describe('Storefront routes and real API contracts', () => {
     expect(page.order()).toBeNull();
     expect(harness.routeNativeElement?.textContent).toContain('session actuelle');
   });
+  it('uses actual pack photo metadata on cards and tolerates packs without photos', async () => {
+    await harness.navigateByUrl('/packs', BrowsePage);
+    http.expectOne('/api/v1/packs').flush([pack]);
+    http
+      .expectOne('/api/v1/media/packs?ids=pack')
+      .flush({
+        pack: [
+          {
+            id: 'photo',
+            packId: 'pack',
+            cardUrl: '/kit-card.jpg',
+            detailUrl: '/kit-detail.jpg',
+            width: 1586,
+            height: 992,
+            sortOrder: 0,
+            primary: true,
+          },
+        ],
+      });
+    harness.detectChanges();
+    expect(
+      harness.routeNativeElement!.querySelector('app-offer-card img')!.getAttribute('src'),
+    ).toBe('/kit-card.jpg');
+    expect(harness.routeNativeElement!.querySelector('.pack-art')).toBeNull();
+  });
   it('rejects fractional quantities with an accessible explanation and no cart request', async () => {
     await harness.navigateByUrl('/packs/pack', DetailPage);
     http.expectOne('/api/v1/packs/pack').flush(pack);
+    http.expectOne('/api/v1/media/packs?ids=pack').flush({});
     harness.detectChanges();
     await harness.fixture.whenStable();
     const input: HTMLInputElement = harness.routeNativeElement!.querySelector('[name=quantity]')!;

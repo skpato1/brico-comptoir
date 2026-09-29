@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CatalogApi, Product, ProductImage } from '../../core/catalog-api';
-import { Pack, PacksApi, PackVariant } from '../../core/packs-api';
+import { Pack, PackImage, PacksApi, PackVariant } from '../../core/packs-api';
 import { CartState } from '../../core/cart-state';
 import { SessionState } from '../../core/session-state';
 import { ProductPhoto } from '../../shared/product-photo';
@@ -40,7 +40,7 @@ export class DetailPage implements OnInit {
   readonly packMode = this.route.snapshot.data['kind'] === 'packs';
   readonly product = signal<Product | null>(null);
   readonly pack = signal<Pack | null>(null);
-  readonly images = signal<ProductImage[]>([]);
+  readonly images = signal<(ProductImage | PackImage)[]>([]);
   readonly loading = signal(true);
   readonly error = signal('');
   readonly notice = signal('');
@@ -70,6 +70,21 @@ export class DetailPage implements OnInit {
               this.pack.set(p);
               this.selected = p.variants[0]?.id ?? '';
               this.loading.set(false);
+              this.packsApi
+                .publicImages([p.id])
+                .pipe(takeUntilDestroyed(this.destroy))
+                .subscribe({
+                  next: (images) => {
+                    if (generation === this.generation)
+                      this.images.set(
+                        [...(images[p.id] ?? [])].sort(
+                          (a, b) =>
+                            Number(b.primary) - Number(a.primary) || a.sortOrder - b.sortOrder,
+                        ),
+                      );
+                  },
+                  error: () => {},
+                });
             }
           },
           error: () => this.fail(generation),

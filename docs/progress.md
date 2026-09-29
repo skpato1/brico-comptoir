@@ -1283,3 +1283,49 @@ relecture du diff et `git diff --check` réussis. Cette exécution locale utilis
 le backend de l'arbre de travail, qui contient des modifications préexistantes
 non incluses dans ce correctif. Le pipeline distant vérifiera le commit seul.
 Aucun changement d'architecture ni de code applicatif dans ce correctif.
+
+## Visuels fournis et photos de packs — 29 septembre 2026
+
+Le compte administrateur de production est maintenant vérifié par l'API réelle :
+connexion avec CSRF, rôle ADMIN, session, lectures administratives privées,
+refus anonyme/sans CSRF et révocation après déconnexion. Aucun bootstrap de
+production n'a été exécuté par l'agent pour ce contrôle.
+
+À la demande de l'exploitant, quatre fiches sont créées par les API autorisées
+en production : « Kit entretien du bois — à valider », « Gants — référence à
+valider », « Pinceau plat — référence à valider », « Papier abrasif — référence
+à valider ». Brouillons vérifiés en 404 côté public, sans variante/SKU, prix,
+stock ou quantité de composition inventés. Les descriptions identifient les
+visuels générés et les caractéristiques à valider ; l'avant/après du kit est
+explicitement simulé, sans preuve photographique ni promesse de résultat.
+
+Les quatre PNG originaux (1,99 à 2,39 Mo ; 1254×1254 et 1586×992) sont préparés
+dans un répertoire privé exclu de Git. L'import opérateur garde un checkpoint
+d'identifiants et vérifie les fiches existantes avant de créer, sans répétition
+aveugle d'un téléversement incertain. Aucun fichier fourni ni identifiant de
+connexion n'est inclus dans la publication du code.
+
+L'absence de photos de packs est corrigée : métadonnées V13, port public de
+visibilité des packs, stockage partagé interchangeable, mêmes contrôles de
+fichiers/rendus que les produits, administration ajout/ordre/image principale,
+cartes et fiches responsives. Contrats et limites dans [pack-media.md](pack-media.md).
+
+Vérifications locales : `mvn verify` avec les quatre suites d'intégration
+`PackMediaIT,MediaCatalogIT,PacksIT,MediaMinioLocalIT` : 51 tests unitaires/ArchUnit
+et 9 tests PostgreSQL/Testcontainers/MinIO réussis, aucun ignoré. Les sources
+locales incluent les diagnostics de démarrage préexistants, qui restent hors
+du commit photo. Les nouveaux tests couvrent RBAC/CSRF, type réel, taille,
+dimensions, lot invalide, métadonnées, ordre/principale, propriété, brouillons,
+retrait de publication d'un composant, rendus et rollback/nettoyage après panne.
+Angular : `npm run test:ci` passe 52 tests, dont photos de packs, refus d'accès
+et réponses tardives ; `BRICO_API_ORIGIN=https://brico-comptoir.onrender.com node
+scripts/build-vercel.mjs` réussit, budgets respectés. Cinq tests de routes Vercel,
+contrôles dépôt/publication/liens locaux et `git diff --check` réussis.
+
+Limite de production explicite : l'exploitant configure Backblaze B2 dans Render.
+Les valeurs de stockage inspectées restent des placeholders ; aucun des quatre
+fichiers n'a encore été déclaré téléversé en production. Un téléversement réel
+et sa lecture administrative doivent confirmer B2 après configuration. Les fiches
+resteront en brouillon jusqu'à validation commerciale ; le stock du pack demeure
+dérivé des composants. SMTP et lancement commercial ne sont pas vérifiés par
+cette tranche.

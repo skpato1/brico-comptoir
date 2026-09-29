@@ -33,6 +33,9 @@ import tn.bricocomptoir.catalog.application.port.out.CatalogStore;
 import tn.bricocomptoir.catalog.application.service.CatalogService;
 import tn.bricocomptoir.catalog.application.service.CatalogImportService;
 import tn.bricocomptoir.media.application.service.MediaService;
+import tn.bricocomptoir.media.application.service.PackImageService;
+import tn.bricocomptoir.media.application.port.out.PackPhotoLookup;
+import tn.bricocomptoir.media.application.port.out.PackImageStore;
 import tn.bricocomptoir.media.application.port.out.CatalogProductLookup;
 import tn.bricocomptoir.media.application.port.out.ImageProcessor;
 import tn.bricocomptoir.media.application.port.out.MediaStore;
@@ -92,6 +95,12 @@ class SecurityConfiguration {
     MediaService mediaService(CatalogProductLookup catalog, ImageProcessor processor,
                               MediaStore store, ObjectStorage objects) {
         return new MediaService(catalog, processor, store, objects);
+    }
+
+    @Bean
+    PackImageService packImageService(PackPhotoLookup packs, ImageProcessor processor,
+                                      PackImageStore store, ObjectStorage objects) {
+        return new PackImageService(packs, processor, store, objects);
     }
 
     @Bean
@@ -189,7 +198,8 @@ class SecurityConfiguration {
                                 "/api/v1/products", "/api/v1/products/*", "/api/v1/availability/*",
                                 "/api/v1/packs", "/api/v1/packs/*",
                                 "/api/v1/media/products", "/api/v1/media/*/card",
-                                "/api/v1/media/*/detail").permitAll()
+                                "/api/v1/media/*/detail", "/api/v1/media/packs",
+                                "/api/v1/media/packs/*/card", "/api/v1/media/packs/*/detail").permitAll()
                         .requestMatchers("/api/v1/admin/catalog/**").hasAnyRole("CATALOG_MANAGER", "ADMIN")
                         .requestMatchers("/api/v1/admin/packs", "/api/v1/admin/packs/**")
                                 .hasAnyRole("CATALOG_MANAGER", "ADMIN")

@@ -23,6 +23,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import tn.bricocomptoir.bootstrap.BricoComptoirApplication;
 import tn.bricocomptoir.media.application.port.out.ObjectStorage;
+import tn.bricocomptoir.media.adapter.transaction.PackImageTransactions;
+import tn.bricocomptoir.media.application.service.PackImageService;
+import tn.bricocomptoir.packs.adapter.transaction.PackTransactions;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
@@ -57,7 +60,28 @@ class MediaMinioLocalIT {
     @Autowired WebApplicationContext context;
     @Autowired JdbcTemplate jdbc;
     @Autowired ObjectStorage objects;
+    @Autowired PackImageTransactions packMedia;
+    @Autowired PackTransactions packs;
     @MockitoBean JavaMailSender mail;
+
+    @Test void draftPackUsesRealPrivateObjectsAndAdminRenditions() throws Exception {
+        var pack = packs.savePack(null, "minio-" + UUID.randomUUID(), "DÉMO test photo pack", "", "", "DRAFT", null);
+        var output = new ByteArrayOutputStream();
+        ImageIO.write(new BufferedImage(1600, 1000, BufferedImage.TYPE_INT_RGB), "png", output);
+        byte[] source = output.toByteArray();
+        var image = packMedia.upload(pack.id(), java.util.List.of(new PackImageService.Upload(source, "image/png"))).getFirst();
+        try {
+            assertThat(objects.get(image.originalKey())).isEqualTo(source);
+            assertThat(ImageIO.read(new java.io.ByteArrayInputStream(objects.get(image.cardKey()))).getWidth()).isEqualTo(360);
+            assertThat(ImageIO.read(new java.io.ByteArrayInputStream(objects.get(image.detailKey()))).getWidth()).isEqualTo(1200);
+            var mvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
+            mvc.perform(get("/api/v1/media/packs/" + image.id() + "/detail")).andExpect(status().isNotFound());
+            mvc.perform(get("/api/v1/admin/packs/" + pack.id() + "/images/" + image.id() + "/detail")
+                    .with(user("manager").roles("CATALOG_MANAGER"))).andExpect(status().isOk());
+        } finally {
+            objects.delete(image.originalKey()); objects.delete(image.cardKey()); objects.delete(image.detailKey());
+        }
+    }
 
     @Test void managerUploadStoresObjectsAndPublicApiServesRenditions() throws Exception {
         UUID category = UUID.randomUUID(), product = UUID.randomUUID();

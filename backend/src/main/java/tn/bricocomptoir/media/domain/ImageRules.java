@@ -20,13 +20,17 @@ public final class ImageRules {
 
     public static void capacity(int current, int added) {
         if (added < 1 || added > 4 || current + added > MAX_PER_PRODUCT)
-            throw new IllegalArgumentException("Upload 1–4 images, at most 12 per product");
+            throw new IllegalArgumentException("Upload 1–4 images, at most 12 per product or pack");
     }
 
     public static void order(List<ProductImage> existing, List<UUID> ids, UUID primary) {
+        orderIds(existing.stream().map(ProductImage::id).toList(), ids, primary);
+    }
+
+    public static void orderIds(List<UUID> existing, List<UUID> ids, UUID primary) {
         if (ids == null || primary == null || ids.size() != existing.size()
-                || !new HashSet<>(ids).equals(existing.stream().map(ProductImage::id).collect(java.util.stream.Collectors.toSet()))
+                || !new HashSet<>(ids).equals(new HashSet<>(existing))
                 || !ids.contains(primary))
-            throw new IllegalArgumentException("Order must contain each product image exactly once and select its primary image");
+            throw new IllegalArgumentException("Order must contain each image exactly once and select its primary image");
     }
 }

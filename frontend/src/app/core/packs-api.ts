@@ -1,8 +1,12 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { switchMap } from 'rxjs';
+import { forkJoin, map, of, switchMap } from 'rxjs';
 import { IdentityApi } from './identity-api';
-import { Page } from './catalog-api';
+import { Page, ProductImage } from './catalog-api';
+
+export interface PackImage extends Omit<ProductImage, 'productId'> {
+  packId: string;
+}
 
 export interface PackComponentLine {
   variantId: string;
@@ -63,6 +67,43 @@ export class PacksApi {
 
   list(admin = false) {
     return this.http.get<Pack[]>(`${this.root}/${admin ? 'admin/' : ''}packs`);
+  }
+  publicImages(ids: string[]) {
+    if (!ids.length) return of({} as Record<string, PackImage[]>);
+    const requests = [];
+    for (let i = 0; i < ids.length; i += 100)
+      requests.push(
+        this.http.get<Record<string, PackImage[]>>(`${this.root}/media/packs`, {
+          params: { ids: ids.slice(i, i + 100).join(',') },
+        }),
+      );
+    return forkJoin(requests).pipe(
+      map((results) => Object.assign({}, ...results) as Record<string, PackImage[]>),
+    );
+  }
+  adminImages(id: string) {
+    return this.http.get<PackImage[]>(`${this.root}/admin/packs/${id}/images`);
+  }
+  uploadImages(id: string, files: File[]) {
+    const form = new FormData();
+    for (const file of files) form.append('files', file);
+    return this.identity
+      .csrf()
+      .pipe(
+        switchMap(() => this.http.post<PackImage[]>(`${this.root}/admin/packs/${id}/images`, form)),
+      );
+  }
+  orderImages(id: string, imageIds: string[], primaryImageId: string) {
+    return this.identity
+      .csrf()
+      .pipe(
+        switchMap(() =>
+          this.http.put<PackImage[]>(`${this.root}/admin/packs/${id}/images/order`, {
+            imageIds,
+            primaryImageId,
+          }),
+        ),
+      );
   }
   savePack(input: PackInput, id?: string) {
     const url = `${this.root}/admin/packs${id ? '/' + id : ''}`;

@@ -20,6 +20,9 @@ class ImageRulesTest {
         UUID a = UUID.randomUUID(), b = UUID.randomUUID(), product = UUID.randomUUID();
         var images = List.of(image(a, product), image(b, product));
         ImageRules.order(images, List.of(b, a), b);
+        ImageRules.orderIds(List.of(a, b), List.of(b, a), b);
+        assertThatThrownBy(() -> ImageRules.orderIds(List.of(a, b), List.of(a, a), a))
+                .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> ImageRules.order(images, List.of(a, a), a))
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> ImageRules.order(images, List.of(a, b), UUID.randomUUID()))

@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import tn.bricocomptoir.packs.application.port.in.PackOfferQueries;
 import tn.bricocomptoir.packs.application.port.out.CatalogSkuLookup;
@@ -41,6 +42,13 @@ public final class PackService implements PackOfferQueries {
         Pack visible = admin ? found : publicPack(found);
         if (visible == null) throw new IllegalArgumentException("Pack not found");
         return visible;
+    }
+
+    public boolean exists(UUID id) { return store.pack(id).isPresent(); }
+
+    public Set<UUID> visibleIds(List<UUID> ids) {
+        return ids.stream().distinct().filter(id -> store.pack(id).map(this::publicPack).isPresent())
+                .collect(java.util.stream.Collectors.toSet());
     }
 
     public Map<UUID, Long> availability(Pack pack) {

@@ -61,7 +61,9 @@ du socle décrit la santé ; les contrats identity sont dans `identity.md`. Le
 [README](../README.md) décrit les commandes et profils `local`, `test`, `prod`.
 
 MinIO sert de stockage objet local privé au module `media`, via le port
-`ObjectStorage`. Mailpit sert de transport SMTP local au module `notifications`
+`ObjectStorage`. Les [photos de packs](pack-media.md) reprennent la validation
+et les rendus des produits, avec visibilité contrôlée par `PackPhotoQueries`.
+Mailpit sert de transport SMTP local au module `notifications`
 pour les commandes, leurs statuts et la récupération du mot de passe.
 MinIO est construit depuis la version officielle `RELEASE.2025-10-15T17-29-55Z`,
 sa distribution communautaire étant désormais fournie en sources ; Mailpit
@@ -179,7 +181,7 @@ dans [storefront.md](storefront.md).
 | `identity` | Comptes, profil minimal, identifiants de connexion, rôles, état actif, récupération | Inscrire un client, lire son profil, charger une identité pour l'authentification, administrer les accès, réinitialiser un mot de passe | `AccountStore`, `PasswordHasher`, `ResetStore`, `ResetDelivery` |
 | `catalog` | Catégories, marques, produits/variantes, prix et publication | Consulter et administrer les SKU | `CatalogStore` |
 | `packs` | Fiches et variantes de packs, prix propres, compositions et publication | Consulter/administrer les packs, lire une offre et sa composition | `PackStore`, `CatalogSkuLookup`, `StockAvailabilityLookup` |
-| `media` | Métadonnées des photos de produit, ordre et image principale ; aucun binaire en base | Téléverser, ordonner, servir les rendus publics de produits visibles | `MediaStore`, `ObjectStorage`, `ImageProcessor`, `CatalogProductLookup` |
+| `media` | Métadonnées des photos de produit et de pack, ordre et image principale ; aucun binaire en base | Téléverser, ordonner, servir les rendus des offres visibles | `MediaStore`, `PackImageStore`, `ObjectStorage`, `ImageProcessor`, `CatalogProductLookup`, `PackPhotoLookup` |
 | `inventory` | Quantités physiques et réservées par variante, réservations, mouvements | `InventoryOperations`, `InventoryAvailabilityQueries`, `InventoryOrderOperations` | `InventoryStore`, `VariantReferencePort` |
 | `sales` | Panier client, commandes figées, coordonnées, livraison et idempotence | Estimer/fusionner/modifier le panier, prévisualiser, placer et traiter une commande ; `PersonalSales` | `CartStore`, `OrderStore`, `OfferLookup`, `CheckoutOffers`, `OrderStock`, `StockLookup`, `DeliveryFees`, `DeliverySettingsStore`, `OrderNotifications`, `CustomerContact`, `OrderEventFeed` |
 | `content` | Textes structurés de l'accueil, sans HTML ni URL libre | Lire et modifier la fiche d'accueil versionnée | `HomeContentStore` |
@@ -204,7 +206,7 @@ Adaptateurs livrés :
 
 Graphe intermodules autorisé : `sales -> inventory -> catalog`,
 `sales -> catalog`, `sales -> packs`, `packs -> catalog`, `packs -> inventory`
-et `media -> catalog`, toujours via les ports entrants publics des modules
+et `media -> catalog`, `media -> packs`, toujours via les ports entrants publics des modules
 appelés. S'ajoutent `sales -> identity`, `sales -> notifications` et
 `identity -> notifications`. `notifications` reste indépendant ; le flux SSE
 est un adaptateur entrant de `sales`, qui vérifie ses gestionnaires via un port

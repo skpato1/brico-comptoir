@@ -16,7 +16,7 @@
 } @else {
   <div class="detail-layout">
     <div class="visual">
-      @if (packMode) {
+      @if (packMode && !images().length) {
         <div class="pack-visual">
           <span>LE CONTENU FAIT LA DIFFÉRENCE</span
           ><strong>Votre pack.<br />Votre variante.</strong>
@@ -27,10 +27,10 @@
         <app-product-photo
           [image]="images()[photo]"
           [detail]="true"
-          [alt]="product()?.name ?? ''"
+          [alt]="(packMode ? pack()?.name : product()?.name) ?? ''"
         />
         @if (images().length > 1) {
-          <div class="thumbnails" aria-label="Photos du produit">
+          <div class="thumbnails" aria-label="Photos de la fiche">
             @for (image of images(); track image.id; let i = $index) {
               <button
                 class="secondary"

@@ -108,7 +108,12 @@
   }
   <div class="offer-grid">
     @for (pack of packs(); track pack.id) {
-      <app-offer-card [offer]="pack" [pack]="true" [description]="pack.slogan" />
+      <app-offer-card
+        [offer]="pack"
+        [pack]="true"
+        [description]="pack.slogan"
+        [image]="primary(pack.id)"
+      />
     }
   </div>
 } @else if (page(); as result) {
