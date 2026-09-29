@@ -1329,3 +1329,22 @@ et sa lecture administrative doivent confirmer B2 après configuration. Les fich
 resteront en brouillon jusqu'à validation commerciale ; le stock du pack demeure
 dérivé des composants. SMTP et lancement commercial ne sont pas vérifiés par
 cette tranche.
+
+## Activation et contrôle CI des photos de packs — 29 septembre 2026
+
+Commit photo `293bbf2` publié sur `origin/main`. Vercel signale le déploiement
+réussi ; Render `dep-dattfmjrjlhs73c4ini0` devient Live en 3 min 22 s, avec
+Flyway exécuté au démarrage. L'API réelle confirme les quatre brouillons sans
+variante et leurs listes d'images en HTTP 200, dont la nouvelle table de packs.
+Les quatre listes sont encore vides : B2 attend la configuration de l'exploitant.
+La vitrine ne doit donc pas annoncer les fichiers téléversés. Le navigateur
+confirme connexion administrative, recherche du kit, brouillon et contrôles
+de photos ; la connexion doit être renouvelée après le redémarrage du backend.
+
+CI `36589776538` : frontend réussi, parcours navigateur et restauration réussis.
+Le backend exécute 59 tests d'intégration ; son seul échec est le test de socle
+qui attend encore 12 migrations au lieu de 13. Son assertion est mise à jour
+pour V13 sans réduire la validation ni le contrôle de non-réexécution. Les
+7 tests `FoundationIT` sont ensuite exécutés sur PostgreSQL/Testcontainers réel
+et réussissent localement. Le correctif déclenchera une nouvelle CI complète ;
+elle n'est pas présentée comme réussie avant son résultat.
