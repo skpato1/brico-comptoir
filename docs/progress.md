@@ -1410,3 +1410,25 @@ n'est encore déclaré créé, et aucune valeur Render n'est remplacée par un
 secret fictif. L'import des quatre illustrations et la lecture réellement
 hébergée restent à terminer après provisionnement et déploiement. Les fiches
 restent en brouillon et l'avant/après du kit reste identifié comme simulé.
+
+Vérification du commit stockage `030a109` après publication : la
+[CI 36595299634](https://github.com/skpato1/brico-comptoir/actions/runs/36595299634)
+réussit ses trois jobs. Le commit exact exécute 47 tests unitaires/ArchUnit
+et 60 tests d'intégration, sans échec, erreur ou test ignoré ; les sept
+tests locaux supplémentaires des diagnostics préexistants restent hors
+de ce commit. Le frontend réussit 52 tests Angular, cinq tests de routage
+et son build de production. Les quatre parcours navigateur réussissent
+en 47,4 s ; le contrôle de sauvegarde/restauration PostgreSQL et MinIO
+réussit également. Ces vérifications n'utilisent pas un projet Supabase.
+
+Render indique `030a109` Live (déploiement automatique en 3 min 49 s),
+Vercel indique son déploiement réussi. Après déploiement, les lectures de
+`/api/v1/health` sur Render et via le proxy Vercel retournent HTTP 200 et
+`status=UP`. La santé ne vérifie pas la connexion au stockage d'images.
+Le tableau de bord Supabase affiche encore la page de connexion. Le plan
+Free de l'organisation et ses deux projets actifs sont confirmés : ils
+occupent la limite publiée de deux projets actifs gratuits. Aucun projet
+existant n'est suspendu, supprimé ou réutilisé ; aucun abonnement payant
+n'est souscrit. La destination, la capacité disponible, le bucket privé,
+les clés saisies dans Render et l'import réel restent à résoudre avant
+de déclarer le stockage Supabase opérationnel.
