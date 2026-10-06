@@ -59,6 +59,7 @@ describe('Storefront routes and real API contracts', () => {
           { path: 'catalogue', component: BrowsePage },
           { path: 'packs', component: BrowsePage, data: { kind: 'packs' } },
           { path: 'packs/:id', component: DetailPage, data: { kind: 'packs' } },
+          { path: 'produits/:id', component: DetailPage },
           { path: 'confirmation/:id', component: ConfirmationPage },
         ]),
       ],
@@ -155,6 +156,24 @@ describe('Storefront routes and real API contracts', () => {
       subtotalEstimate: { amount: '28.750', currency: 'TND' },
       shortages: [],
     });
+  });
+  it('shows zero-stock products as sold out and prevents adding them to the cart', async () => {
+    const page = await harness.navigateByUrl('/produits/item', DetailPage);
+    http.expectOne('/api/v1/products/item').flush({
+      id: 'item', categoryId: 'category', brandId: null, name: 'Vis test', description: '',
+      characteristics: {}, status: 'PUBLISHED', demo: false, version: 0,
+      variants: [{ id: 'variant', sku: 'BC-TEST', label: 'Unité', unit: 'unité', options: {},
+        price: { amount: '21.000', currency: 'TND' }, status: 'PUBLISHED', version: 0 }],
+    });
+    http.expectOne('/api/v1/availability/variant').flush({ variantId: 'variant', available: 0 });
+    http.expectOne('/api/v1/media/products?ids=item').flush({});
+    harness.detectChanges();
+    const button = harness.routeNativeElement!.querySelector<HTMLButtonElement>('button[type=submit]')!;
+    expect(button.disabled).toBe(true);
+    expect(button.textContent).toContain('Épuisé');
+    expect(harness.routeNativeElement?.textContent).toContain('ce produit n’est pas disponible');
+    page.add();
+    http.expectNone('/api/v1/cart/estimate');
   });
   it('reloads a confirmation using owner protected API and never fabricates an inaccessible receipt', async () => {
     const page = await harness.navigateByUrl('/confirmation/private', ConfirmationPage);

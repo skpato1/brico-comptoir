@@ -68,7 +68,7 @@
               name="variant"
               [value]="v.id"
               [(ngModel)]="selected"
-              (ngModelChange)="notice.set('')"
+              (ngModelChange)="onVariantChanged()"
             /><span
               >{{ v.label }}<strong>{{ v.price.amount }} TND</strong></span
             ></label
@@ -84,6 +84,11 @@
             pv.available > 0 ? 'Disponible selon les composants actuels' : 'Momentanément épuisé'
           }}
         </p>
+      }
+      @if (!packMode && available() === 0) {
+        <p class="error" role="status">Épuisé — ce produit n’est pas disponible pour le moment.</p>
+      } @else if (!packMode && availabilityError()) {
+        <p class="error" role="status">Disponibilité indisponible. Réessayez plus tard.</p>
       }
       <form #quantityForm="ngForm" (ngSubmit)="add()" class="buy">
         <label
@@ -106,10 +111,11 @@
             cart.busy() ||
             cart.recoveryPending() ||
             !canBuy() ||
-            (packMode && packVariant()?.available === 0)
+            (packMode && packVariant()?.available === 0) ||
+            (!packMode && !productCanAdd())
           "
         >
-          Ajouter au panier →
+          {{ !packMode && available() === 0 ? 'Épuisé' : 'Ajouter au panier →' }}
         </button>
       </form>
       <p id="quantity-help" class="muted small">

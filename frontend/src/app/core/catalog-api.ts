@@ -56,6 +56,10 @@ export interface ProductImage {
   sortOrder: number;
   primary: boolean;
 }
+export interface Availability {
+  variantId: string;
+  available: number;
+}
 export interface ImportRow {
   line: number;
   productKey: string;
@@ -130,6 +134,9 @@ export class CatalogApi {
   private readonly root = '/api/v1';
   detail(id: string) {
     return this.http.get<Product>(`${this.root}/products/${id}`);
+  }
+  availability(variantId: string) {
+    return this.http.get<Availability>(`${this.root}/availability/${variantId}`);
   }
   categoryPage(q = '', page = 0, size = 20) {
     return this.http.get<Page<Category>>(`${this.root}/admin/catalog/categories/page`, {

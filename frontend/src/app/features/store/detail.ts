@@ -44,10 +44,13 @@ export class DetailPage implements OnInit {
   readonly loading = signal(true);
   readonly error = signal('');
   readonly notice = signal('');
+  readonly available = signal<number | null>(null);
+  readonly availabilityError = signal(false);
   selected = '';
   quantity = 1;
   photo = 0;
   private generation = 0;
+  private availabilityGeneration = 0;
   ngOnInit(): void {
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroy)).subscribe(() => this.load());
   }
@@ -58,6 +61,9 @@ export class DetailPage implements OnInit {
     this.error.set('');
     this.notice.set('');
     this.images.set([]);
+    ++this.availabilityGeneration;
+    this.available.set(null);
+    this.availabilityError.set(false);
     this.photo = 0;
     this.quantity = 1;
     if (this.packMode) {
@@ -98,6 +104,7 @@ export class DetailPage implements OnInit {
             if (generation !== this.generation) return;
             this.product.set(p);
             this.selected = p.variants[0]?.id ?? '';
+            this.loadAvailability();
             this.loading.set(false);
             this.api
               .publicImages([p.id])
@@ -138,9 +145,34 @@ export class DetailPage implements OnInit {
   canBuy(): boolean {
     return !this.session.account() || !!this.session.account()?.roles.includes('CUSTOMER');
   }
+  productCanAdd(): boolean {
+    const available = this.available();
+    return available !== null && available >= this.quantity;
+  }
+  onVariantChanged(): void {
+    this.notice.set('');
+    if (!this.packMode) this.loadAvailability();
+  }
+  private loadAvailability(): void {
+    const variantId = this.selected;
+    const generation = ++this.availabilityGeneration;
+    this.available.set(null);
+    this.availabilityError.set(false);
+    if (!variantId) return;
+    this.api.availability(variantId).pipe(takeUntilDestroyed(this.destroy)).subscribe({
+      next: (result) => {
+        if (generation === this.availabilityGeneration && result.variantId === variantId)
+          this.available.set(result.available);
+      },
+      error: () => {
+        if (generation === this.availabilityGeneration) this.availabilityError.set(true);
+      },
+    });
+  }
   add(): void {
     if (
       !this.selected ||
+      (!this.packMode && !this.productCanAdd()) ||
       this.cart.busy() ||
       !Number.isInteger(this.quantity) ||
       this.quantity < 1 ||
