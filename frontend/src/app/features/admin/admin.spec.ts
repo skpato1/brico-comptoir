@@ -11,6 +11,10 @@ import { AdjustmentState } from './stock';
 import { CatalogComponent } from '../catalog/catalog';
 import { HomePage } from '../store/home';
 import { HomeContent } from '../../core/admin-api';
+import { AdminHero } from './hero';
+import { AdminSupport } from './support';
+import { AdminContact } from './contact';
+import { ContactPage } from '../store/contact';
 
 const home: HomeContent = {
   title: 'Titre API',
@@ -47,7 +51,7 @@ describe('Administration réelle', () => {
     const links = Array.from(harness.routeNativeElement!.querySelectorAll('.admin-nav a')).map(
       (a) => a.textContent,
     );
-    expect(links).toEqual(['Commandes']);
+    expect(links).toEqual(['Vue d’ensemble', 'Commandes', 'Contact']);
     http.expectNone('/api/v1/admin/delivery');
     await harness.navigateByUrl('/gestion?section=commandes');
     const request = http.expectOne((r) => r.url === '/api/v1/admin/orders');
@@ -164,6 +168,8 @@ describe('Administration réelle', () => {
     const f = TestBed.createComponent(HomePage);
     f.detectChanges();
     http.expectOne('/api/v1/content/home').flush({ ...home, title: '<b>Texte</b>' });
+    f.detectChanges();
+    http.expectOne('/api/v1/content/hero').flush({ version: 0, slides: [] });
     http
       .expectOne((r) => r.url === '/api/v1/products')
       .flush({ items: [], page: 0, size: 4, totalElements: 0 });
@@ -184,5 +190,61 @@ describe('Administration réelle', () => {
     expect(f.componentInstance.adminBusy()).toBe(false);
     expect(f.componentInstance.adminImages()).toEqual([]);
     expect(f.componentInstance.adminMessage()).toContain('Accès refusé');
+  });
+  it('saves editable hero slides with CSRF and keeps the server as authority', () => {
+    const f = TestBed.createComponent(AdminHero);
+    f.detectChanges();
+    const original = { version: 3, slides: [{
+      id: '11111111-1111-4111-8111-111111111111', visible: true, image: 'kits',
+      label: 'Kits', title: 'Un projet', description: 'Description', alt: 'Illustration IA',
+      link: '/packs', action: 'Découvrir', detail: 'Détail',
+    }] };
+    http.expectOne('/api/v1/admin/content/hero').flush(original);
+    f.componentInstance.value()!.slides[0].title = 'Un projet modifié';
+    f.componentInstance.save({ invalid: false, control: { markAllAsTouched: vi.fn() } } as never);
+    http.expectOne('/api/v1/auth/csrf').flush(null, { status: 204, statusText: 'No Content' });
+    const write = http.expectOne('/api/v1/admin/content/hero');
+    expect(write.request.method).toBe('PUT');
+    expect(write.request.body.slides[0].title).toBe('Un projet modifié');
+    write.flush({}, { status: 403, statusText: 'Forbidden' });
+    expect(f.componentInstance.error()).toContain('Accès refusé');
+    expect(f.componentInstance.value()?.version).toBe(3);
+  });
+  it('looks up support data by exact email and never sends cart mutations', () => {
+    const f = TestBed.createComponent(AdminSupport);
+    f.detectChanges();
+    f.componentInstance.email = 'client@example.invalid';
+    f.componentInstance.search({ invalid: false, control: { markAllAsTouched: vi.fn() } } as never);
+    const lookup = http.expectOne(r => r.url === '/api/v1/admin/accounts/lookup');
+    expect(lookup.request.params.get('email')).toBe('client@example.invalid');
+    lookup.flush({ id: 'customer-id', email: 'client@example.invalid', roles: ['CUSTOMER'], active: true });
+    const cart = http.expectOne('/api/v1/admin/support/carts/customer-id');
+    expect(cart.request.method).toBe('GET');
+    cart.flush({ customerId: 'customer-id', version: 2, lines: [{ kind: 'PACK', offerId: 'offer-id', quantity: 3 }] });
+    f.detectChanges();
+    expect(f.nativeElement.textContent).toContain('3');
+    expect(f.nativeElement.textContent).toContain('lecture seule');
+  });
+  it('lets an order manager read contact messages but does not load contact editing', () => {
+    const f = TestBed.createComponent(AdminContact);
+    f.componentRef.setInput('canEdit', false);
+    f.detectChanges();
+    const list = http.expectOne(r => r.url === '/api/v1/admin/contact/messages');
+    list.flush({ items: [], page: 0, size: 20, totalElements: 0 });
+    http.expectNone('/api/v1/admin/contact');
+    expect(f.nativeElement.textContent).not.toContain('Enregistrer les coordonnées');
+  });
+  it('submits the public contact form with CSRF and reports a rate limit', () => {
+    const f = TestBed.createComponent(ContactPage);
+    f.detectChanges();
+    http.expectOne('/api/v1/contact').flush({ email: '', phone: '', address: '', version: 0 });
+    f.componentInstance.message = { name: 'Client', email: 'client@example.invalid', subject: 'Question', body: 'Bonjour', website: '' };
+    f.componentInstance.submit({ invalid: false, control: { markAllAsTouched: vi.fn() } } as never);
+    http.expectOne('/api/v1/auth/csrf').flush(null, { status: 204, statusText: 'No Content' });
+    const send = http.expectOne('/api/v1/contact/messages');
+    expect(send.request.method).toBe('POST');
+    send.flush({}, { status: 429, statusText: 'Too Many Requests' });
+    f.detectChanges();
+    expect(f.nativeElement.querySelector('[role=alert]').textContent).toContain('Trop de messages');
   });
 });

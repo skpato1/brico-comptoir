@@ -32,6 +32,7 @@ import {
 export class CatalogComponent implements OnInit {
   @Input() account: Account | null = null;
   @Input() adminOnly = false;
+  @Input() adminFocus = 'produits';
   readonly adminResult = signal<Page<Product> | null>(null);
   readonly categoryResult = signal<Page<Category> | null>(null);
   readonly brandResult = signal<Page<Brand> | null>(null);

@@ -76,8 +76,8 @@ for (const connected of [false, true]) {
       expect(order.summary.items.flatMap(line => line.components).reduce((sum, component) => sum + component.quantity, 0)).toBe(connected ? 3 : 2);
       expect(await (await admin.get(`/api/v1/admin/stock/${data.sku.id}`)).json()).toMatchObject({ onHand: 20, reserved: connected ? 3 : 2 });
 
-      await expect(manager.page.getByText('1 nouvelle(s) commande(s) reçue(s).', { exact: true })).toBeVisible();
-      await manager.page.getByRole('link', { name: 'Consulter les commandes' }).click();
+      await expect(manager.page.getByRole('link', { name: '1 nouvelle(s) commande(s) · Ouvrir' })).toBeVisible();
+      await manager.page.getByRole('link', { name: '1 nouvelle(s) commande(s) · Ouvrir' }).click();
       await manager.page.getByRole('button', { name: 'Rechercher les commandes' }).click();
       const row = manager.page.getByRole('row').filter({ hasText: order.id });
       await expect(row).toBeVisible();

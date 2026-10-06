@@ -59,3 +59,49 @@ rechargement du navigateur reste déconseillé et déclenche un avertissement
 depuis l'écran de stock. Vérifier les soldes avant une nouvelle opération.
 La gestion des médias reprend les actions existantes : téléversement, ordre et
 image principale ; pas de suppression de fichier ajoutée à cette étape.
+
+## Espace de gestion élargi (6 octobre 2026)
+
+`/gestion` ouvre une vue de tâches par rôle. Les sections produits, photos,
+catégories, marques, prix/SKU et import CSV réutilisent les API catalogue
+existantes ; les listes restent paginées côté serveur. Packs, stocks,
+commandes, livraison et textes d'accueil conservent leurs contrats. Les
+onglets du navigateur ne confèrent aucun droit.
+
+| Opération | CATALOG_MANAGER | ORDER_MANAGER | ADMIN |
+| --- | --- | --- | --- |
+| Bannières du hero, catalogue, photos, packs et textes d'accueil | Oui | Non | Oui |
+| Commandes, notifications et messages de contact | Non | Oui | Oui |
+| Coordonnées de contact, stock, livraison, recherche de compte et panier client en lecture seule | Non | Non | Oui |
+
+Le module `content` stocke désormais un agrégat `Hero` (1 à 10 diapositives,
+au moins une visible, ordre stable et version optimiste).
+`GET /api/v1/content/hero` n'expose que les diapositives visibles ;
+`GET/PUT /api/v1/admin/content/hero` donne l'éditeur complet aux gestionnaires de
+catalogue. Les liens acceptés sont des routes internes prévues ; les trois
+illustrations d'ambiance sont fournies avec l'application et marquées comme
+générées par IA. **L'ajout d'une nouvelle image de bannière n'est pas encore
+pris en charge** : l'éditeur choisit parmi ces illustrations. Les photos
+produit continuent de passer par `media` et son stockage objet privé.
+
+`GET /api/v1/contact` fournit les coordonnées publiques, vides tant que
+l'exploitant ne les renseigne pas. `PUT /api/v1/admin/contact` (ADMIN, CSRF,
+version) les modifie. `POST /api/v1/contact/messages` reçoit un message
+visiteur avec CSRF, champs bornés, champ leurre et limite de cinq messages par
+heure et par IP de l'instance. `GET /api/v1/admin/contact/messages` est paginé
+(`page`, `size` de 1 à 50, `status=NEW|RESOLVED`) et réservé à ORDER_MANAGER
+ou ADMIN ; `POST .../{id}/resolve` marque un message traité une seule fois.
+Le corps n'est jamais inséré comme HTML. Les messages sont conservés dans
+PostgreSQL ; `CONTACT_MESSAGE_RETENTION_DAYS` active leur purge périodique,
+`0` la désactive. L'exploitant doit fixer une durée avant l'ouverture.
+
+Le support ADMIN recherche un compte par email exact via
+`GET /api/v1/admin/accounts/lookup?email=…`, puis peut lire son panier client via
+`GET /api/v1/admin/support/carts/{customerId}`. Cette dernière réponse est
+limitée aux références et quantités du panier ; aucun prix ni disponibilité
+n'est promis. Elle n'accepte aucune écriture. Les paniers visiteurs restent
+dans le navigateur du visiteur et ne sont pas consultables par l'équipe.
+L'inbox contact constitue un nouveau traitement de données personnelles :
+les droits d'accès/rectification/export/suppression des messages demandent
+encore une procédure de support vérifiant l'identité du demandeur ; ils ne
+sont pas couverts par l'export automatique du compte.

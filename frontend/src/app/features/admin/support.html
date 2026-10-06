@@ -1,0 +1,22 @@
+<div class="workspace-heading"><div><p class="eyebrow">SUPPORT · ADMIN UNIQUEMENT</p><h2>Comptes et paniers clients</h2>
+  <p>Recherchez un compte par adresse exacte. La consultation du panier est en lecture seule ; les paniers visiteurs restent dans leur navigateur.</p></div></div>
+<form #lookup="ngForm" (ngSubmit)="search(lookup)" class="support-lookup">
+  <label>Email du client<input type="email" name="supportEmail" [(ngModel)]="email" required maxlength="254" autocomplete="off" /></label>
+  <button type="submit" [disabled]="busy()">Rechercher</button>
+</form>
+@if (busy()) { <p role="status">Recherche…</p> }
+@if (error()) { <p role="alert" class="error">{{ error() }}</p> }
+@if (account(); as found) {
+  <section class="admin-detail"><h3>Compte</h3>
+    <dl class="support-facts"><div><dt>Email</dt><dd>{{ found.email }}</dd></div><div><dt>État</dt><dd>{{ found.active ? 'Actif' : 'Désactivé' }}</dd></div><div><dt>Rôles</dt><dd>{{ found.roles.join(', ') }}</dd></div><div><dt>Identifiant</dt><dd>{{ found.id }}</dd></div></dl>
+  </section>
+  @if (cart(); as value) {
+    <section class="admin-detail"><h3>Panier enregistré</h3>
+      @if (!value.lines.length) { <p>Ce client n’a aucun article dans son panier enregistré.</p> }
+      @else { <div class="table-scroll"><table><caption>Lignes du panier client</caption><thead><tr><th>Type</th><th>Référence d’offre</th><th>Quantité</th></tr></thead><tbody>
+        @for (line of value.lines; track line.kind + line.offerId) { <tr><td>{{ line.kind === 'PACK' ? 'Pack' : 'Produit' }}</td><td>{{ line.offerId }}</td><td>{{ line.quantity }}</td></tr> }
+      </tbody></table></div> }
+      <p>Prix et disponibilité seront recalculés lors du checkout.</p>
+    </section>
+  }
+}

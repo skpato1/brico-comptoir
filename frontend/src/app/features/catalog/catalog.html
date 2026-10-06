@@ -168,7 +168,7 @@
   }
   @if (adminOpen() && canManage) {
     <section class="admin" aria-labelledby="catalog-admin-title">
-      <h3 id="catalog-admin-title">Gestion du catalogue</h3>
+      <h3 id="catalog-admin-title">{{ adminFocus === 'prix' ? 'Prix et variantes/SKU' : adminFocus === 'import' ? 'Import CSV' : adminFocus === 'photos' ? 'Photos des produits' : adminFocus === 'categories' ? 'Catégories' : adminFocus === 'marques' ? 'Marques' : 'Produits' }}</h3>
       <p>
         Les modifications sont contrôlées par le serveur. Les brouillons ne sont pas visibles dans
         le catalogue public.
@@ -176,7 +176,7 @@
       @if (adminMessage()) {
         <p role="alert" class="admin-message">{{ adminMessage() }}</p>
       }
-      <form (ngSubmit)="loadAdminProducts(0)">
+      <form (ngSubmit)="loadAdminProducts(0)" [hidden]="adminFocus === 'categories' || adminFocus === 'marques' || adminFocus === 'import'">
         <label
           >Rechercher un produit / SKU<input
             name="adminQuery"
@@ -188,7 +188,7 @@
         <p role="status">Chargement des produits…</p>
       }
       @if (adminResult(); as r) {
-        <div class="table-scroll">
+        <div class="table-scroll" [hidden]="adminFocus === 'categories' || adminFocus === 'marques' || adminFocus === 'import'">
           <table>
             <caption>
               Produits, y compris brouillons
@@ -226,19 +226,19 @@
             </tbody>
           </table>
         </div>
-        <app-admin-pager
+        <app-admin-pager [hidden]="adminFocus === 'categories' || adminFocus === 'marques' || adminFocus === 'import'"
           [page]="r.page"
           [size]="r.size"
           [total]="r.totalElements"
           (changed)="loadAdminProducts($event)"
         />
         @if (!r.totalElements) {
-          <p>Aucun produit trouvé.</p>
+          <p [hidden]="adminFocus === 'categories' || adminFocus === 'marques' || adminFocus === 'import'">Aucun produit trouvé.</p>
         }
       }
 
       <div class="admin-grid">
-        <section class="admin-panel">
+        <section class="admin-panel" [hidden]="adminFocus !== 'photos'">
           <h4>Photos du produit</h4>
           @if (productId) {
             <p>
@@ -304,7 +304,7 @@
             }
           </ol>
         </section>
-        <section class="admin-panel">
+        <section class="admin-panel" [hidden]="adminFocus !== 'import'">
           <h4>Importer des produits CSV</h4>
           <p>Format et colonnes décrits dans la documentation. L’aperçu ne crée aucun produit.</p>
           <input
@@ -342,7 +342,7 @@
             }
           }
         </section>
-        <form #categoryEditor="ngForm" (ngSubmit)="valid(categoryEditor) && saveCategory()">
+        <form #categoryEditor="ngForm" (ngSubmit)="valid(categoryEditor) && saveCategory()" [hidden]="adminFocus !== 'categories'">
           <h4>{{ categoryId ? 'Modifier la catégorie' : 'Créer une catégorie' }}</h4>
           <label
             >Nom
@@ -407,7 +407,7 @@
           }
         </form>
 
-        <form #brandEditor="ngForm" (ngSubmit)="valid(brandEditor) && saveBrand()">
+        <form #brandEditor="ngForm" (ngSubmit)="valid(brandEditor) && saveBrand()" [hidden]="adminFocus !== 'marques'">
           <h4>{{ brandId ? 'Modifier la marque' : 'Créer une marque' }}</h4>
           <label
             >Nom <input name="brandName" [(ngModel)]="brandForm.name" required maxlength="120"
@@ -456,7 +456,7 @@
           }
         </form>
 
-        <form #productEditor="ngForm" (ngSubmit)="valid(productEditor) && saveProduct()">
+        <form #productEditor="ngForm" (ngSubmit)="valid(productEditor) && saveProduct()" [hidden]="adminFocus !== 'produits'">
           <h4>{{ productId ? 'Modifier le produit' : 'Créer un produit' }}</h4>
           <label
             >Nom <input name="productName" [(ngModel)]="productForm.name" required maxlength="180"
@@ -518,7 +518,7 @@
           </ul>
         </form>
 
-        <form #variantEditor="ngForm" (ngSubmit)="valid(variantEditor) && saveVariant()">
+        <form #variantEditor="ngForm" (ngSubmit)="valid(variantEditor) && saveVariant()" [hidden]="adminFocus !== 'prix'">
           <h4>{{ variantId ? 'Modifier la variante' : 'Créer une variante/SKU' }}</h4>
           <label
             >Produit

@@ -2,6 +2,8 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { HeroCarousel } from './hero-carousel';
 import { vi } from 'vitest';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 
 describe('HeroCarousel accessibility and rotation', () => {
   let reduced = false;
@@ -22,7 +24,7 @@ describe('HeroCarousel accessibility and rotation', () => {
         removeEventListener: removeListener,
       })),
     );
-    TestBed.configureTestingModule({ imports: [HeroCarousel], providers: [provideRouter([])] });
+    TestBed.configureTestingModule({ imports: [HeroCarousel], providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()] });
   });
   afterEach(() => {
     TestBed.resetTestingModule();
@@ -118,5 +120,19 @@ describe('HeroCarousel accessibility and rotation', () => {
     expect(f.nativeElement.querySelector('.slide.active a').getAttribute('href')).toBe(
       '/solutions',
     );
+  });
+  it('uses visible server-managed slides and wraps using the actual slide count', () => {
+    const f = create();
+    const http = TestBed.inject(HttpTestingController);
+    http.expectOne('/api/v1/content/hero').flush({ version: 4, slides: [
+      { id: 'one', visible: true, image: 'kits', label: 'Projet', title: 'Projet maison', description: 'Description', alt: 'Illustration IA', link: '/packs', action: 'Voir', detail: 'Note' },
+      { id: 'two', visible: true, image: 'tools', label: 'Outils', title: 'Outils maison', description: 'Description', alt: 'Illustration IA', link: '/catalogue', action: 'Explorer', detail: 'Note' },
+    ] });
+    f.detectChanges();
+    expect(f.nativeElement.querySelectorAll('.slide')).toHaveLength(2);
+    expect(f.nativeElement.querySelector('.slide').getAttribute('aria-label')).toContain('sur 2');
+    expect(f.nativeElement.textContent).toContain('Projet maison');
+    f.componentInstance.select(2);
+    expect(f.componentInstance.active()).toBe(0);
   });
 });

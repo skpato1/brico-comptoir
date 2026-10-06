@@ -1,6 +1,8 @@
 import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { AdminApi, HeroSlide } from '../../core/admin-api';
 
 @Component({
   selector: 'app-hero-carousel',
@@ -11,8 +13,10 @@ import { RouterLink } from '@angular/router';
 export class HeroCarousel implements OnInit {
   private readonly document = inject(DOCUMENT);
   private readonly destroy = inject(DestroyRef);
-  readonly slides = [
+  private readonly api = inject(AdminApi);
+  readonly slides = signal<HeroSlide[]>([
     {
+      id: 'default-kits', visible: true,
       image: 'kits',
       label: 'Kits & packs',
       title: 'Le bon kit.\nLe début de votre projet.',
@@ -24,6 +28,7 @@ export class HeroCarousel implements OnInit {
       detail: 'Compositions détaillées · Variantes à comparer',
     },
     {
+      id: 'default-hardware', visible: true,
       image: 'hardware',
       label: 'Fixations & quincaillerie',
       title: 'Chaque pièce\na son importance.',
@@ -35,6 +40,7 @@ export class HeroCarousel implements OnInit {
       detail: 'Références et caractéristiques dans chaque fiche',
     },
     {
+      id: 'default-tools', visible: true,
       image: 'tools',
       label: 'Outils & équipement',
       title: 'À vous de faire.\nÀ nous d’équiper.',
@@ -45,7 +51,7 @@ export class HeroCarousel implements OnInit {
       action: 'Voir les produits',
       detail: 'À l’unité ou en pack · Prix en dinars tunisiens',
     },
-  ];
+  ]);
   readonly active = signal(0);
   readonly paused = signal(false);
   readonly hovered = signal(false);
@@ -58,6 +64,16 @@ export class HeroCarousel implements OnInit {
   private pointerStart?: { x: number; y: number };
 
   ngOnInit(): void {
+    this.api.hero().pipe(takeUntilDestroyed(this.destroy)).subscribe({
+      next: ({ slides }) => {
+        if (slides.length) {
+          this.slides.set(slides);
+          this.active.set(0);
+          this.failedImages.set(new Set());
+        }
+      },
+      error: () => { /* Keep the bundled, clearly illustrative banners available. */ },
+    });
     const view = this.document.defaultView;
     if (!view || typeof view.matchMedia !== 'function') return;
     const media = view.matchMedia('(prefers-reduced-motion: reduce)');
@@ -68,7 +84,8 @@ export class HeroCarousel implements OnInit {
     media.addEventListener('change', syncMotion);
     this.document.addEventListener('visibilitychange', syncVisibility);
     const timer = view.setInterval(() => {
-      if (this.rotating()) this.active.update((index) => (index + 1) % this.slides.length);
+      if (this.rotating() && this.slides().length > 1)
+        this.active.update((index) => (index + 1) % this.slides().length);
     }, 6500);
     this.destroy.onDestroy(() => {
       view.clearInterval(timer);
@@ -79,7 +96,7 @@ export class HeroCarousel implements OnInit {
 
   select(index: number): void {
     this.paused.set(true);
-    this.active.set((index + this.slides.length) % this.slides.length);
+    if (this.slides().length) this.active.set((index + this.slides().length) % this.slides().length);
   }
   toggleRotation(): void {
     this.paused.update((value) => !value);

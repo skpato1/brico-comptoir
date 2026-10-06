@@ -1,23 +1,70 @@
-.admin-nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 24px 0;
+:host { display: block; background: #f8f8f8; min-height: 85vh; }
+.admin-shell { max-width: 1560px; margin: auto; padding: clamp(20px, 3vw, 48px); }
+.admin-intro { display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-bottom: 26px; }
+.admin-intro h1 { font-size: clamp(1.8rem, 3vw, 2.6rem); margin: 0 0 8px; letter-spacing: -.035em; }
+.admin-intro p { margin: 0; color: #555; }
+.admin-intro .eyebrow { color: #b51f24; font-size: .72rem; font-weight: 750; letter-spacing: .15em; margin-bottom: 12px; }
+.store-link { display: inline-flex; gap: 12px; align-items: center; white-space: nowrap; padding: 12px 16px; border: 1px solid #d8d8d8; border-radius: 8px; background: white; text-decoration: none; font-weight: 650; }
+.store-link:hover { border-color: #b51f24; color: #b51f24; }
+.admin-notice { background: #fff9e9; border: 1px solid #ead59f; border-radius: 10px; padding: 12px 18px; margin-bottom: 22px; }
+.admin-notice p { margin: 0 0 5px; }
+.admin-layout { display: grid; grid-template-columns: 225px minmax(0, 1fr); gap: 26px; align-items: start; }
+.admin-nav { position: sticky; top: 14px; max-height: calc(100vh - 28px); overflow: auto; padding: 14px; background: #fff; border: 1px solid #ececec; border-radius: 12px; }
+.admin-nav-group + .admin-nav-group { border-top: 1px solid #eee; margin-top: 9px; padding-top: 9px; }
+.admin-nav-group p { padding: 5px 12px; margin: 0; color: #727272; text-transform: uppercase; font-size: .7rem; font-weight: 750; letter-spacing: .13em; }
+.admin-nav a { display: block; padding: 10px 12px; border-radius: 7px; color: #313131; text-decoration: none; font-size: .9rem; font-weight: 550; }
+.admin-nav a:hover { background: #f7f7f7; }
+.admin-nav .active, .admin-nav .active:hover { background: #b51f24; color: white; }
+.admin-workspace { min-width: 0; background: #fff; border: 1px solid #ececec; border-radius: 12px; padding: clamp(18px, 2.8vw, 38px); box-shadow: 0 14px 35px rgb(0 0 0 / 3%); }
+.admin-workspace > h2 { margin-top: 0; }
+.admin-shortcuts { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-top: 28px; }
+.admin-shortcuts a { position: relative; min-height: 118px; display: flex; flex-direction: column; gap: 8px; padding: 20px 38px 20px 20px; border: 1px solid #e2e2e2; border-radius: 10px; text-decoration: none; transition: border-color .18s, transform .18s, box-shadow .18s; }
+.admin-shortcuts a:hover, .admin-shortcuts a:focus-visible { border-color: #b51f24; transform: translateY(-2px); box-shadow: 0 8px 20px rgb(0 0 0 / 6%); }
+.admin-shortcuts strong { font-size: 1.02rem; }
+.admin-shortcuts span { color: #636363; font-size: .86rem; line-height: 1.45; }
+.admin-shortcuts b { position: absolute; top: 18px; right: 18px; color: #b51f24; }
+:host ::ng-deep .workspace-heading { display: flex; justify-content: space-between; align-items: start; gap: 18px; margin-bottom: 22px; }
+:host ::ng-deep .workspace-heading h2 { margin: 3px 0 8px; }
+:host ::ng-deep .workspace-heading p:last-child { margin: 0; color: #666; }
+:host ::ng-deep .banner-list { display: grid; gap: 18px; }
+:host ::ng-deep .banner-editor { padding: 20px; border: 1px solid #e5e5e5; border-radius: 10px; }
+:host ::ng-deep .banner-top { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+:host ::ng-deep .banner-top img { object-fit: cover; border-radius: 7px; }
+:host ::ng-deep .banner-top p { margin: 5px 0 0; color: #666; }
+:host ::ng-deep .banner-top .actions { margin-left: auto; }
+:host ::ng-deep .admin-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+:host ::ng-deep .admin-grid .wide { grid-column: 1 / -1; }
+:host ::ng-deep .admin-grid label { font-weight: 600; }
+:host ::ng-deep .admin-grid input, :host ::ng-deep .admin-grid textarea, :host ::ng-deep .admin-grid select, :host ::ng-deep .support-lookup input, :host ::ng-deep .filter-row select { display: block; width: 100%; min-height: 42px; padding: 9px; border: 1px solid #bbb; border-radius: 6px; background: white; }
+:host ::ng-deep .admin-grid textarea { min-height: 85px; }
+:host ::ng-deep .admin-grid small { display: block; font-weight: 400; color: #666; }
+:host ::ng-deep .support-card { padding: 18px; border: 1px solid #e5e5e5; border-radius: 9px; margin: 14px 0; }
+:host ::ng-deep .support-card-head { display: flex; justify-content: space-between; gap: 10px; }
+:host ::ng-deep .support-card-head span, :host ::ng-deep .support-card p { color: #626262; }
+:host ::ng-deep .support-card .message-body { white-space: pre-wrap; color: #222; overflow-wrap: anywhere; }
+:host ::ng-deep .support-lookup { display: flex; align-items: end; gap: 12px; max-width: 650px; }
+:host ::ng-deep .support-lookup label { flex: 1; }
+:host ::ng-deep .support-facts { display: grid; gap: 14px; }
+:host ::ng-deep .support-facts div { display: grid; grid-template-columns: 110px 1fr; gap: 12px; overflow-wrap: anywhere; }
+:host ::ng-deep .support-facts dt { color: #666; }
+:host ::ng-deep .support-facts dd { margin: 0; }
+:host ::ng-deep .filter-row { display: flex; align-items: end; gap: 12px; }
+:host ::ng-deep .catalog [hidden] { display: none !important; }
+@media (max-width: 880px) {
+  .admin-layout { display: block; }
+  .admin-nav { position: static; display: flex; overflow-x: auto; max-height: none; padding: 8px; gap: 10px; margin-bottom: 16px; scroll-snap-type: x proximity; }
+  .admin-nav-group { display: flex; align-items: center; gap: 5px; flex: 0 0 auto; border: 0 !important; margin: 0 !important; padding: 0 !important; }
+  .admin-nav-group p { display: none; }
+  .admin-nav a { white-space: nowrap; scroll-snap-align: start; }
 }
-.admin-nav a {
-  padding: 12px 18px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  text-decoration: none;
-}
-.admin-nav .active {
-  background: #b51f24;
-  color: white;
-  border-color: #b51f24;
-}
-.admin-workspace {
-  border-top: 1px solid #ddd;
-  padding-top: 24px;
+@media (max-width: 620px) {
+  .admin-intro { display: block; }
+  .store-link { margin-top: 18px; }
+  :host ::ng-deep .admin-grid { display: block; }
+  :host ::ng-deep .banner-top { flex-wrap: wrap; }
+  :host ::ng-deep .banner-top .actions { width: 100%; }
+  :host ::ng-deep .support-lookup { display: block; }
+  :host ::ng-deep .support-card-head { display: block; }
 }
 :host ::ng-deep .catalog,
 :host ::ng-deep .packs {
@@ -26,6 +73,8 @@
   padding: 0;
   border: 0;
 }
+:host ::ng-deep .catalog .admin-grid { display: block; max-width: 900px; }
+:host ::ng-deep .catalog .admin-grid > * { margin-top: 18px; }
 :host ::ng-deep .catalog button:not(.secondary):not(.link) {
   background: #b51f24;
 }

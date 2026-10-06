@@ -46,6 +46,8 @@ spring:
       mail.smtp.timeout: 5000
       mail.smtp.writetimeout: 5000
 brico:
+  contact:
+    message-retention-days: ${CONTACT_MESSAGE_RETENTION_DAYS:0}
   privacy:
     archive-key: ${DATA_ARCHIVE_KEY}
     contact-days: ${PRIVACY_CONTACT_DAYS:90}

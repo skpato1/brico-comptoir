@@ -14,18 +14,22 @@ import org.springframework.test.context.*;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.junit.jupiter.*;
 import org.testcontainers.postgresql.PostgreSQLContainer;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.when;
 import tools.jackson.databind.ObjectMapper;
 import tn.bricocomptoir.bootstrap.BricoComptoirApplication;
 import tn.bricocomptoir.catalog.adapter.transaction.CatalogTransactions;
 import tn.bricocomptoir.packs.adapter.transaction.PackTransactions;
 import tn.bricocomptoir.identity.adapter.transaction.IdentityTransactions;
 import tn.bricocomptoir.identity.domain.Role;
+import tn.bricocomptoir.identity.adapter.security.AttemptThrottle;
 import tn.bricocomptoir.inventory.adapter.transaction.InventoryTransactions;
 import tn.bricocomptoir.sales.adapter.transaction.OrderTransactions;
 import tn.bricocomptoir.sales.domain.*;
 import tn.bricocomptoir.sales.domain.OrderModels.*;
 import tn.bricocomptoir.sales.domain.CartModels.Kind;
 import tn.bricocomptoir.content.domain.HomeContent;
+import tn.bricocomptoir.content.domain.ManagedContent.*;
 import static org.assertj.core.api.Assertions.*;
 
 @Testcontainers
@@ -51,9 +55,12 @@ class AdministrationIT {
     @Autowired JdbcTemplate jdbc;
     @Autowired ObjectMapper json;
     @MockitoBean JavaMailSender mail;
+    @MockitoBean AttemptThrottle throttle;
     private static UUID adminId;
     private static String adminEmail;
     @BeforeEach void administrator(){
+        // This suite opens many sessions from loopback to test RBAC; rate limiting is tested separately.
+        when(throttle.allow(anyString(), anyString(), anyInt(), any())).thenReturn(true);
         if(adminId==null){adminEmail=UUID.randomUUID()+"@example.invalid";adminId=identity.bootstrapAdmin(adminEmail,LOGIN_PASSWORD).id();}
     }
     private Browser browser(Role role)throws Exception{
@@ -149,6 +156,63 @@ class AdministrationIT {
         assertThat(root.request("PUT","/admin/delivery",json.writeValueAsString(new DeliverySettings(false,"0.000",Set.of(),current.version())),true).statusCode()).isEqualTo(200);
         assertThatThrownBy(()->orders.preview(actor,items,address)).isInstanceOf(CheckoutFailure.class).hasMessage("CHECKOUT_UNAVAILABLE");
         assertThat(orders.get(actor,order.id()).snapshot().deliveryTnd()).isEqualByComparingTo("9.500");
+    }
+    @Test void heroAndContactRespectRolesCsrfVisibilityAndVersion() throws Exception {
+        Browser root=browser(Role.ADMIN),cm=browser(Role.CATALOG_MANAGER),om=browser(Role.ORDER_MANAGER),customer=browser(Role.CUSTOMER),guest=new Browser();
+        for(String path:List.of("/content/hero","/contact")) assertThat(guest.get(path).statusCode()).isEqualTo(200);
+        assertThat(cm.get("/admin/content/hero").statusCode()).isEqualTo(200);
+        assertThat(om.get("/admin/content/hero").statusCode()).isEqualTo(403);
+        assertThat(customer.get("/admin/content/hero").statusCode()).isEqualTo(403);
+        Hero before=json.readValue(cm.get("/admin/content/hero").body(),Hero.class);
+        assertThat(before.slides()).hasSizeGreaterThan(0);
+        var hidden=new Slide(UUID.randomUUID(),false,"kits","Cachée","Titre caché","Description cachée","Illustration IA","/packs","Voir","Note");
+        var changes=new java.util.ArrayList<>(before.slides());changes.add(hidden);
+        var update=new Hero(before.version(),changes);
+        assertThat(cm.request("PUT","/admin/content/hero",json.writeValueAsString(update),false).statusCode()).isEqualTo(403);
+        assertThat(cm.request("PUT","/admin/content/hero",json.writeValueAsString(update),true).statusCode()).isEqualTo(200);
+        assertThat(guest.get("/content/hero").body()).doesNotContain("Titre caché");
+        assertThat(cm.get("/admin/content/hero").body()).contains("Titre caché");
+        assertThat(cm.request("PUT","/admin/content/hero",json.writeValueAsString(update),true).statusCode()).isEqualTo(409);
+        assertThat(om.request("PUT","/admin/content/hero",json.writeValueAsString(update),true).statusCode()).isEqualTo(403);
+        assertThat(root.get("/admin/contact").statusCode()).isEqualTo(200);
+        assertThat(cm.get("/admin/contact").statusCode()).isEqualTo(403);
+        Contact current=json.readValue(root.get("/admin/contact").body(),Contact.class);
+        var details=new Contact("contact@example.invalid","20123456","Adresse de test",current.version());
+        assertThat(root.request("PUT","/admin/contact",json.writeValueAsString(details),false).statusCode()).isEqualTo(403);
+        assertThat(root.request("PUT","/admin/contact",json.writeValueAsString(details),true).statusCode()).isEqualTo(200);
+        assertThat(guest.get("/contact").body()).contains("Adresse de test");
+        assertThat(root.request("PUT","/admin/contact",json.writeValueAsString(details),true).statusCode()).isEqualTo(409);
+        assertThat(cm.request("PUT","/admin/contact",json.writeValueAsString(details),true).statusCode()).isEqualTo(403);
+        guest.get("/auth/csrf");
+        var message=new MessageInput("Client","client@example.invalid","Question","Bonjour, question de test","");
+        assertThat(guest.request("POST","/contact/messages",json.writeValueAsString(message),false).statusCode()).isEqualTo(403);
+        assertThat(guest.request("POST","/contact/messages",json.writeValueAsString(message),true).statusCode()).isEqualTo(201);
+        assertThat(om.get("/admin/contact/messages").body()).contains("question de test");
+        assertThat(cm.get("/admin/contact/messages").statusCode()).isEqualTo(403);
+        assertThat(customer.get("/admin/contact/messages").statusCode()).isEqualTo(403);
+        var messages=json.readTree(om.get("/admin/contact/messages").body());
+        String id=messages.path("items").get(0).path("id").asString();
+        assertThat(om.request("POST","/admin/contact/messages/"+id+"/resolve","{}",false).statusCode()).isEqualTo(403);
+        assertThat(om.request("POST","/admin/contact/messages/"+id+"/resolve","{}",true).statusCode()).isEqualTo(204);
+        assertThat(om.request("POST","/admin/contact/messages/"+id+"/resolve","{}",true).statusCode()).isEqualTo(409);
+    }
+
+    @Test void supportCanReadExactAccountAndSavedCartOnlyAsAdmin() throws Exception {
+        Browser root=browser(Role.ADMIN),cm=browser(Role.CATALOG_MANAGER),om=browser(Role.ORDER_MANAGER),guest=new Browser();
+        String email=UUID.randomUUID()+"@example.invalid";
+        UUID customerId=identity.register(email,LOGIN_PASSWORD).id();
+        String lookup="/admin/accounts/lookup?email="+email;
+        assertThat(root.get(lookup).body()).contains(customerId.toString());
+        assertThat(cm.get(lookup).statusCode()).isEqualTo(403);
+        assertThat(om.get(lookup).statusCode()).isEqualTo(403);
+        assertThat(guest.get(lookup).statusCode()).isEqualTo(401);
+        String cart="/admin/support/carts/"+customerId;
+        assertThat(root.get(cart).statusCode()).isEqualTo(200);
+        assertThat(cm.get(cart).statusCode()).isEqualTo(403);
+        assertThat(om.get(cart).statusCode()).isEqualTo(403);
+        assertThat(guest.get(cart).statusCode()).isEqualTo(401);
+        assertThat(root.request("PUT",cart,"{}",true).statusCode()).isEqualTo(405);
+        assertThat(root.get(cart).body()).contains("\"lines\":[]");
     }
     private final class Browser{
         final CookieManager cookies=new CookieManager(null,CookiePolicy.ACCEPT_ALL);

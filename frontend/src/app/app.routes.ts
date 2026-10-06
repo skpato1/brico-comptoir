@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { HomePage } from './features/store/home';
 import { CheckoutPage } from './features/store/purchase';
 export const routes: Routes = [
+  { path: 'contact', loadComponent: () => import('./features/store/contact').then(m => m.ContactPage), title: 'Contact | BricoComptoir' },
   { path: 'mes-donnees', loadComponent: () => import('./features/store/privacy').then(m => m.PrivacyPage), title: 'Mes données | BricoComptoir' },
   { path: '', component: HomePage, title: 'BricoComptoir — Vos projets, simplement' },
   {

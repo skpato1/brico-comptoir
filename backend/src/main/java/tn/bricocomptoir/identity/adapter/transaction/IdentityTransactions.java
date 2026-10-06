@@ -28,6 +28,9 @@ public class IdentityTransactions {
     @Transactional(readOnly = true)
     public Account findVisible(UUID actor, UUID target) { return service.findVisible(actor, target); }
 
+    @Transactional(readOnly = true)
+    public Account findByEmailVisible(UUID actor, String email) { return service.findByEmailVisible(actor, email); }
+
     @Transactional
     public Account changeRoles(UUID actor, UUID target, Set<Role> roles) {
         return service.changeRoles(actor, target, roles);
