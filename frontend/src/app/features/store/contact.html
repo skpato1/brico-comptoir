@@ -1,0 +1,22 @@
+<main class="page-wrap contact-page">
+  <p class="eyebrow">BRICOCOMPTOIR</p><h1>Nous contacter</h1>
+  <p>Une question sur un article, un pack ou votre commande ? Écrivez-nous avec les informations utiles.</p>
+  @if (details(); as info) {
+    <div class="contact-details">
+      @if (info.email) { <p>Email : <a [href]="'mailto:' + info.email">{{ info.email }}</a></p> }
+      @if (info.phone) { <p>Téléphone : <a [href]="'tel:' + info.phone">{{ info.phone }}</a></p> }
+      @if (info.address) { <p>{{ info.address }}</p> }
+    </div>
+  }
+  @if (sent()) { <p role="status">Votre message a été reçu. Nous vous répondrons par email.</p> }
+  @if (error()) { <p role="alert" class="error">{{ error() }}</p> }
+  <form #form="ngForm" (ngSubmit)="submit(form)" class="contact-form">
+    <label>Nom<input name="name" [(ngModel)]="message.name" required maxlength="120" autocomplete="name" /></label>
+    <label>Email<input name="email" type="email" [(ngModel)]="message.email" required maxlength="254" autocomplete="email" /></label>
+    <label>Sujet<input name="subject" [(ngModel)]="message.subject" required maxlength="160" /></label>
+    <label>Message<textarea name="body" [(ngModel)]="message.body" required maxlength="3000" rows="7"></textarea></label>
+    <div class="contact-honeypot" aria-hidden="true"><label>Site web<input name="website" [(ngModel)]="message.website" tabindex="-1" autocomplete="off" /></label></div>
+    <p>Ces données servent uniquement à traiter votre demande. N’envoyez pas de mot de passe.</p>
+    <button type="submit" [disabled]="busy()">{{ busy() ? 'Envoi…' : 'Envoyer le message' }}</button>
+  </form>
+</main>

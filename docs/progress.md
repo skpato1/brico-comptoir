@@ -1486,3 +1486,25 @@ Playwright, `node scripts/check-repository.mjs` et
 être relancé localement à ce stade : le moteur Docker Desktop ne répond pas,
 même après tentative de démarrage. La validation intégrale est attendue du
 prochain run GitHub Actions ; elle ne doit pas être présumée réussie.
+
+## 6 octobre 2026 — Espace d'administration étendu
+
+Navigation par rôle et par tâche : produits, photos, catégories, marques,
+prix/SKU, import CSV, packs, commandes, stock, livraison, bannières, textes
+d'accueil, contact et support comptes/paniers. Les opérations catalogue,
+vente et stock réutilisent les API existantes. V14 crée les bannières
+ordonnées/versionnées, les coordonnées et la file de messages de contact.
+Le hero public lit uniquement les diapositives visibles ; le formulaire de
+contact applique CSRF et limites serveur. Recherche de compte par email exact
+et consultation du panier client réservées à ADMIN, sans mutation de panier.
+
+Vérifications exécutées : `npm run test:ci` (64 tests réussis),
+`npm run build` (réussi, avertissement de taille pour la feuille de style
+administration), `node scripts/check-repository.mjs` (14 migrations),
+`node scripts/check-release.mjs` (réussi), `git diff --check` (aucune erreur
+d'espacement). Les tests backend PostgreSQL/Testcontainers et les parcours
+navigateur restent à exécuter sur CI : Java 21 et le moteur Docker ne sont pas
+disponibles dans cet environnement local. Les bannières utilisent encore les
+trois illustrations intégrées ; l'upload dédié d'images de bannière reste à
+faire. L'exploitant doit fixer les coordonnées publiques et la durée de
+conservation des messages (`CONTACT_MESSAGE_RETENTION_DAYS`).

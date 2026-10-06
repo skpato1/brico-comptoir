@@ -648,3 +648,21 @@ V10 et les contrats de [notifications.md](notifications.md). Paiement en
 ligne, transporteurs, retours, promotions et multi-dépôts restent des extensions.
 La livraison d'emails en production nécessite un SMTP fiable,
 un domaine public validé et des paramètres Argon2id mesurés avant ouverture.
+
+### Administration de la vitrine et contact (V14)
+
+Le module `content` possède les bannières d'accueil, les coordonnées publiques
+et les messages de contact. Le domaine Java valide les diapositives, les liens
+internes et les champs texte ; l'application orchestre le port de stockage ;
+l'adaptateur JDBC porte les versions optimistes, les pages SQL et les
+transactions PostgreSQL. Aucun champ de contact ou de bannière ne contient du
+HTML interprété. L'authentification, le CSRF et le RBAC restent à la frontière
+HTTP de Spring Security. Les images de bannière sont pour l'instant trois
+illustrations statiques intégrées ; les photos produit restent dans `media`.
+
+Le support ADMIN lit un compte via le contrat public `identity` avec recherche
+par email exact, puis son panier via le contrat `sales` en lecture seule. Aucun
+module ne joint directement les tables d'un autre. Les paniers visiteurs ne
+quittent pas le navigateur. Les messages de contact forment un traitement
+personnel distinct de l'export de compte, avec conservation configurable et
+une procédure de droits à définir avant exploitation commerciale.

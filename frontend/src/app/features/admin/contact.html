@@ -1,0 +1,29 @@
+<div class="workspace-heading"><div><p class="eyebrow">RELATION CLIENT</p><h2>Contact</h2><p>Messages envoyés depuis le site. Les coordonnées restent visibles publiquement seulement si elles sont renseignées.</p></div></div>
+@if (error()) { <p role="alert" class="error">{{ error() }}</p> }
+@if (success()) { <p role="status">{{ success() }}</p> }
+@if (canEdit && details(); as value) {
+  <section class="admin-detail"><h3>Coordonnées publiques</h3>
+    <form #detailsForm="ngForm" (ngSubmit)="saveDetails(detailsForm)" class="admin-settings">
+      <label>Email<input name="contactEmail" type="email" [(ngModel)]="value.email" maxlength="254" /></label>
+      <label>Téléphone<input name="contactPhone" [(ngModel)]="value.phone" maxlength="40" /></label>
+      <label>Adresse ou point de retrait<input name="contactAddress" [(ngModel)]="value.address" maxlength="240" /></label>
+      <button type="submit" [disabled]="busy()">Enregistrer les coordonnées</button>
+    </form>
+  </section>
+}
+<section class="admin-detail"><h3>Messages reçus</h3>
+  <form (ngSubmit)="loadMessages()" class="filter-row"><label>État<select name="messageStatus" [(ngModel)]="status"><option value="NEW">À traiter</option><option value="RESOLVED">Traités</option></select></label><button type="submit" [disabled]="busy()">Afficher</button></form>
+  @if (busy()) { <p role="status">Chargement…</p> }
+  @if (messages(); as result) {
+    @if (!result.totalElements) { <p>Aucun message dans cette catégorie.</p> }
+    @for (message of result.items; track message.id) {
+      <article class="support-card">
+        <div class="support-card-head"><strong>{{ message.subject }}</strong><span>{{ message.createdAt | date:'dd/MM/yyyy HH:mm' }}</span></div>
+        <p>De {{ message.name }} · <a [href]="'mailto:' + message.email">{{ message.email }}</a></p>
+        <p class="message-body">{{ message.body }}</p>
+        @if (message.status === 'NEW') { <button class="secondary" type="button" [disabled]="busy()" (click)="resolve(message.id)">Marquer comme traité</button> }
+      </article>
+    }
+    <app-admin-pager [page]="result.page" [size]="result.size" [total]="result.totalElements" (changed)="loadMessages($event)" />
+  }
+</section>

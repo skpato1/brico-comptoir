@@ -1,0 +1,12 @@
+:host { display: block; }
+.contact-page { max-width: 780px; margin: 0 auto; padding: clamp(24px, 5vw, 70px) 20px; }
+h1 { font-size: clamp(2rem, 5vw, 3rem); margin: 0 0 15px; }
+.contact-details { border-left: 4px solid #be252b; padding: 8px 20px; margin: 26px 0; background: #fafafa; }
+.contact-form { display: grid; gap: 17px; max-width: 620px; margin: 32px 0; }
+.contact-form label { display: grid; gap: 7px; font-weight: 650; }
+.contact-form input, .contact-form textarea { width: 100%; border: 1px solid #aaa; border-radius: 6px; padding: 12px; }
+.contact-form textarea { resize: vertical; }
+.contact-form button { justify-self: start; }
+.contact-form p { margin: 0; color: #666; font-size: .85rem; }
+.contact-honeypot { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+input.ng-invalid.ng-touched, textarea.ng-invalid.ng-touched { border: 2px solid #be252b; }

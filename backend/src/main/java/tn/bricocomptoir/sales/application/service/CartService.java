@@ -29,6 +29,11 @@ public final class CartService {
         return new View(cart, quote(cart.lines()));
     }
 
+    public Cart supportRead(UUID customerId) {
+        requireCustomer(customerId);
+        return store.read(customerId).orElse(new Cart(customerId, 0, List.of()));
+    }
+
     public View replace(UUID customerId, long expectedVersion, List<Line> lines) {
         requireCustomer(customerId);
         if (expectedVersion < 0) throw new IllegalArgumentException("Cart version required");

@@ -11,7 +11,7 @@
   (pointercancel)="cancelPointer()"
 >
   <div class="slides" [attr.aria-live]="rotating() ? 'off' : 'polite'" aria-atomic="false">
-    @for (slide of slides; track slide.image; let i = $index) {
+    @for (slide of slides(); track slide.id; let i = $index) {
       <article
         class="slide"
         [class.active]="active() === i"
@@ -19,7 +19,7 @@
         [attr.inert]="active() !== i ? '' : null"
         role="group"
         aria-roledescription="diapositive"
-        [attr.aria-label]="i + 1 + ' sur 3 : ' + slide.label"
+        [attr.aria-label]="i + 1 + ' sur ' + slides().length + ' : ' + slide.label"
       >
         <div class="photo">
           @if (!failedImages().has(i)) {
@@ -52,7 +52,7 @@
               >{{ slide.action }}
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg
             ></a>
-            @if (i === 0) {
+            @if (slide.link === '/solutions') {
               <a class="secondary-link" routerLink="/packs">Voir tous les packs</a>
             }
           </div>
@@ -82,7 +82,7 @@
   </button>
   <div class="controls">
     <div class="selectors" role="group" aria-label="Choisir une ambiance">
-      @for (slide of slides; track slide.image; let i = $index) {
+      @for (slide of slides(); track slide.id; let i = $index) {
         <button
           type="button"
           [class.selected]="active() === i"

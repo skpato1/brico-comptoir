@@ -124,6 +124,11 @@ public class IdentityController {
         return ResponseEntity.status(HttpStatus.CREATED).body(AccountView.of(created));
     }
 
+    @GetMapping("/admin/accounts/lookup")
+    public AccountView lookup(@AuthenticationPrincipal SessionUser user, @RequestParam String email) {
+        return AccountView.of(identity.findByEmailVisible(user.id(), email));
+    }
+
     @PutMapping("/admin/accounts/{id}/roles")
     public AccountView changeRoles(@AuthenticationPrincipal SessionUser user, @PathVariable UUID id,
                                    @Valid @RequestBody RolesRequest input) {

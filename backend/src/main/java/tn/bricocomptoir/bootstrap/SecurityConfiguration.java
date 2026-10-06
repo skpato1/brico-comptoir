@@ -187,13 +187,16 @@ class SecurityConfiguration {
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/register", "/api/v1/auth/login",
                                 "/api/v1/auth/password-reset/request", "/api/v1/auth/password-reset/complete",
                                 "/api/v1/cart/estimate", "/api/v1/checkout/preview", "/api/v1/orders",
-                                "/api/v1/orders/*/cancel").permitAll()
+                                "/api/v1/orders/*/cancel", "/api/v1/contact/messages").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/orders/*").permitAll()
                         .requestMatchers("/api/v1/privacy/guest/**").permitAll()
                         .requestMatchers("/api/v1/privacy/**").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/v1/orders").hasRole("CUSTOMER")
-                        .requestMatchers(HttpMethod.GET, "/api/v1/content/home").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/content/home", "/api/v1/content/hero",
+                                "/api/v1/contact").permitAll()
                         .requestMatchers("/api/v1/admin/content/**").hasAnyRole("CATALOG_MANAGER", "ADMIN")
+                        .requestMatchers("/api/v1/admin/contact/messages", "/api/v1/admin/contact/messages/**")
+                                .hasAnyRole("ORDER_MANAGER", "ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/v1/categories", "/api/v1/brands",
                                 "/api/v1/products", "/api/v1/products/*", "/api/v1/availability/*",
                                 "/api/v1/packs", "/api/v1/packs/*",

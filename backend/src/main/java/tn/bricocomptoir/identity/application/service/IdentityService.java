@@ -80,6 +80,12 @@ public final class IdentityService {
         return accounts.byId(target).orElseThrow(() -> new IllegalArgumentException("Account not found"));
     }
 
+    public Account findByEmailVisible(UUID actor, String emailInput) {
+        requireAdmin(actor);
+        String email = AccountPolicy.normalizeEmail(emailInput);
+        return accounts.byEmail(email).orElseThrow(() -> new IllegalArgumentException("Account not found"));
+    }
+
     public Account changeRoles(UUID actor, UUID target, Set<Role> roles) {
         if (roles == null || roles.isEmpty()) throw new IllegalArgumentException("Roles required");
         accounts.lockAdministration();

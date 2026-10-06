@@ -18,6 +18,8 @@ public class CartTransactions {
     public Quote estimate(List<Line> lines) { return service.estimate(lines); }
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public View view(UUID customerId) { return service.view(customerId); }
+    @Transactional(readOnly = true)
+    public Cart supportRead(UUID customerId) { return service.supportRead(customerId); }
     @Transactional public View replace(UUID customerId, long version, List<Line> lines) {
         contact.lockPurchase(customerId);
         return service.replace(customerId, version, lines);

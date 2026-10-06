@@ -12,6 +12,43 @@ export interface HomeContent {
   productDescription: string;
   version: number;
 }
+export interface HeroSlide {
+  id: string;
+  visible: boolean;
+  image: 'kits' | 'hardware' | 'tools';
+  label: string;
+  title: string;
+  description: string;
+  alt: string;
+  link: string;
+  action: string;
+  detail: string;
+}
+export interface HeroContent {
+  version: number;
+  slides: HeroSlide[];
+}
+export interface ContactDetails {
+  email: string;
+  phone: string;
+  address: string;
+  version: number;
+}
+export interface ContactMessage {
+  id: string;
+  name: string;
+  email: string;
+  subject: string;
+  body: string;
+  status: 'NEW' | 'RESOLVED';
+  createdAt: string;
+}
+export interface ContactMessagePage {
+  items: ContactMessage[];
+  page: number;
+  size: number;
+  totalElements: number;
+}
 export interface DeliverySettings {
   enabled: boolean;
   amountTnd: string;
@@ -77,6 +114,27 @@ export class AdminApi {
   }
   saveHome(value: HomeContent) {
     return this.write<HomeContent>('/content/home', value);
+  }
+  hero(admin = false) {
+    return this.http.get<HeroContent>('/api/v1/' + (admin ? 'admin/' : '') + 'content/hero');
+  }
+  saveHero(value: HeroContent) {
+    return this.write<HeroContent>('/content/hero', value);
+  }
+  contact(admin = false) {
+    return this.http.get<ContactDetails>('/api/v1/' + (admin ? 'admin/' : '') + 'contact');
+  }
+  saveContact(value: ContactDetails) {
+    return this.write<ContactDetails>('/contact', value);
+  }
+  messages(page = 0, status = 'NEW') {
+    return this.http.get<ContactMessagePage>('/api/v1/admin/contact/messages', {
+      params: { page, size: 20, status },
+    });
+  }
+  resolveMessage(id: string) {
+    return this.identity.csrf().pipe(switchMap(() =>
+      this.http.post<void>(`/api/v1/admin/contact/messages/${id}/resolve`, {})));
   }
   delivery() {
     return this.http.get<DeliverySettings>('/api/v1/admin/delivery');
