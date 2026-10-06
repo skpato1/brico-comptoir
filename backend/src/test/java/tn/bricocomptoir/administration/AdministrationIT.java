@@ -14,12 +14,15 @@ import org.springframework.test.context.*;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.junit.jupiter.*;
 import org.testcontainers.postgresql.PostgreSQLContainer;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.when;
 import tools.jackson.databind.ObjectMapper;
 import tn.bricocomptoir.bootstrap.BricoComptoirApplication;
 import tn.bricocomptoir.catalog.adapter.transaction.CatalogTransactions;
 import tn.bricocomptoir.packs.adapter.transaction.PackTransactions;
 import tn.bricocomptoir.identity.adapter.transaction.IdentityTransactions;
 import tn.bricocomptoir.identity.domain.Role;
+import tn.bricocomptoir.identity.adapter.security.AttemptThrottle;
 import tn.bricocomptoir.inventory.adapter.transaction.InventoryTransactions;
 import tn.bricocomptoir.sales.adapter.transaction.OrderTransactions;
 import tn.bricocomptoir.sales.domain.*;
@@ -52,9 +55,12 @@ class AdministrationIT {
     @Autowired JdbcTemplate jdbc;
     @Autowired ObjectMapper json;
     @MockitoBean JavaMailSender mail;
+    @MockitoBean AttemptThrottle throttle;
     private static UUID adminId;
     private static String adminEmail;
     @BeforeEach void administrator(){
+        // This suite opens many sessions from loopback to test RBAC; rate limiting is tested separately.
+        when(throttle.allow(anyString(), anyString(), anyInt(), any())).thenReturn(true);
         if(adminId==null){adminEmail=UUID.randomUUID()+"@example.invalid";adminId=identity.bootstrapAdmin(adminEmail,LOGIN_PASSWORD).id();}
     }
     private Browser browser(Role role)throws Exception{

@@ -248,3 +248,23 @@ EUR-Lex a répondu avec un contrôle d'accès, sans lecture complète du texte.
 Ces liens restent des références officielles à revérifier, pas des formalités
 juridiques réputées accomplies. Faire confirmer les textes à jour et les démarches
 par l'exploitant et son conseil avant ouverture.
+
+## Messages de contact ajoutés à la vitrine (V14)
+
+Le formulaire collecte uniquement nom, email, sujet et message. Ces données
+sont conservées dans `content_contact_message`, visibles par ORDER_MANAGER et
+ADMIN, et ne sont pas écrites dans les logs applicatifs. Le formulaire exige
+CSRF et applique un champ leurre et une limite de soumissions par IP. Les
+coordonnées de la boutique sont publiques uniquement lorsqu'elles ont été
+renseignées. `CONTACT_MESSAGE_RETENTION_DAYS` active la purge des messages
+après la durée choisie ; `0` (valeur par défaut) la désactive. L'exploitant doit
+valider cette durée et la configurer, ainsi que la conservation des sauvegardes.
+
+Les messages ne sont pas automatiquement attribués au compte dont ils portent
+l'adresse email : un expéditeur anonyme peut saisir l'adresse d'un tiers.
+**L'export et l'anonymisation automatiques du compte ne couvrent donc pas ces
+messages.** Une procédure vérifiant l'identité du demandeur et permettant la
+recherche, la rectification ou l'effacement manuel des messages reste à définir
+et à mettre en œuvre avant l'ouverture commerciale. Cette limite doit figurer
+dans la notice de confidentialité publique ; aucune conformité globale n'est
+déduite du mécanisme de purge.

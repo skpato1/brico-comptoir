@@ -1508,3 +1508,13 @@ disponibles dans cet environnement local. Les bannières utilisent encore les
 trois illustrations intégrées ; l'upload dédié d'images de bannière reste à
 faire. L'exploitant doit fixer les coordonnées publiques et la durée de
 conservation des messages (`CONTACT_MESSAGE_RETENTION_DAYS`).
+
+Premier run CI de la branche (`1113bf5`) : frontend réussi (64 tests et build),
+backend compilé et migrations V1–V14 appliquées mais trois assertions en échec,
+parcours navigateur en échec sur trois scénarios utilisant l'ancien libellé de
+notification. Les deux tests d'administration sont désormais isolés de la
+limite de connexion IP, testée ailleurs ; l'assertion Flyway attend V14 et les
+sélecteurs navigateur ciblent le nouveau panneau. Vérifications locales des
+fichiers corrigés : `node --check` (deux scénarios),
+`node scripts/check-repository.mjs`, `node scripts/check-release.mjs` et
+`git diff --check` réussissent. La relance CI reste à confirmer.

@@ -75,9 +75,9 @@ onglets du navigateur ne confèrent aucun droit.
 | Coordonnées de contact, stock, livraison, recherche de compte et panier client en lecture seule | Non | Non | Oui |
 
 Le module `content` stocke désormais un agrégat `Hero` (1 à 10 diapositives,
-au moins une visible, ordre stable et version optimiste). `GET
-/api/v1/content/hero` n'expose que les diapositives visibles ; `GET/PUT
-/api/v1/admin/content/hero` donne l'éditeur complet aux gestionnaires de
+au moins une visible, ordre stable et version optimiste).
+`GET /api/v1/content/hero` n'expose que les diapositives visibles ;
+`GET/PUT /api/v1/admin/content/hero` donne l'éditeur complet aux gestionnaires de
 catalogue. Les liens acceptés sont des routes internes prévues ; les trois
 illustrations d'ambiance sont fournies avec l'application et marquées comme
 générées par IA. **L'ajout d'une nouvelle image de bannière n'est pas encore
@@ -95,8 +95,8 @@ Le corps n'est jamais inséré comme HTML. Les messages sont conservés dans
 PostgreSQL ; `CONTACT_MESSAGE_RETENTION_DAYS` active leur purge périodique,
 `0` la désactive. L'exploitant doit fixer une durée avant l'ouverture.
 
-Le support ADMIN recherche un compte par email exact via `GET
-/api/v1/admin/accounts/lookup?email=…`, puis peut lire son panier client via
+Le support ADMIN recherche un compte par email exact via
+`GET /api/v1/admin/accounts/lookup?email=…`, puis peut lire son panier client via
 `GET /api/v1/admin/support/carts/{customerId}`. Cette dernière réponse est
 limitée aux références et quantités du panier ; aucun prix ni disponibilité
 n'est promis. Elle n'accepte aucune écriture. Les paniers visiteurs restent

@@ -27,10 +27,10 @@ test('SMTP interrompu : commande durable, reprise sans doublon et SSE après int
       return outbox.items.some(entry => entry.key.includes(order.id) && entry.lastError === 'PROVIDER_UNAVAILABLE' && entry.attempts > 0);
     }, { timeout: 15000 }).toBe(true);
     await manager.context.setOffline(false);
-    await expect(manager.page.getByText('1 nouvelle(s) commande(s) reçue(s).', { exact: true })).toBeVisible();
+    await expect(manager.page.getByRole('link', { name: '1 nouvelle(s) commande(s) · Ouvrir' })).toBeVisible();
     await manager.page.reload();
     await expect(manager.page.getByText('Notifications connectées.', { exact: true })).toBeVisible();
-    await expect(manager.page.getByText('1 nouvelle(s) commande(s) reçue(s).', { exact: true })).toHaveCount(0);
+    await expect(manager.page.getByRole('link', { name: '1 nouvelle(s) commande(s) · Ouvrir' })).toHaveCount(0);
     helper('mail-resume');
     paused = false;
     await mail(admin, recipient, order.id);
@@ -55,7 +55,7 @@ test('Rôles réels : catalogue refusé au gestionnaire commandes, stock et SSE 
     expect((await guest.get('/api/v1/admin/order-events/stream')).status()).toBe(401);
     await expect(catalog.page.getByRole('alert')).toContainText('Cet espace n’est pas accessible');
     await expect(catalog.page.getByRole('link', { name: 'Stocks', exact: true })).toHaveCount(0);
-    await expect(orders.page.getByRole('link', { name: 'Produits, photos et catégories', exact: true })).toHaveCount(0);
+    await expect(orders.page.getByRole('link', { name: 'Produits', exact: true })).toHaveCount(0);
     // Client-supplied forwarding headers must not bypass the public rate limit.
     for (let i = 0; i < 6; i++) {
       const reset = await mutate(guest, '/auth/password-reset/request', { email: 'absent@example.invalid' }, 'POST', {
