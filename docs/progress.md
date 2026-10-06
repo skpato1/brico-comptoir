@@ -1502,9 +1502,9 @@ Vérifications exécutées : `npm run test:ci` (64 tests réussis),
 `npm run build` (réussi, avertissement de taille pour la feuille de style
 administration), `node scripts/check-repository.mjs` (14 migrations),
 `node scripts/check-release.mjs` (réussi), `git diff --check` (aucune erreur
-d'espacement). Les tests backend PostgreSQL/Testcontainers et les parcours
-navigateur restent à exécuter sur CI : Java 21 et le moteur Docker ne sont pas
-disponibles dans cet environnement local. Les bannières utilisent encore les
+d'espacement). Java 21 et le moteur Docker ne sont pas disponibles dans cet
+environnement local ; les tests backend et navigateur ont été exécutés dans
+GitHub Actions. Les bannières utilisent encore les
 trois illustrations intégrées ; l'upload dédié d'images de bannière reste à
 faire. L'exploitant doit fixer les coordonnées publiques et la durée de
 conservation des messages (`CONTACT_MESSAGE_RETENTION_DAYS`).
@@ -1517,4 +1517,9 @@ limite de connexion IP, testée ailleurs ; l'assertion Flyway attend V14 et les
 sélecteurs navigateur ciblent le nouveau panneau. Vérifications locales des
 fichiers corrigés : `node --check` (deux scénarios),
 `node scripts/check-repository.mjs`, `node scripts/check-release.mjs` et
-`git diff --check` réussissent. La relance CI reste à confirmer.
+`git diff --check` réussissent. La relance CI
+([run #18](https://github.com/skpato1/brico-comptoir/actions/runs/37520040405))
+est entièrement réussie : backend avec PostgreSQL/Testcontainers et MinIO,
+frontend avec 64 tests et build, quatre parcours Playwright (achat invité,
+achat avec SKU partagé, panne SMTP/reprise SSE, permissions), puis sauvegarde
+et restauration PostgreSQL/MinIO en Docker Compose.
