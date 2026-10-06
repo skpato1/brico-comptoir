@@ -117,3 +117,31 @@ publiées sont servies en renditions carte et fiche par l'API média.
 Ne considérer l'import réussi qu'après contrôle du journal, des totaux dans
 l'API et d'un échantillon de fiches et d'images sur le site. L'export ne
 constitue pas une synchronisation automatique avec SQES.
+
+## État vérifié le 6 octobre 2026
+
+Les 6 645 fiches sont mappées dans l'API : 6 617 produits SQES publiés à
+stock zéro, 25 prix à valider en brouillon et 3 références absentes du flux
+actuel remises en brouillon. L'audit a comparé les 9 396 variantes tarifées
+aux prix attendus, sans écart. Le catalogue public affiche 6 621 produits
+au total, dont quatre fiches déjà présentes avant cet import.
+
+Les 14 767 fichiers de l'archive représentent 1 031 654 181 octets ; aucun
+fichier ne manque et aucune empreinte ne diffère. La vérification complète
+retourne **un échec attendu** : 331 images principales sont en stockage natif,
+et 6 252 fiches compatibles n'en ont pas encore. L'envoi massif a été arrêté
+après des délais d'attente de l'API sous charge ; il n'est pas annoncé comme
+terminé. Les 6 555 fiches publiées avec photo compatible affichent une image
+principale via le repli CDN ; leurs galeries contiennent jusqu'à 12 photos.
+Les 62 fiches sans image compatible restent sans visuel, conformément à la
+limite minimale de 320 px choisie par l'exploitant.
+
+Dans le navigateur de production, une fiche sans média natif charge son
+image, une autre affiche cinq photos et la sélection de la deuxième change
+le visuel principal ; toutes deux restent « Épuisé » avec l'action d'achat
+désactivée. Un média natif témoin répond HTTP 200. Les 8 tests Node de
+préparation, les 55 tests Angular, le build Angular, les contrôles du dépôt
+(13 migrations) et la recherche ciblée de secrets/liens locaux passent.
+Avant de reprendre l'envoi natif, contrôler la capacité et la latence du
+stockage, puis utiliser le journal privé et un faible `--workers` ; ne pas
+exécuter simultanément un audit exhaustif sur l'API de production.
