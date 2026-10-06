@@ -164,7 +164,7 @@ describe('Administration réelle', () => {
     expect(f.componentInstance.items()[0].status).toBe('PREPARING');
     expect(f.componentInstance.error()).toContain('Accès refusé');
   });
-  it('renders home content read from the backend as plain text', () => {
+  it('keeps the hero without the removed home introduction', () => {
     const f = TestBed.createComponent(HomePage);
     f.detectChanges();
     http.expectOne('/api/v1/content/home').flush({ ...home, title: '<b>Texte</b>' });
@@ -175,8 +175,9 @@ describe('Administration réelle', () => {
       .flush({ items: [], page: 0, size: 4, totalElements: 0 });
     http.expectOne('/api/v1/brands').flush([]);
     f.detectChanges();
-    expect(f.nativeElement.querySelector('#start-title').textContent).toContain('<b>Texte</b>');
-    expect(f.nativeElement.querySelector('#start-title b')).toBeNull();
+    expect(f.nativeElement.querySelector('app-hero-carousel')).not.toBeNull();
+    expect(f.nativeElement.querySelector('#start-title')).toBeNull();
+    expect(f.nativeElement.querySelector('.pathways')).toBeNull();
   });
   it('uploads selected photos with CSRF and displays a denied operation without replacing metadata', () => {
     const f = TestBed.createComponent(CatalogComponent);

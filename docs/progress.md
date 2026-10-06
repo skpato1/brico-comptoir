@@ -1547,3 +1547,17 @@ pointent vers `/catalogue`. Ces captures ne valident pas la base ni l'API de
 production. Les tests Java/PostgreSQL ne sont pas exécutables sur ce poste :
 JDK 21 absent du PATH et moteur Docker indisponible ; la CI doit les exécuter
 avant intégration. Le déploiement public attend l'intégration de cette branche.
+
+## 6 octobre 2026 — Retrait du bloc d’orientation de l’accueil
+
+Branche `codex/remove-home-orientation` créée depuis `origin/main` pour retirer
+« ON COMMENCE PAR OÙ ? », « À vous de faire. À nous d’équiper. » et les deux
+cartes de navigation vers les packs et le catalogue. Le carrousel et les autres
+sections d’accueil sont conservés ; les styles devenus inutiles ont été retirés
+et le test d’accueil adapté.
+
+Vérification sur cette branche isolée : `npm run test:ci` (65 tests réussis sur
+13 fichiers), `npm run build` réussi avec les avertissements de budget CSS
+préexistants de l’administration et du hero, `node scripts/check-repository.mjs`
+et `node scripts/check-release.mjs` réussis, `git diff --check` sans erreur.
+Aucun code backend, migration ni donnée métier modifié.
