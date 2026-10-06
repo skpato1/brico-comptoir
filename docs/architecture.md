@@ -178,6 +178,15 @@ panier sont partagés par les pages ; l'administration existante reste séparée
 dans la navigation. Voir les choix d'affichage, les médias et l'accessibilité
 dans [storefront.md](storefront.md).
 
+Sous 800 px, la navigation publique utilise un panneau burger modal. Il charge
+`GET /api/v1/categories` à la première ouverture, construit l'arbre avec les
+`parentId` renvoyés par le catalogue, puis lie chaque nœud au filtre serveur
+`/catalogue?categoryId=...`. Une catégorie parent mène aussi à l'ensemble de
+ses descendants. Les catégories sans parent sont regroupées dans un index A–Z
+recherchable ; ce regroupement est une aide de navigation, pas une taxonomie
+persistée. Le menu conserve les liens directs vers les packs, le compte et le
+panier. La navigation desktop reste séparée.
+
 ## 3. Modules, ports et adaptateurs
 
 | Module | Responsabilité et données possédées | Ports entrants principaux | Ports sortants principaux |

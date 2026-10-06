@@ -1548,16 +1548,27 @@ production. Les tests Java/PostgreSQL ne sont pas exécutables sur ce poste :
 JDK 21 absent du PATH et moteur Docker indisponible ; la CI doit les exécuter
 avant intégration. Le déploiement public attend l'intégration de cette branche.
 
-## 6 octobre 2026 — Retrait du bloc d’orientation de l’accueil
+## 6 octobre 2026 — Navigation mobile par catégories
 
-Branche `codex/remove-home-orientation` créée depuis `origin/main` pour retirer
-« ON COMMENCE PAR OÙ ? », « À vous de faire. À nous d’équiper. » et les deux
-cartes de navigation vers les packs et le catalogue. Le carrousel et les autres
-sections d’accueil sont conservés ; les styles devenus inutiles ont été retirés
-et le test d’accueil adapté.
+Le header public remplace la barre de navigation horizontale par un bouton
+burger sous 800 px. Son panneau modal garde les accès aux solutions, produits,
+packs, compte, panier et contact. Il charge les catégories publiques à la
+première ouverture, affiche les sous-catégories selon leurs vrais `parentId`,
+permet une recherche sans accents et classe les catégories sans parent dans
+un index A–Z. Chaque lien applique le filtre `categoryId` au catalogue ; un
+parent inclut ses descendants via l'API existante. L'état de chargement,
+l'erreur et la reprise sont visibles. La navigation desktop reste inchangée.
 
-Vérification sur cette branche isolée : `npm run test:ci` (65 tests réussis sur
-13 fichiers), `npm run build` réussi avec les avertissements de budget CSS
-préexistants de l’administration et du hero, `node scripts/check-repository.mjs`
-et `node scripts/check-release.mjs` réussis, `git diff --check` sans erreur.
-Aucun code backend, migration ni donnée métier modifié.
+L'API publique de production retournait 358 catégories racines et aucune
+sous-catégorie lors de l'inspection ; aucune hiérarchie commerciale n'a été
+inventée. L'index A–Z sert ces catégories actuelles. La hiérarchie apparaîtra
+quand des parents seront renseignés dans l'administration.
+
+Vérifications locales : 72 tests Angular réussis ; build de production réussi
+(seuls les avertissements CSS préexistants de l'administration et du hero
+subsistent) ; contrôles dépôt et release réussis ; `git diff --check` sans
+erreur. Parcours Playwright local avec réponses API simulées à 375 et 320 px :
+panneau visible sans débordement horizontal, sous-catégorie ouvrant le catalogue
+filtré, fermeture par Échap ; à 1280 px, la navigation desktop reste visible
+et le burger masqué. Le menu n'est pas encore déployé en production.
+Le backend et ses tests n'ont pas été modifiés par cette étape.
