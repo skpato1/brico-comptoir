@@ -1470,3 +1470,19 @@ flèche mobile déplaçant la rangée, aucune erreur JavaScript observée.
 `node scripts/check-release.mjs` et `node scripts/check-repository.mjs`
 réussissent ; `git diff --check` ne signale aucune erreur d'espacement.
 Le backend n'a pas été modifié et ses tests n'ont pas été relancés.
+
+## 6 octobre 2026 — Stabilisation du parcours navigateur CI
+
+Le job navigateur du commit `140d646` a réussi trois parcours sur quatre.
+Le parcours « Client : pack + produit commun » a échoué au défilement de la
+photo de catalogue : la recherche remplaçait la carte initiale pendant que
+Playwright la manipulait. Le test attend maintenant la réponse API filtrée
+et le compteur de résultat final avant de contrôler l'image. Aucune règle
+de commande, de média ou de marque n'a été modifiée.
+
+`node --check e2e/tests/purchase.spec.mjs`, la découverte des quatre tests
+Playwright, `node scripts/check-repository.mjs` et
+`node scripts/check-release.mjs` réussissent. Le parcours complet ne peut pas
+être relancé localement à ce stade : le moteur Docker Desktop ne répond pas,
+même après tentative de démarrage. La validation intégrale est attendue du
+prochain run GitHub Actions ; elle ne doit pas être présumée réussie.

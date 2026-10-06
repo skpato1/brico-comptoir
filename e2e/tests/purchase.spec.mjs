@@ -31,7 +31,19 @@ for (const connected of [false, true]) {
       // Cards request only compressed derivatives; the detail uses srcset/lazy loading.
       await page.goto('/catalogue');
       await page.getByLabel('Produit ou référence').fill(data.product.name);
+      // The unfiltered catalogue may already contain this fixture. Wait for
+      // the filtered response and its rendered result before scrolling its
+      // image, otherwise the in-flight search can replace the image node.
+      const searched = page.waitForResponse(response => {
+        const url = new URL(response.url());
+        return url.pathname === '/api/v1/products' &&
+          url.searchParams.get('q') === data.product.name &&
+          response.request().method() === 'GET';
+      });
       await page.locator('form.filters').getByRole('button', { name: 'Rechercher', exact: true }).click();
+      const searchResponse = await searched;
+      expect(searchResponse.ok()).toBeTruthy();
+      await expect(page.locator('.result-count')).toHaveText('1 produit(s) trouvé(s)');
       const image = page.getByRole('img', { name: data.product.name });
       await image.scrollIntoViewIfNeeded();
       await expect.poll(() => image.evaluate(img => img.complete && img.naturalWidth > 0)).toBe(true);
