@@ -1545,5 +1545,13 @@ Prévisualisation Playwright desktop/mobile avec réponses API simulées : les
 deux images s'affichent, le mobile charge les versions 720 px et les boutons
 pointent vers `/catalogue`. Ces captures ne valident pas la base ni l'API de
 production. Les tests Java/PostgreSQL ne sont pas exécutables sur ce poste :
-JDK 21 absent du PATH et moteur Docker indisponible ; la CI doit les exécuter
-avant intégration. Le déploiement public attend l'intégration de cette branche.
+JDK 21 absent du PATH et moteur Docker indisponible. La CI de la PR
+[#2](https://github.com/skpato1/brico-comptoir/pull/2),
+[run 37528922319](https://github.com/skpato1/brico-comptoir/actions/runs/37528922319),
+a terminé avec succès les jobs backend, frontend et navigateur, incluant les
+tests PostgreSQL/Testcontainers et Flyway V15. La PR a ensuite été fusionnée.
+Contrôle public après déploiement : les quatre variantes JPEG répondent en
+`200`, l'API `/api/v1/content/hero` retourne les deux nouveaux identifiants,
+et Playwright a affiché les deux bannières sur Vercel en desktop (1440 px)
+et mobile (720 px), avec liens vers `/catalogue`. Les autres parcours de la
+boutique n'ont pas été relancés sur la production à cette occasion.
