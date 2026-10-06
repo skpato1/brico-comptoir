@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { switchMap } from 'rxjs';
+import { catchError, map, of, shareReplay, switchMap } from 'rxjs';
 import { IdentityApi } from './identity-api';
 
 export interface Category {
@@ -56,6 +56,7 @@ export interface ProductImage {
   sortOrder: number;
   primary: boolean;
 }
+type SqesImageFallback = Record<string, [string, string, number, number]>;
 export interface Availability {
   variantId: string;
   available: number;
@@ -132,6 +133,10 @@ export class CatalogApi {
   private readonly http = inject(HttpClient);
   private readonly identity = inject(IdentityApi);
   private readonly root = '/api/v1';
+  private readonly sqesFallback = this.http.get<SqesImageFallback>('/sqes-image-fallback.json').pipe(
+    catchError(() => of({} as SqesImageFallback)),
+    shareReplay(1),
+  );
   detail(id: string) {
     return this.http.get<Product>(`${this.root}/products/${id}`);
   }
@@ -170,7 +175,28 @@ export class CatalogApi {
   publicImages(ids: string[]) {
     return this.http.get<Record<string, ProductImage[]>>(`${this.root}/media/products`, {
       params: new HttpParams().set('ids', ids.join(',')),
-    });
+    }).pipe(switchMap((native) => {
+      const missing = ids.filter((id) => !native[id]?.length);
+      if (!missing.length) return of(native);
+      return this.sqesFallback.pipe(map((fallback) => {
+        const result = { ...native };
+        for (const id of missing) {
+          const entry = fallback[id];
+          if (!entry) continue;
+          try {
+            const url = new URL(entry[1]);
+            if (url.protocol !== 'https:' || url.hostname !== 'cdn.shopify.com') continue;
+            const card = new URL(url), detail = new URL(url);
+            card.searchParams.set('width', '360'); card.searchParams.set('format', 'pjpg');
+            detail.searchParams.set('width', '1200'); detail.searchParams.set('format', 'pjpg');
+            result[id] = [{ id: `sqes-${entry[0]}`, productId: id,
+              cardUrl: card.href, detailUrl: detail.href, width: entry[2], height: entry[3],
+              sortOrder: 0, primary: true }];
+          } catch { /* Invalid fallback URL is ignored; native media stays authoritative. */ }
+        }
+        return result;
+      }));
+    }));
   }
   adminImages(productId: string) {
     return this.http.get<ProductImage[]>(`${this.root}/admin/catalog/products/${productId}/images`);

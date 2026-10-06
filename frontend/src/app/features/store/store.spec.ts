@@ -167,6 +167,7 @@ describe('Storefront routes and real API contracts', () => {
     });
     http.expectOne('/api/v1/availability/variant').flush({ variantId: 'variant', available: 0 });
     http.expectOne('/api/v1/media/products?ids=item').flush({});
+    http.expectOne('/sqes-image-fallback.json').flush({});
     harness.detectChanges();
     const button = harness.routeNativeElement!.querySelector<HTMLButtonElement>('button[type=submit]')!;
     expect(button.disabled).toBe(true);

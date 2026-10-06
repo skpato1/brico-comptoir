@@ -75,10 +75,16 @@ describe('Catalogue', () => {
           request.url === '/api/v1/media/products' && request.params.get('ids') === 'p-1',
       )
       .flush({ 'p-1': [] });
+    http.expectOne('/sqes-image-fallback.json').flush({
+      'p-1': ['41', 'https://cdn.shopify.com/files/photo.jpg?v=1', 640, 480],
+    });
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Vis test');
     expect(fixture.nativeElement.textContent).toContain('2.375 TND');
     expect(fixture.nativeElement.textContent).toContain('Démonstration fictive');
+    const image = fixture.nativeElement.querySelector('.product-photo') as HTMLImageElement;
+    expect(image.getAttribute('src')).toContain('width=360');
+    expect(image.getAttribute('srcset')).toContain('width=1200');
   });
 
   it('shows management only for the appropriate role and sends CSRF before mutations', () => {
@@ -167,6 +173,7 @@ describe('Catalogue', () => {
           },
         ],
       });
+    http.expectNone('/sqes-image-fallback.json');
     fixture.detectChanges();
     const image = fixture.nativeElement.querySelector('.product-photo') as HTMLImageElement;
     expect(image.getAttribute('loading')).toBe('lazy');
