@@ -57,6 +57,7 @@ export interface ProductImage {
   primary: boolean;
 }
 type SqesImageFallback = Record<string, [string, string, number, number]>;
+type SqesGalleryFallback = Record<string, [string, string, number, number][]>;
 export interface Availability {
   variantId: string;
   available: number;
@@ -172,10 +173,38 @@ export class CatalogApi {
       params,
     });
   }
-  publicImages(ids: string[]) {
+  private sourceImage(id: string, entry: [string, string, number, number], order: number): ProductImage | null {
+    try {
+      const url = new URL(entry[1]);
+      if (url.protocol !== 'https:' || url.hostname !== 'cdn.shopify.com') return null;
+      const card = new URL(url), detail = new URL(url);
+      card.searchParams.set('width', '360'); card.searchParams.set('format', 'pjpg');
+      detail.searchParams.set('width', '1200'); detail.searchParams.set('format', 'pjpg');
+      return { id: `sqes-${entry[0]}`, productId: id,
+        cardUrl: card.href, detailUrl: detail.href, width: entry[2], height: entry[3],
+        sortOrder: order, primary: order === 0 };
+    } catch { return null; }
+  }
+  publicImages(ids: string[], gallery = false) {
     return this.http.get<Record<string, ProductImage[]>>(`${this.root}/media/products`, {
       params: new HttpParams().set('ids', ids.join(',')),
     }).pipe(switchMap((native) => {
+      const id = ids[0];
+      const shard = gallery && ids.length === 1 ? id.match(/^[0-9a-f]{2}/)?.[0] : null;
+      if (shard) {
+        return this.http.get<SqesGalleryFallback>(`/sqes-galleries/${shard}.json`).pipe(
+          catchError(() => of({} as SqesGalleryFallback)),
+          map((fallback) => {
+            const sources = fallback[id] ?? [];
+            if (!sources.length) return native;
+            const existing = native[id] ?? [];
+            const appended = sources.slice(existing.length)
+              .map((entry, index) => this.sourceImage(id, entry, existing.length + index))
+              .filter((image): image is ProductImage => image !== null);
+            return { ...native, [id]: [...existing, ...appended] };
+          }),
+        );
+      }
       const missing = ids.filter((id) => !native[id]?.length);
       if (!missing.length) return of(native);
       return this.sqesFallback.pipe(map((fallback) => {
@@ -183,16 +212,8 @@ export class CatalogApi {
         for (const id of missing) {
           const entry = fallback[id];
           if (!entry) continue;
-          try {
-            const url = new URL(entry[1]);
-            if (url.protocol !== 'https:' || url.hostname !== 'cdn.shopify.com') continue;
-            const card = new URL(url), detail = new URL(url);
-            card.searchParams.set('width', '360'); card.searchParams.set('format', 'pjpg');
-            detail.searchParams.set('width', '1200'); detail.searchParams.set('format', 'pjpg');
-            result[id] = [{ id: `sqes-${entry[0]}`, productId: id,
-              cardUrl: card.href, detailUrl: detail.href, width: entry[2], height: entry[3],
-              sortOrder: 0, primary: true }];
-          } catch { /* Invalid fallback URL is ignored; native media stays authoritative. */ }
+          const image = this.sourceImage(id, entry, 0);
+          if (image) result[id] = [image];
         }
         return result;
       }));

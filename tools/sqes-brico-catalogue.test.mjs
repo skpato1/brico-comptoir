@@ -42,6 +42,16 @@ test('duplicate supplier SKUs get distinct source-ID-based internal references',
     ['BC-SQES-31', 'BC-SQES-32']);
 });
 
+test('a product removed from the current source feed stays in draft despite a valid price', () => {
+  const copy = structuredClone(snapshot);
+  copy.products[0].variants = [copy.products[0].variants[0]];
+  copy.products[0].sourceRemoved = true;
+  const product = buildCatalogue(copy).products[0];
+  assert.equal(product.status, 'DRAFT');
+  assert.equal(product.needsPriceReview, false);
+  assert.equal(product.variants[0].priceTnd, '21.000');
+});
+
 test('photo URLs accept only the expected CDN host and request bounded renditions', () => {
   assert.equal(photoDownloadUrl('https://cdn.shopify.com/a.png?v=1'),
     'https://cdn.shopify.com/a.png?v=1&width=1200&format=pjpg');

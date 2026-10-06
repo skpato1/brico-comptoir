@@ -107,7 +107,7 @@ export class DetailPage implements OnInit {
             this.loadAvailability();
             this.loading.set(false);
             this.api
-              .publicImages([p.id])
+              .publicImages([p.id], true)
               .pipe(takeUntilDestroyed(this.destroy))
               .subscribe({
                 next: (v) => {

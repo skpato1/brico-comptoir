@@ -48,14 +48,17 @@ produits dont toutes les photos source sont plus petites ou incompatibles
 restent sans image dans l'application, conformément au choix de l'exploitant ;
 les fichiers récupérés sont néanmoins conservés dans l'archive.
 
-Pour rendre immédiatement visibles les images principales sans attendre les
-écritures du stockage objet, `tools/write-sqes-image-fallback.mjs` génère
-`frontend/public/sqes-image-fallback.json` : 6 555 fiches publiées avec une
-photo compatible. L'interface privilégie toujours les médias natifs de
-BricoComptoir et utilise le CDN SQES uniquement si l'API média ne renvoie
-encore aucune image pour la fiche. Ce repli dépend de la disponibilité du
-CDN externe ; l'archive locale demeure la copie transportable. Il ne
-remplace pas les galeries natives.
+Pour rendre immédiatement visibles les photos sans attendre les écritures du
+stockage objet, `tools/write-sqes-image-fallback.mjs` génère
+`frontend/public/sqes-image-fallback.json` pour les cartes de 6 555 fiches
+publiées, et 256 petits fichiers `frontend/public/sqes-galleries/` chargés
+uniquement à l'ouverture d'une fiche. Ils contiennent 17 303 références
+photo compatibles, au maximum 12 par produit. Les médias natifs de
+BricoComptoir restent prioritaires dans les cartes et en première position
+dans les galeries ; les photos source complémentaires sont servies depuis
+le CDN SQES. Ce repli dépend de la disponibilité du CDN externe et ne
+constitue pas une copie dans le stockage de production. L'archive locale
+demeure la copie transportable, y compris pour les photos au-delà de 12.
 
 ```powershell
 node tools/check-sqes-source-drift.mjs

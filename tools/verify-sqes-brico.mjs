@@ -36,25 +36,52 @@ for (const product of manifest.products) {
   }
 }
 let missingFiles = 0, corruptFiles = 0, totalBytes = 0;
-for (const [path, checksum] of files) {
-  try {
-    const full = join(directory, path);
-    totalBytes += (await stat(full)).size;
-    const actual = createHash('sha256').update(await readFile(full)).digest('hex');
-    if (actual !== checksum) corruptFiles++;
-  } catch { missingFiles++; }
-}
+const entries = [...files];
+let fileCursor = 0, checkedFiles = 0;
+const checkFiles = async () => {
+  while (fileCursor < entries.length) {
+    const [path, checksum] = entries[fileCursor++];
+    try {
+      const full = join(directory, path);
+      totalBytes += (await stat(full)).size;
+      const actual = createHash('sha256').update(await readFile(full)).digest('hex');
+      if (actual !== checksum) corruptFiles++;
+    } catch { missingFiles++; }
+    checkedFiles++;
+    if (checkedFiles % 1000 === 0) console.log(`Checked ${checkedFiles}/${entries.length} local photos.`);
+  }
+};
+await Promise.all(Array.from({ length: 8 }, checkFiles));
 if (missingFiles) errors.push(`${missingFiles} local photo files missing`);
 if (corruptFiles) errors.push(`${corruptFiles} local photo checksums differ`);
 
 const api = new BricoApi(baseUrl);
 await api.login(resolve('.local/production-admin.env'));
 const observed = new Map();
-for (let page = 0; ; page++) {
-  const result = await api.request(`/api/v1/admin/catalog/products?page=${page}&size=100`);
-  for (const product of result.items) observed.set(product.id, product);
-  if ((page + 1) * 100 >= result.totalElements) break;
+async function readPage(page) {
+  for (let attempt = 0; attempt < 4; attempt++) {
+    try { return await api.request(`/api/v1/admin/catalog/products?page=${page}&size=100`, { timeout: 90000 }); }
+    catch (error) {
+      if (![500, 502, 503, 504].includes(error.status) &&
+          !['TimeoutError', 'AbortError'].includes(error.name) || attempt === 3) throw error;
+      await new Promise(resolve => setTimeout(resolve, (attempt + 1) * 1500));
+    }
+  }
 }
+const firstPage = await readPage(0);
+for (const product of firstPage.items) observed.set(product.id, product);
+const pageCount = Math.ceil(firstPage.totalElements / 100);
+let pageCursor = 1, checkedPages = 1;
+const checkPages = async () => {
+  while (pageCursor < pageCount) {
+    const page = pageCursor++;
+    const result = await readPage(page);
+    for (const product of result.items) observed.set(product.id, product);
+    checkedPages++;
+    if (checkedPages % 10 === 0) console.log(`Checked ${checkedPages}/${pageCount} admin catalogue pages.`);
+  }
+};
+await Promise.all(Array.from({ length: 2 }, checkPages));
 let importedProducts = 0, importedVariants = 0, expectedImages = 0, missingPrimary = 0;
 for (const product of manifest.products) {
   const target = observed.get(journal.productIds[product.sourceId]);
