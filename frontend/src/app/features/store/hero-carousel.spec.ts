@@ -118,8 +118,22 @@ describe('HeroCarousel accessibility and rotation', () => {
       'Visuel momentanément indisponible',
     );
     expect(f.nativeElement.querySelector('.slide.active a').getAttribute('href')).toBe(
-      '/solutions',
+      '/catalogue',
     );
+  });
+  it('renders the supplied banners without a dark overlay or duplicate visual copy', () => {
+    const f = create();
+    const first = f.nativeElement.querySelector('.slide');
+    expect(first.classList.contains('promotional')).toBe(true);
+    expect(first.querySelector('img').getAttribute('src')).toBe('/images/hero/brico-projects-1440.jpg');
+    expect(first.querySelector('img').getAttribute('srcset')).toContain('brico-projects-720.jpg 720w');
+    expect(first.querySelector('h1').classList.contains('visually-hidden')).toBe(true);
+    expect(first.querySelector('.description')).toBeNull();
+    expect(first.querySelector('.hero-actions a').getAttribute('href')).toBe('/catalogue');
+    expect(f.nativeElement.querySelectorAll('.slide')[2].querySelector('img').getAttribute('src'))
+      .toBe('/images/hero/brico-workshop-1440.jpg');
+    expect(f.nativeElement.querySelectorAll('.slide')[1].querySelector('img').getAttribute('src'))
+      .toBe('/images/hero/hardware-1440.webp');
   });
   it('uses visible server-managed slides and wraps using the actual slide count', () => {
     const f = create();

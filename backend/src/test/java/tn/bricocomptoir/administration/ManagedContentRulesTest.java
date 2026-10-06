@@ -25,6 +25,17 @@ class ManagedContentRulesTest {
                 valid.title(), valid.description(), valid.alt(), valid.link(), valid.action(), valid.detail()))).checked())
                 .isInstanceOf(IllegalArgumentException.class);
     }
+    @Test void suppliedPromotionalImagesAreAllowedButArbitraryPathsAreRejected() {
+        Slide valid = slide();
+        for (String image : List.of("brico-projects", "brico-workshop")) {
+            assertThat(new Slide(valid.id(), true, image, valid.label(), valid.title(),
+                    valid.description(), valid.alt(), valid.link(), valid.action(), valid.detail()).checked().image())
+                    .isEqualTo(image);
+        }
+        assertThatThrownBy(() -> new Slide(valid.id(), true, "../../private", valid.label(), valid.title(),
+                valid.description(), valid.alt(), valid.link(), valid.action(), valid.detail()).checked())
+                .isInstanceOf(IllegalArgumentException.class);
+    }
     @Test void contactRejectsMarkupAndHoneypot() {
         assertThat(new Contact("", "", "", 0).checked().email()).isEmpty();
         assertThatThrownBy(() -> new Contact("<script>", "", "", 0).checked()).isInstanceOf(IllegalArgumentException.class);

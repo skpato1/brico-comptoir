@@ -1,5 +1,6 @@
 <section
   class="carousel"
+  [class.promotional-active]="isPromotionalHeroImage(slides()[active()].image)"
   aria-roledescription="carrousel"
   aria-label="Kits, quincaillerie et outils pour vos projets"
   (mouseenter)="hovered.set(true)"
@@ -15,6 +16,7 @@
       <article
         class="slide"
         [class.active]="active() === i"
+        [class.promotional]="isPromotionalHeroImage(slide.image)"
         [attr.aria-hidden]="active() !== i"
         [attr.inert]="active() !== i ? '' : null"
         role="group"
@@ -24,19 +26,14 @@
         <div class="photo">
           @if (!failedImages().has(i)) {
             <img
-              [src]="'/images/hero/' + slide.image + '-1440.webp'"
-              [srcset]="
-                '/images/hero/' +
-                slide.image +
-                '-720.webp 720w, /images/hero/' +
-                slide.image +
-                '-1440.webp 1440w'
-              "
+              [src]="heroImageUrl(slide.image, 1440)"
+              [srcset]="heroImageUrl(slide.image, 720) + ' 720w, ' + heroImageUrl(slide.image, 1440) + ' 1440w'"
               sizes="100vw"
               width="1440"
-              height="960"
+              [attr.height]="slide.image === 'brico-workshop' ? 693 : isPromotionalHeroImage(slide.image) ? 745 : 960"
               [alt]="slide.alt"
               [attr.fetchpriority]="i === 0 ? 'high' : 'low'"
+              [attr.loading]="i === 0 ? 'eager' : 'lazy'"
               decoding="async"
               draggable="false"
               (error)="imageFailed(i)"
@@ -45,8 +42,10 @@
         </div>
         <div class="caption">
           <p class="eyebrow">{{ slide.label }}</p>
-          <h1>{{ slide.title }}</h1>
-          <p class="description">{{ slide.description }}</p>
+          <h1 [class.visually-hidden]="isPromotionalHeroImage(slide.image)">{{ slide.title }}</h1>
+          @if (!isPromotionalHeroImage(slide.image)) {
+            <p class="description">{{ slide.description }}</p>
+          }
           <div class="hero-actions">
             <a class="button" [routerLink]="slide.link"
               >{{ slide.action }}
@@ -56,7 +55,9 @@
               <a class="secondary-link" routerLink="/packs">Voir tous les packs</a>
             }
           </div>
-          <p class="detail">{{ slide.detail }}</p>
+          @if (!isPromotionalHeroImage(slide.image)) {
+            <p class="detail">{{ slide.detail }}</p>
+          }
           @if (failedImages().has(i)) {
             <p class="image-fallback">Visuel momentanément indisponible</p>
           }
@@ -119,5 +120,5 @@
   </div>
 </section>
 <p class="image-note">
-  Visuels d’ambiance générés par IA · consultez les fiches pour le contenu exact des packs.
+  Visuels promotionnels et illustrations · les produits représentés sont illustratifs. Consultez les fiches pour l’offre et la disponibilité réelles.
 </p>

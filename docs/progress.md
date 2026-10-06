@@ -1523,3 +1523,27 @@ est entièrement réussie : backend avec PostgreSQL/Testcontainers et MinIO,
 frontend avec 64 tests et build, quatre parcours Playwright (achat invité,
 achat avec SKU partagé, panne SMTP/reprise SSE, permissions), puis sauvegarde
 et restauration PostgreSQL/MinIO en Docker Compose.
+
+## 6 octobre 2026 — Deux bannières fournies pour le hero
+
+Les deux visuels BricoComptoir fournis par l'exploitant sont intégrés aux
+bannières d'accueil et proposés dans l'éditeur. Des versions JPEG 720 et
+1440 px pèsent 112–349 Ko chacune ; les bandes inférieures contenant des
+promesses de livraison ou de paiement non vérifiées ont été écartées. Le
+carrousel conserve un vrai bouton vers le catalogue, un texte alternatif et
+une note indiquant que les produits représentés sont illustratifs. Flyway V15
+remplace deux illustrations initiales si le hero n'a pas été personnalisé ;
+l'API publique de production indiquait encore `version=0` et les trois
+diapositives initiales lors du contrôle préalable. Une vitrine personnalisée
+reste inchangée et peut choisir les nouveaux visuels dans l'administration.
+
+Vérifications locales : `npm run test:ci` (65 tests réussis), `npm run build`
+(réussi ; avertissements de taille CSS pour l'administration et le hero),
+`node scripts/check-repository.mjs` (15 migrations),
+`node scripts/check-release.mjs` (réussi), `git diff --check` (réussi).
+Prévisualisation Playwright desktop/mobile avec réponses API simulées : les
+deux images s'affichent, le mobile charge les versions 720 px et les boutons
+pointent vers `/catalogue`. Ces captures ne valident pas la base ni l'API de
+production. Les tests Java/PostgreSQL ne sont pas exécutables sur ce poste :
+JDK 21 absent du PATH et moteur Docker indisponible ; la CI doit les exécuter
+avant intégration. Le déploiement public attend l'intégration de cette branche.

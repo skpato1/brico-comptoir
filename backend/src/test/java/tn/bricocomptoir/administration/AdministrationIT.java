@@ -165,7 +165,8 @@ class AdministrationIT {
         assertThat(customer.get("/admin/content/hero").statusCode()).isEqualTo(403);
         Hero before=json.readValue(cm.get("/admin/content/hero").body(),Hero.class);
         assertThat(before.slides()).hasSizeGreaterThan(0);
-        var hidden=new Slide(UUID.randomUUID(),false,"kits","Cachée","Titre caché","Description cachée","Illustration IA","/packs","Voir","Note");
+        assertThat(before.slides()).extracting(Slide::image).contains("brico-projects", "brico-workshop");
+        var hidden=new Slide(UUID.randomUUID(),false,"brico-workshop","Cachée","Titre caché","Description cachée","Visuel promotionnel","/packs","Voir","Note");
         var changes=new java.util.ArrayList<>(before.slides());changes.add(hidden);
         var update=new Hero(before.version(),changes);
         assertThat(cm.request("PUT","/admin/content/hero",json.writeValueAsString(update),false).statusCode()).isEqualTo(403);

@@ -11,6 +11,7 @@
   touch-action: pan-y pinch-zoom;
 }
 .slides {
+  position: relative;
   display: grid;
   overflow: hidden;
 }
@@ -32,6 +33,51 @@
   opacity: 1;
   visibility: visible;
   z-index: 1;
+}
+.slide:not(.active) {
+  position: absolute;
+  inset: 0;
+}
+.slide.promotional {
+  display: block;
+  min-height: 0;
+  padding: 0;
+}
+.promotional .photo {
+  position: relative;
+  z-index: 0;
+  height: min(52vw, 745px);
+}
+.promotional .photo::after {
+  display: none;
+}
+.promotional .photo img {
+  display: block;
+  object-fit: contain;
+  object-position: center;
+  transform: none;
+}
+.promotional .caption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: none;
+  padding: 18px max(80px, calc((100% - 1192px) / 2)) 104px;
+  background: #191919;
+}
+.promotional .eyebrow {
+  margin: 0;
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 .photo {
   position: absolute;
@@ -226,6 +272,22 @@ a:focus-visible {
   .photo::after {
     background: linear-gradient(90deg, #000c, #0007), linear-gradient(0deg, #000b, transparent);
   }
+  .promotional .photo {
+    height: 52vw;
+  }
+  .promotional .photo::after {
+    display: none;
+  }
+  .promotional .photo img {
+    object-position: center;
+  }
+  .promotional .caption {
+    display: block;
+    padding: 18px 24px 92px;
+  }
+  .promotional .eyebrow {
+    margin-bottom: 12px;
+  }
   .detail {
     max-width: 28ch;
   }
@@ -255,6 +317,10 @@ a:focus-visible {
     bottom: 88px;
     width: 44px;
     min-height: 44px;
+  }
+  .promotional-active .arrow {
+    top: calc(26vw - 22px);
+    bottom: auto;
   }
   .previous {
     left: auto;

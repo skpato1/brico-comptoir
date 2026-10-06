@@ -657,8 +657,15 @@ internes et les champs texte ; l'application orchestre le port de stockage ;
 l'adaptateur JDBC porte les versions optimistes, les pages SQL et les
 transactions PostgreSQL. Aucun champ de contact ou de bannière ne contient du
 HTML interprété. L'authentification, le CSRF et le RBAC restent à la frontière
-HTTP de Spring Security. Les images de bannière sont pour l'instant trois
-illustrations statiques intégrées ; les photos produit restent dans `media`.
+HTTP de Spring Security. Les images de bannière sont cinq ressources statiques
+intégrées : trois illustrations d'ambiance et deux visuels promotionnels fournis
+par l'exploitant. Le frontend sert ces derniers en JPEG responsif (720/1440 px),
+sans le bandeau inférieur de promesses commerciales non vérifiées. Un gabarit
+dédié montre l'image sans voile ni texte superposé et garde un lien de
+navigation accessible. Flyway V15 élargit la liste blanche des images et
+remplace deux diapositives initiales uniquement si la vitrine n'a jamais été
+personnalisée (`content_hero.version = 0`). Les photos produit restent dans
+`media`.
 
 Le support ADMIN lit un compte via le contrat public `identity` avec recherche
 par email exact, puis son panier via le contrat `sales` en lecture seule. Aucun

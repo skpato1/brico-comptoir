@@ -2,6 +2,7 @@ import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AdminApi, adminError, HeroContent, HeroSlide } from '../../core/admin-api';
+import { heroImageUrl } from '../store/hero-images';
 
 @Component({
   selector: 'app-admin-hero',
@@ -9,6 +10,7 @@ import { AdminApi, adminError, HeroContent, HeroSlide } from '../../core/admin-a
   templateUrl: './hero.html',
 })
 export class AdminHero implements OnInit {
+  readonly heroImageUrl = heroImageUrl;
   private readonly api = inject(AdminApi);
   private readonly destroy = inject(DestroyRef);
   readonly value = signal<HeroContent | null>(null);
