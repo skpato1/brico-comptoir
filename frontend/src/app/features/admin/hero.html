@@ -1,6 +1,6 @@
 <div class="workspace-heading">
   <div><p class="eyebrow">VITRINE</p><h2>Bannières de l’accueil</h2>
-    <p>Ordre, visibilité, textes et destination. Les trois illustrations disponibles sont des visuels d’ambiance générés par IA.</p></div>
+    <p>Ordre, visibilité, textes et destination. Deux bannières promotionnelles fournies et trois illustrations d’ambiance sont disponibles. Les produits représentés sont illustratifs.</p></div>
   <button class="secondary" type="button" (click)="load()" [disabled]="busy()">Recharger</button>
 </div>
 @if (error()) { <p role="alert" class="error">{{ error() }}</p> }
@@ -12,7 +12,7 @@
       @for (slide of hero.slides; track slide.id; let i = $index) {
         <section class="banner-editor" [attr.aria-label]="'Bannière ' + (i + 1)">
           <div class="banner-top">
-            <img [src]="'/images/hero/' + slide.image + '-720.webp'" [alt]="slide.alt" width="150" height="100" loading="lazy" />
+            <img [src]="heroImageUrl(slide.image, 720)" [alt]="slide.alt" width="150" height="100" loading="lazy" />
             <div><strong>Bannière {{ i + 1 }}</strong><p>{{ slide.visible ? 'Visible' : 'Masquée' }}</p></div>
             <div class="actions">
               <button type="button" class="secondary" [disabled]="i === 0 || busy()" (click)="move(i, -1)" [attr.aria-label]="'Monter la bannière ' + (i + 1)">↑</button>
@@ -22,7 +22,7 @@
           </div>
           <div class="admin-grid">
             <label class="check"><input type="checkbox" [name]="'visible' + slide.id" [(ngModel)]="slide.visible" /> Afficher cette bannière</label>
-            <label>Illustration<select [name]="'image' + slide.id" [(ngModel)]="slide.image"><option value="kits">Kits</option><option value="hardware">Quincaillerie</option><option value="tools">Outillage</option></select></label>
+            <label>Illustration<select [name]="'image' + slide.id" [(ngModel)]="slide.image"><option value="brico-projects">BricoComptoir · Tous les projets</option><option value="brico-workshop">BricoComptoir · Atelier</option><option value="kits">Kits (illustration)</option><option value="hardware">Quincaillerie (illustration)</option><option value="tools">Outillage (illustration)</option></select></label>
             <label>Sur-titre<input [name]="'label' + slide.id" [(ngModel)]="slide.label" required maxlength="80" /></label>
             <label>Titre<input [name]="'title' + slide.id" [(ngModel)]="slide.title" required maxlength="140" /></label>
             <label class="wide">Description<textarea [name]="'description' + slide.id" [(ngModel)]="slide.description" required maxlength="400"></textarea></label>

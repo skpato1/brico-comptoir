@@ -15,7 +15,7 @@ export interface HomeContent {
 export interface HeroSlide {
   id: string;
   visible: boolean;
-  image: 'kits' | 'hardware' | 'tools';
+  image: 'kits' | 'hardware' | 'tools' | 'brico-projects' | 'brico-workshop';
   label: string;
   title: string;
   description: string;

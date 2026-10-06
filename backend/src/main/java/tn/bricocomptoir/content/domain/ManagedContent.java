@@ -29,7 +29,8 @@ public final class ManagedContent {
                         String description, String alt, String link, String action, String detail) {
         private static final Pattern LINK = Pattern.compile("/(solutions|packs|catalogue|produits/[0-9a-fA-F-]{36}|packs/[0-9a-fA-F-]{36})");
         public Slide checked() {
-            if (id == null || image == null || !Set.of("kits", "hardware", "tools").contains(image))
+            if (id == null || image == null || !Set.of("kits", "hardware", "tools",
+                    "brico-projects", "brico-workshop").contains(image))
                 throw new IllegalArgumentException("Unknown banner image");
             if (link == null || !LINK.matcher(link).matches())
                 throw new IllegalArgumentException("Invalid internal banner link");

@@ -3,6 +3,7 @@ import { DOCUMENT } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AdminApi, HeroSlide } from '../../core/admin-api';
+import { heroImageUrl, isPromotionalHeroImage } from './hero-images';
 
 @Component({
   selector: 'app-hero-carousel',
@@ -11,21 +12,23 @@ import { AdminApi, HeroSlide } from '../../core/admin-api';
   styleUrl: './hero-carousel.scss',
 })
 export class HeroCarousel implements OnInit {
+  readonly heroImageUrl = heroImageUrl;
+  readonly isPromotionalHeroImage = isPromotionalHeroImage;
   private readonly document = inject(DOCUMENT);
   private readonly destroy = inject(DestroyRef);
   private readonly api = inject(AdminApi);
   readonly slides = signal<HeroSlide[]>([
     {
       id: 'default-kits', visible: true,
-      image: 'kits',
-      label: 'Kits & packs',
-      title: 'Le bon kit.\nLe début de votre projet.',
+      image: 'brico-projects',
+      label: 'Tout pour vos projets',
+      title: 'BricoComptoir, tout pour vos projets',
       description:
-        'Découvrez les packs publiés, comparez leur contenu et choisissez la composition adaptée à votre besoin.',
-      alt: 'Illustration : boîte de projet avec outils et sachets de fixations.',
-      link: '/solutions',
-      action: 'Découvrir les kits',
-      detail: 'Compositions détaillées · Variantes à comparer',
+        'Explorez les produits et packs publiés pour préparer votre prochain projet.',
+      alt: 'Visuel promotionnel BricoComptoir : atelier, outils et univers bricolage. Produits illustratifs.',
+      link: '/catalogue',
+      action: 'Découvrir les produits',
+      detail: 'Visuel promotionnel · Produits illustratifs',
     },
     {
       id: 'default-hardware', visible: true,
@@ -41,15 +44,15 @@ export class HeroCarousel implements OnInit {
     },
     {
       id: 'default-tools', visible: true,
-      image: 'tools',
-      label: 'Outils & équipement',
-      title: 'À vous de faire.\nÀ nous d’équiper.',
+      image: 'brico-workshop',
+      label: 'Atelier & outillage',
+      title: 'L’atelier BricoComptoir',
       description:
-        'Un article à l’unité ou un pack : partez de votre projet et retrouvez les produits publiés au comptoir.',
-      alt: 'Illustration : perceuse, marteau, pince et tournevis sur un établi.',
+        'Retrouvez les références publiées pour bricoler et équiper votre atelier.',
+      alt: 'Visuel promotionnel BricoComptoir : établi et outils de bricolage. Produits et marques illustratifs.',
       link: '/catalogue',
-      action: 'Voir les produits',
-      detail: 'À l’unité ou en pack · Prix en dinars tunisiens',
+      action: 'Explorer le catalogue',
+      detail: 'Visuel promotionnel · Produits illustratifs',
     },
   ]);
   readonly active = signal(0);
@@ -72,7 +75,7 @@ export class HeroCarousel implements OnInit {
           this.failedImages.set(new Set());
         }
       },
-      error: () => { /* Keep the bundled, clearly illustrative banners available. */ },
+      error: () => { /* Keep the bundled promotional visuals available. */ },
     });
     const view = this.document.defaultView;
     if (!view || typeof view.matchMedia !== 'function') return;

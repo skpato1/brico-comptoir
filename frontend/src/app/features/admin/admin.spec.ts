@@ -200,6 +200,9 @@ describe('Administration réelle', () => {
       link: '/packs', action: 'Découvrir', detail: 'Détail',
     }] };
     http.expectOne('/api/v1/admin/content/hero').flush(original);
+    f.detectChanges();
+    expect(f.nativeElement.querySelector('option[value="brico-projects"]')).not.toBeNull();
+    expect(f.nativeElement.querySelector('option[value="brico-workshop"]')).not.toBeNull();
     f.componentInstance.value()!.slides[0].title = 'Un projet modifié';
     f.componentInstance.save({ invalid: false, control: { markAllAsTouched: vi.fn() } } as never);
     http.expectOne('/api/v1/auth/csrf').flush(null, { status: 204, statusText: 'No Content' });
