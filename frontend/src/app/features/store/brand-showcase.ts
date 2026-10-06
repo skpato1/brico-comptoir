@@ -1,4 +1,13 @@
-import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  DestroyRef,
+  ElementRef,
+  inject,
+  OnInit,
+  signal,
+  ViewChild,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { Brand, CatalogApi } from '../../core/catalog-api';
@@ -67,14 +76,19 @@ const logoGroups: { title: string; logos: Logo[] }[] = [
   styleUrl: './brand-showcase.scss',
 })
 export class BrandShowcase implements OnInit {
+  @ViewChild('logoRail') private logoRail?: ElementRef<HTMLElement>;
+
   private readonly api = inject(CatalogApi);
   private readonly destroy = inject(DestroyRef);
   private readonly availableBrands = signal<Brand[]>([]);
+  readonly selectedCategory = signal('Toutes');
 
   readonly groups = computed(() => {
-    const available = new Map(this.availableBrands()
-      .filter((brand) => brand.active)
-      .map((brand) => [brand.slug, brand]));
+    const available = new Map(
+      this.availableBrands()
+        .filter((brand) => brand.active)
+        .map((brand) => [brand.slug, brand]),
+    );
     return logoGroups
       .map((group) => ({
         title: group.title,
@@ -86,8 +100,40 @@ export class BrandShowcase implements OnInit {
       .filter((group) => group.logos.length > 0);
   });
 
+  readonly visibleLogos = computed(() => {
+    const selected = this.selectedCategory();
+    const groups =
+      selected === 'Toutes'
+        ? this.groups()
+        : this.groups().filter((group) => group.title === selected);
+    const unique = new Map<string, (typeof groups)[number]['logos'][number]>();
+    for (const group of groups) {
+      for (const logo of group.logos) {
+        if (!unique.has(logo.brandId)) unique.set(logo.brandId, logo);
+      }
+    }
+    return [...unique.values()];
+  });
+
+  selectCategory(category: string): void {
+    this.selectedCategory.set(category);
+    if (this.logoRail) this.logoRail.nativeElement.scrollLeft = 0;
+  }
+
+  scrollLogos(direction: -1 | 1): void {
+    const rail = this.logoRail?.nativeElement;
+    if (!rail) return;
+    rail.scrollBy({
+      left: direction * Math.max(rail.clientWidth * 0.8, 160),
+      behavior: globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+        ? 'auto'
+        : 'smooth',
+    });
+  }
+
   ngOnInit(): void {
-    this.api.brands()
+    this.api
+      .brands()
       .pipe(takeUntilDestroyed(this.destroy))
       .subscribe({ next: (brands) => this.availableBrands.set(brands), error: () => {} });
   }

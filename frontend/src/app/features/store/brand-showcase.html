@@ -1,34 +1,59 @@
 @if (groups().length) {
   <section class="brand-showcase" aria-labelledby="brand-title">
     <div class="brand-heading">
-      <p class="eyebrow">LES MARQUES DU COMPTOIR</p>
-      <h2 id="brand-title">Choisissez votre marque.</h2>
-    </div>
-    @for (group of groups(); track group.title) {
-      <div class="brand-group">
-        <h3>{{ group.title }}</h3>
-        <ul class="brand-grid">
-          @for (logo of group.logos; track logo.name) {
-            <li>
-              <a
-                routerLink="/catalogue"
-                [queryParams]="{ brandId: logo.brandId }"
-                [class.dark-logo]="logo.dark"
-                [attr.aria-label]="'Voir les produits ' + logo.name"
-              >
-                <img
-                  [src]="'/brand-logos/' + logo.file"
-                  alt=""
-                  width="180"
-                  height="90"
-                  loading="lazy"
-                  decoding="async"
-                />
-              </a>
-            </li>
-          }
-        </ul>
+      <div>
+        <p class="eyebrow">LES MARQUES DU COMPTOIR</p>
+        <h2 id="brand-title">Choisissez votre marque.</h2>
       </div>
-    }
+      @if (selectedCategory() === 'Toutes' && visibleLogos().length > 4) {
+        <div class="rail-controls" aria-label="Défilement des marques">
+          <button type="button" aria-label="Marques précédentes" (click)="scrollLogos(-1)">
+            ‹
+          </button>
+          <button type="button" aria-label="Marques suivantes" (click)="scrollLogos(1)">›</button>
+        </div>
+      }
+    </div>
+
+    <div class="brand-categories" role="group" aria-label="Filtrer les marques par rayon">
+      <button
+        type="button"
+        [attr.aria-pressed]="selectedCategory() === 'Toutes'"
+        (click)="selectCategory('Toutes')"
+      >
+        Toutes
+      </button>
+      @for (group of groups(); track group.title) {
+        <button
+          type="button"
+          [attr.aria-pressed]="selectedCategory() === group.title"
+          (click)="selectCategory(group.title)"
+        >
+          {{ group.title }}
+        </button>
+      }
+    </div>
+
+    <ul #logoRail class="brand-rail" aria-label="Marques disponibles">
+      @for (logo of visibleLogos(); track logo.brandId) {
+        <li>
+          <a
+            routerLink="/catalogue"
+            [queryParams]="{ brandId: logo.brandId }"
+            [class.dark-logo]="logo.dark"
+            [attr.aria-label]="'Voir les produits ' + logo.name"
+          >
+            <img
+              [src]="'/brand-logos/' + logo.file"
+              alt=""
+              width="180"
+              height="90"
+              loading="lazy"
+              decoding="async"
+            />
+          </a>
+        </li>
+      }
+    </ul>
   </section>
 }

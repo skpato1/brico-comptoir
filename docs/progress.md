@@ -1454,3 +1454,19 @@ le logo BOSCH ouvre le catalogue avec BOSCH sélectionné et 18 produits.
 `node scripts/check-release.mjs` et
 `node scripts/check-repository.mjs` réussissent ; `git diff --check` ne
 signale aucune erreur d'espacement.
+
+## 6 octobre 2026 — Bandeau horizontal des marques
+
+L'accueil présente désormais les marques dans une seule rangée de logos,
+défilable au toucher et avec des flèches. Des boutons filtrent les six rayons ;
+« Toutes » déduplique TOTAL, présent dans deux rayons. La navigation garde les
+liens vers le filtre `brandId` fourni par l'API. Les mouvements respectent la
+préférence système de réduction des animations.
+
+`npm run test:ci --prefix frontend` : 59 tests réussis, dont filtres et
+défilement. `npm run build --prefix frontend` : réussi. Vérification dans le
+navigateur local avec l'API de production : 18 logos chargés, filtres actifs,
+flèche mobile déplaçant la rangée, aucune erreur JavaScript observée.
+`node scripts/check-release.mjs` et `node scripts/check-repository.mjs`
+réussissent ; `git diff --check` ne signale aucune erreur d'espacement.
+Le backend n'a pas été modifié et ses tests n'ont pas été relancés.
