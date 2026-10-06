@@ -167,6 +167,7 @@ describe('Administration réelle', () => {
     http
       .expectOne((r) => r.url === '/api/v1/products')
       .flush({ items: [], page: 0, size: 4, totalElements: 0 });
+    http.expectOne('/api/v1/brands').flush([]);
     f.detectChanges();
     expect(f.nativeElement.querySelector('#start-title').textContent).toContain('<b>Texte</b>');
     expect(f.nativeElement.querySelector('#start-title b')).toBeNull();

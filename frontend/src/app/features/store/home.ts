@@ -3,11 +3,12 @@ import { RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CatalogApi, Product, ProductImage } from '../../core/catalog-api';
 import { HeroCarousel } from './hero-carousel';
+import { BrandShowcase } from './brand-showcase';
 import { OfferCard } from '../../shared/offer-card';
 import { AdminApi, HomeContent } from '../../core/admin-api';
 @Component({
   selector: 'app-home',
-  imports: [RouterLink, OfferCard, HeroCarousel],
+  imports: [RouterLink, OfferCard, HeroCarousel, BrandShowcase],
   templateUrl: './home.html',
   styleUrl: './home.scss',
 })

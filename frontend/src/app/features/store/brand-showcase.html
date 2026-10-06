@@ -1,0 +1,34 @@
+@if (groups().length) {
+  <section class="brand-showcase" aria-labelledby="brand-title">
+    <div class="brand-heading">
+      <p class="eyebrow">LES MARQUES DU COMPTOIR</p>
+      <h2 id="brand-title">Choisissez votre marque.</h2>
+    </div>
+    @for (group of groups(); track group.title) {
+      <div class="brand-group">
+        <h3>{{ group.title }}</h3>
+        <ul class="brand-grid">
+          @for (logo of group.logos; track logo.name) {
+            <li>
+              <a
+                routerLink="/catalogue"
+                [queryParams]="{ brandId: logo.brandId }"
+                [class.dark-logo]="logo.dark"
+                [attr.aria-label]="'Voir les produits ' + logo.name"
+              >
+                <img
+                  [src]="'/brand-logos/' + logo.file"
+                  alt=""
+                  width="180"
+                  height="90"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </a>
+            </li>
+          }
+        </ul>
+      </div>
+    }
+  </section>
+}

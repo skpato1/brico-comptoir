@@ -1432,3 +1432,25 @@ existant n'est suspendu, supprimé ou réutilisé ; aucun abonnement payant
 n'est souscrit. La destination, la capacité disponible, le bucket privé,
 les clés saisies dans Render et l'import réel restent à résoudre avant
 de déclarer le stockage Supabase opérationnel.
+
+## 6 octobre 2026 — Logos de marques sur l'accueil
+
+Une section « Choisissez votre marque » présente 18 logos distincts dans six
+familles, avec 19 emplacements car TOTAL figure aussi en jardinage. Les images
+sont servies localement depuis `frontend/public/brand-logos/` (365 ko au total)
+et chaque logo ouvre le catalogue avec le filtre `brandId` de l'API publique.
+Les marques inactives ou absentes de l'API ne sont pas annoncées comme
+disponibles. Les visuels de collection SQES ont été examinés ; ACEM,
+DEUTSCHCOLOR, GARDENA et WADFOW utilisent des fichiers de marque distincts
+parce que leurs images de collection étaient des scènes promotionnelles ou
+un autre logo. NOBLEX n'a actuellement ni marque ni produit dans le catalogue
+de production et reste à intégrer après création de fiches validées et
+obtention de son logo exact.
+
+`npm run test:ci --prefix frontend` : 57 tests réussis.
+`npm run build --prefix frontend` : réussi. Prévisualisation locale Angular
+avec l'API publique réelle : 19 emplacements affichés et leurs images chargées ;
+le logo BOSCH ouvre le catalogue avec BOSCH sélectionné et 18 produits.
+`node scripts/check-release.mjs` et
+`node scripts/check-repository.mjs` réussissent ; `git diff --check` ne
+signale aucune erreur d'espacement.

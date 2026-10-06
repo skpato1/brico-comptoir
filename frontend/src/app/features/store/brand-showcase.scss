@@ -1,0 +1,92 @@
+:host {
+  display: block;
+  margin-inline: auto;
+  max-width: 1192px;
+}
+
+.brand-showcase {
+  padding-block: 56px 8px;
+}
+
+.brand-heading {
+  margin-bottom: 28px;
+}
+
+.brand-heading .eyebrow {
+  margin-bottom: 10px;
+}
+
+.brand-heading h2 {
+  margin: 0;
+}
+
+.brand-group {
+  margin-top: 26px;
+}
+
+.brand-group h3 {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  margin: 0 0 10px;
+  text-transform: uppercase;
+}
+
+.brand-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.brand-grid a {
+  align-items: center;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  display: flex;
+  height: 108px;
+  justify-content: center;
+  overflow: hidden;
+  padding: 12px;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.brand-grid a:hover,
+.brand-grid a:focus-visible {
+  border-color: var(--red);
+  box-shadow: 0 0 0 2px rgb(190 20 29 / 12%);
+}
+
+.brand-grid a.dark-logo {
+  background: #191919;
+}
+
+.brand-grid img {
+  display: block;
+  height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+  width: 100%;
+}
+
+@media (min-width: 600px) {
+  .brand-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1239px) {
+  :host {
+    margin-inline: 24px;
+  }
+}
+
+@media (max-width: 599px) {
+  :host {
+    margin-inline: 16px;
+  }
+}
