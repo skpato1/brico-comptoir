@@ -4,34 +4,8 @@
     <button class="secondary" (click)="loadContent()">Réessayer</button>
   </p>
 }
-@if (content(); as copy) {
+@if (content()) {
   <app-hero-carousel />
-  <section aria-labelledby="start-title">
-    <div class="section-heading">
-      <div>
-        <p class="eyebrow">ON COMMENCE PAR OÙ ?</p>
-        <h2 id="start-title">{{ copy.title }} {{ copy.accent }}</h2>
-        <p class="muted">{{ copy.description }}</p>
-      </div>
-    </div>
-    <div class="pathways">
-      <a routerLink="/solutions"
-        ><span class="path-number">01 / LES PACKS</span>
-        <h3>{{ copy.solutionTitle }} <span aria-hidden="true">↗</span></h3>
-        <p>
-          {{ copy.solutionDescription }}
-        </p>
-        <span class="path-action">Découvrir les packs <span aria-hidden="true">→</span></span></a
-      ><a routerLink="/catalogue"
-        ><span class="path-number">02 / LE CATALOGUE</span>
-        <h3>{{ copy.productTitle }} <span aria-hidden="true">↗</span></h3>
-        <p>
-          {{ copy.productDescription }}
-        </p>
-        <span class="path-action">Parcourir le catalogue <span aria-hidden="true">→</span></span></a
-      >
-    </div>
-  </section>
 } @else if (!contentError()) {
   <div class="hero-loading" role="status">
     <p>Chargement de l’accueil…</p>
