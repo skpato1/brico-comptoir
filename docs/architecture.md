@@ -682,3 +682,18 @@ module ne joint directement les tables d'un autre. Les paniers visiteurs ne
 quittent pas le navigateur. Les messages de contact forment un traitement
 personnel distinct de l'export de compte, avec conservation configurable et
 une procédure de droits à définir avant exploitation commerciale.
+
+### Exploration publique du catalogue
+
+La vitrine Angular regroupe les catégories publiques à plat dans huit rayons
+visuels et un rayon de secours « Autres catégories ». Chaque rayon contient des
+familles repliables ; une recherche conserve l'accès à tous les intitulés
+publiés, même ceux qui ne correspondent pas aux règles de regroupement. Cette
+taxonomie est une aide à la navigation côté présentation : elle ne modifie ni
+les identifiants, ni la hiérarchie persistée, ni le contrat de filtrage. Le
+choix final transmet toujours un `categoryId` réel au backend. Les marques
+restent un filtre distinct et recherchable. La recherche de l'en-tête interroge
+le même endpoint public de produits avec une limite de cinq suggestions ; la
+page de résultats conserve le filtrage et la pagination serveur. Les doublons
+issus de l'import restent dans la base et demanderaient une réconciliation de
+catalogue séparée avant toute fusion de catégories.

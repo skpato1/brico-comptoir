@@ -1,6 +1,8 @@
 @use './app/mobile-menu';
 // Shared navigation stays outside the shell component's style budget.
 @use './app/mobile-shortcuts';
+@use './app/browse-picker';
+@use './app/catalog-discovery';
 
 :root {
   font-family:

@@ -1,18 +1,19 @@
 import {
   Component, computed, DestroyRef, ElementRef, HostListener, inject, OnInit, signal, ViewChild,
 } from '@angular/core';
-import { NgTemplateOutlet } from '@angular/common';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { filter } from 'rxjs';
+import { catchError, debounceTime, distinctUntilChanged, filter, map, of, Subject, switchMap } from 'rxjs';
 import { SessionState } from './core/session-state';
 import { CartState } from './core/cart-state';
-import { CatalogApi, Category } from './core/catalog-api';
+import { CatalogApi, Category, Product } from './core/catalog-api';
 import { buildCategoryMenu, searchCategoryMenu } from './core/category-menu';
+import { buildCategoryDepartments } from './core/category-departments';
+import { DepartmentIcon } from './shared/department-icon';
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, FormsModule, NgTemplateOutlet],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, FormsModule, DepartmentIcon],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
@@ -29,11 +30,31 @@ export class App implements OnInit {
   readonly categoryError = signal(false);
   readonly categories = signal<Category[]>([]);
   readonly menuQuery = signal('');
+  readonly activeDepartmentId = signal('');
   readonly categoryMenu = computed(() => buildCategoryMenu(this.categories()));
+  readonly departments = computed(() => buildCategoryDepartments(this.categoryMenu().searchable));
+  readonly activeDepartment = computed(() =>
+    this.departments().find(department => department.id === this.activeDepartmentId()));
   readonly categoryMatches = computed(() => searchCategoryMenu(this.categoryMenu(), this.menuQuery()));
+  readonly searchSuggestions = signal<Product[]>([]);
+  readonly searchBusy = signal(false);
+  private readonly searchTerms = new Subject<string>();
   query = '';
   ngOnInit(): void {
     this.session.start();
+    this.searchTerms.pipe(
+      map(value => value.trim().slice(0, 120)),
+      debounceTime(280),
+      distinctUntilChanged(),
+      switchMap(q => q.length < 2 ? of({ q, products: [] as Product[] }) : this.catalog.products({
+        q, categoryId: '', brandId: '', minPrice: '', maxPrice: '', sort: 'name', page: 0, size: 5,
+      }).pipe(map(page => ({ q, products: page.items })), catchError(() => of({ q, products: [] as Product[] })))),
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe(({ q, products }) => {
+      if (q !== this.query.trim().slice(0, 120)) return;
+      this.searchSuggestions.set(products);
+      this.searchBusy.set(false);
+    });
     this.router.events
       .pipe(
         filter((event) => event instanceof NavigationEnd),
@@ -51,6 +72,11 @@ export class App implements OnInit {
   }
   search(): void {
     void this.router.navigate(['/catalogue'], { queryParams: { q: this.query.trim() || null } });
+  }
+  onSearchInput(value: string): void {
+    this.searchSuggestions.set([]);
+    this.searchBusy.set(value.trim().length >= 2);
+    this.searchTerms.next(value);
   }
   focusSearch(): void {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -74,11 +100,13 @@ export class App implements OnInit {
     else dialog.removeAttribute('open');
     this.menuOpen.set(false);
     this.menuQuery.set('');
+    this.activeDepartmentId.set('');
     if (restoreFocus) document.getElementById('mobile-menu-toggle')?.focus();
   }
   onMenuClosed(): void {
     this.menuOpen.set(false);
     this.menuQuery.set('');
+    this.activeDepartmentId.set('');
   }
   onDialogClick(event: MouseEvent): void {
     if (event.target === this.mobileDialog?.nativeElement) this.closeMenu();

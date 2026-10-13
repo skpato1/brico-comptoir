@@ -1675,3 +1675,32 @@ le panier ne fournit pas de lien fiable vers une photo ; aucun avis, remise,
 délai, ville normalisée ou note de commande n'est disponible dans les contrats.
 Ces éléments ne sont pas simulés. Aucun test de production ni mesure de
 conversion réelle n'a été effectué.
+
+## 13 octobre 2026 — Recherche et filtres du catalogue
+
+Le catalogue public montre maintenant neuf entrées visuelles : huit rayons
+thématiques et « Autres catégories ». Chaque rayon mène à des familles
+repliables puis aux catégories réelles. La recherche de catégorie retrouve
+également les 358 intitulés de l'API, y compris ceux issus des marques et des
+collections. Sur mobile, ces rayons sont accessibles directement avant les
+résultats et dans le menu « Rayons » ; sélectionner une catégorie depuis la
+bande de rayons applique aussitôt le filtre. Les listes natives de 358
+catégories et 323 marques ont été remplacées par deux sélecteurs recherchables
+avec panneaux adaptés au mobile. La recherche d'en-tête propose jusqu'à cinq
+produits publiés via l'API existante, puis laisse ouvrir la page complète des
+résultats. La taxonomie de présentation ne modifie ni la base ni les contrats
+du backend ; le filtrage transmet toujours un identifiant de catégorie réel.
+
+Vérifications : `npm.cmd run test:ci` (76 tests réussis), `npm.cmd run build`
+(réussi après séparation des styles ; avertissements de budget CSS existants
+sur l'administration et le carrousel), `node scripts/check-repository.mjs`
+(15 migrations) et `node scripts/check-release.mjs` (réussi). Playwright local
+à 375, 768 et 1280 px : choix de catégorie et de marque présent dans l'URL,
+choix direct par rayon opérationnel, cinq suggestions pour « perceuse », aucun
+débordement horizontal ni erreur JavaScript. Les captures restent sous
+`.local/ux-audit/`, ignoré par Git. Aucune donnée ni page de production n'a
+été modifiée. Les doublons et catégories de marque issus de l'import restent
+visibles dans la recherche de catégorie ; leur fusion demanderait un chantier
+de qualité des données séparé.
+`git diff --check` ne signale pas d'erreur (Git indique seulement une future
+normalisation CRLF du présent journal).

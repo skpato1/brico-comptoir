@@ -1,0 +1,42 @@
+.header-search-wrap {
+  position: relative;
+  order: 3;
+  flex: 1 1 100%;
+  min-width: 0;
+}
+.header-search:focus-within { border-color: var(--red); box-shadow: 0 0 0 3px rgb(181 37 43 / 12%); }
+.header-search input:focus-visible { outline: 0; }
+.header-suggestions {
+  display: none; position: absolute; z-index: 12; top: calc(100% + 5px);
+  left: 0; right: 0; padding: 6px; border: 1px solid var(--line);
+  border-radius: 9px; background: #fff; box-shadow: 0 16px 35px #0002;
+}
+.header-search-wrap:focus-within .header-suggestions { display: grid; }
+.header-suggestions a, .header-suggestions button {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 11px 12px; border: 0; border-radius: 6px; background: #fff;
+  color: var(--ink); font-size: .82rem; text-align: left; text-decoration: none;
+}
+.header-suggestions a:hover, .header-suggestions button:hover { background: #fff4f2; color: var(--red); }
+.header-suggestions a span { flex: none; color: var(--red); font-size: .72rem; }
+.header-suggestions button { color: var(--red); font-weight: 750; cursor: pointer; }
+.header-suggestions p { padding: 9px 12px; margin: 0; color: var(--muted); font-size: .79rem; }
+
+.browse-departments { margin: 0 0 25px; }
+.browse-departments-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.browse-departments h2 { margin: 0 0 11px; font-size: 1rem; }
+.browse-departments-head span { color: var(--muted); font-size: .76rem; }
+.browse-departments-track { display: flex; gap: 9px; overflow-x: auto; padding: 2px 2px 12px; scroll-snap-type: x proximity; }
+.browse-departments-track button {
+  flex: 0 0 135px; display: grid; justify-items: start; align-content: center; gap: 8px;
+  min-height: 90px; padding: 12px; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--surface); color: var(--ink); text-align: left; scroll-snap-align: start;
+  cursor: pointer;
+}
+.browse-departments-track button:hover { background: #fff9f7; border-color: var(--red); }
+.browse-departments-track app-department-icon { width: 27px; height: 27px; color: var(--red); }
+.browse-departments-track span { font-size: .78rem; font-weight: 750; line-height: 1.2; }
+@media (max-width: 599px) {
+  .browse-departments-head span { display: none; }
+  .browse-departments-track { margin-right: -16px; padding-right: 16px; }
+}

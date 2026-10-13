@@ -43,8 +43,6 @@
 }
 .header-search {
   display: flex;
-  order: 3;
-  flex: 1 1 100%;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -61,8 +59,6 @@
   padding-inline: 22px;
   font-size: 0.83rem;
 }
-.header-search:focus-within { border-color: var(--red); box-shadow: 0 0 0 3px rgb(181 37 43 / 12%); }
-.header-search input:focus-visible { outline: 0; }
 .header-actions {
   margin-left: auto;
   display: flex;
@@ -157,7 +153,7 @@ main {
   font-size: 0.72rem;
 }
 @media (min-width: 800px) {
-  .header-search {
+  .header-search-wrap {
     order: 0;
     flex: 1 1 200px;
     max-width: 560px;
@@ -175,6 +171,8 @@ main {
   }
 }
 @media (max-width: 799px) {
+  .header-search input { min-height: 49px; font-size: 1rem; }
+  .header-search button { padding-inline: 14px; }
   .main-nav,
   .account-link,
   .cart-label {

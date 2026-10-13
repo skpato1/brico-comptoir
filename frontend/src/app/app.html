@@ -7,17 +7,36 @@
     ><span class="brand-mark" aria-hidden="true">bc</span
     ><span>Brico<span>Comptoir</span><small>DE L’IDÉE AU PROJET</small></span></a
   >
-  <form class="header-search" role="search" (ngSubmit)="search()">
-    <label class="sr-only" for="global-search">Rechercher un produit</label
-    ><input
-      id="global-search"
-      name="q"
-      [(ngModel)]="query"
-      placeholder="Produit ou référence…"
-      type="search"
-      maxlength="120"
-    /><button type="submit" aria-label="Lancer la recherche">Rechercher</button>
-  </form>
+  <div class="header-search-wrap">
+    <form class="header-search" role="search" (ngSubmit)="search()">
+      <label class="sr-only" for="global-search">Rechercher un produit</label
+      ><input
+        id="global-search"
+        name="q"
+        [(ngModel)]="query"
+        (ngModelChange)="onSearchInput($event)"
+        placeholder="Quel produit cherchez-vous ?"
+        type="search"
+        autocomplete="off"
+        maxlength="120"
+        aria-controls="search-suggestions"
+      /><button type="submit" aria-label="Lancer la recherche">Rechercher</button>
+    </form>
+    @if (query.trim().length >= 2) {
+      <div id="search-suggestions" class="header-suggestions" role="region" aria-label="Suggestions de produits">
+        @if (searchBusy()) {
+          <p role="status">Recherche en cours…</p>
+        } @else {
+          @for (product of searchSuggestions(); track product.id) {
+            <a [routerLink]="['/produits', product.id]">{{ product.name }} <span>Voir le produit ›</span></a>
+          } @empty {
+            <p>Aucune suggestion. Lancez la recherche pour voir tous les résultats.</p>
+          }
+          <button type="button" (click)="search()">Voir tous les résultats pour « {{ query.trim() }} »</button>
+        }
+      </div>
+    }
+  </div>
   <div class="header-actions">
     <a class="account-link" routerLink="/compte" routerLinkActive="active">Mon compte</a>
     <a class="cart-link" routerLink="/panier" routerLinkActive="active"
@@ -81,43 +100,43 @@
         } @else if (categoryLoaded()) {
           @if (menuQuery().trim()) {
             @if (categoryMatches().length) {
+              <p class="menu-hint">{{ categoryMatches().length }} catégorie(s) correspondante(s)</p>
               <ul class="menu-search-results">
-                @for (node of categoryMatches(); track node.category.id) {
+                @for (node of categoryMatches().slice(0, 40); track node.category.id) {
                   <li><a routerLink="/catalogue" [queryParams]="{ categoryId: node.category.id }"
                     (click)="closeMenu()">{{ node.path }}</a></li>
                 }
               </ul>
+              @if (categoryMatches().length > 40) { <p class="menu-hint">Précisez votre recherche pour voir les autres catégories.</p> }
             } @else {
               <p class="menu-state">Aucune catégorie trouvée.</p>
             }
-          } @else {
-            @for (branch of categoryMenu().branches; track branch.category.id) {
-              <details class="menu-branch">
-                <summary>{{ branch.category.name }} <span aria-hidden="true">⌄</span></summary>
-                <div class="menu-branch-content">
-                  <a class="menu-parent-link" routerLink="/catalogue"
-                    [queryParams]="{ categoryId: branch.category.id }" (click)="closeMenu()">
-                    Voir toute la catégorie {{ branch.category.name }}
-                  </a>
-                  <ng-container [ngTemplateOutlet]="categoryTree"
-                    [ngTemplateOutletContext]="{ $implicit: branch.children }" />
-                </div>
+          } @else if (activeDepartment(); as department) {
+            <button class="department-back" type="button" (click)="activeDepartmentId.set('')">← Tous les rayons</button>
+            <h3 class="department-title"><app-department-icon [kind]="department.icon" />{{ department.name }}</h3>
+            @for (group of department.groups; track group.name) {
+              <details class="department-group">
+                <summary>{{ group.name }} <small>{{ group.nodes.length }} catégories</small></summary>
+                <ul>
+                  @for (node of group.nodes; track node.category.id) {
+                    <li><a routerLink="/catalogue" [queryParams]="{ categoryId: node.category.id }"
+                      (click)="closeMenu()">{{ node.path }}</a></li>
+                  }
+                </ul>
               </details>
             }
-            @if (categoryMenu().alphabet.length) {
-              <p class="menu-index-title">Toutes les catégories · A–Z</p>
-              @for (group of categoryMenu().alphabet; track group.letter) {
-                <details class="menu-letter">
-                  <summary>{{ group.letter }} <span>{{ group.nodes.length }}</span></summary>
-                  <ul>
-                    @for (node of group.nodes; track node.category.id) {
-                      <li><a routerLink="/catalogue" [queryParams]="{ categoryId: node.category.id }"
-                        (click)="closeMenu()">{{ node.category.name }}</a></li>
-                    }
-                  </ul>
-                </details>
+          } @else {
+            <p class="menu-hint">Choisissez un rayon, puis une catégorie précise.</p>
+            <div class="department-grid">
+              @for (department of departments(); track department.id) {
+                <button type="button" (click)="activeDepartmentId.set(department.id)">
+                  <app-department-icon [kind]="department.icon" />
+                  <span>{{ department.name }}</span>
+                  <small>{{ department.count }} catégories</small>
+                </button>
               }
-            } @else if (!categoryMenu().branches.length) {
+            </div>
+            @if (!departments().length) {
               <p class="menu-state">Aucune catégorie disponible.</p>
             }
           }
@@ -131,28 +150,6 @@
     </nav>
   </div>
 </dialog>
-<ng-template #categoryTree let-nodes>
-  <ul class="menu-tree">
-    @for (node of nodes; track node.category.id) {
-      <li>
-        @if (node.children.length) {
-          <details>
-            <summary>{{ node.category.name }} <span aria-hidden="true">⌄</span></summary>
-            <a class="menu-parent-link" routerLink="/catalogue"
-              [queryParams]="{ categoryId: node.category.id }" (click)="closeMenu()">
-              Voir toute la catégorie {{ node.category.name }}
-            </a>
-            <ng-container [ngTemplateOutlet]="categoryTree"
-              [ngTemplateOutletContext]="{ $implicit: node.children }" />
-          </details>
-        } @else {
-          <a routerLink="/catalogue" [queryParams]="{ categoryId: node.category.id }"
-            (click)="closeMenu()">{{ node.category.name }}</a>
-        }
-      </li>
-    }
-  </ul>
-</ng-template>
 <main id="content" tabindex="-1">
   @if (session.error()) {
     <div class="state-box" role="alert">

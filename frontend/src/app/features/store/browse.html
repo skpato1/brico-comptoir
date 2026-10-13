@@ -23,6 +23,22 @@
     }}
   </p>
 </div>
+@if (!packMode && !applied().q && !applied().categoryId && !applied().brandId) {
+  <section class="browse-departments" aria-labelledby="browse-departments-title">
+    <div class="browse-departments-head">
+      <h2 id="browse-departments-title">Explorer par rayon</h2>
+      <span>Choisissez ensuite une catégorie</span>
+    </div>
+    <div class="browse-departments-track">
+      @for (department of departments(); track department.id) {
+        <button type="button" (click)="openDepartmentPicker(department.id)">
+          <app-department-icon [kind]="department.icon" />
+          <span>{{ department.name }}</span>
+        </button>
+      }
+    </div>
+  </section>
+}
 <div class="browse-layout">
 <form class="filters" role="search" #filtersForm="ngForm" (ngSubmit)="search()">
   <label class="query"
@@ -37,27 +53,26 @@
   @if (!packMode) {
     <button class="filter-toggle secondary" type="button" (click)="filtersOpen.set(!filtersOpen())"
       [attr.aria-expanded]="filtersOpen()" aria-controls="catalogue-filter-fields">
-      Filtres et tri <span aria-hidden="true">{{ filtersOpen() ? '−' : '+' }}</span>
+      Filtres et tri @if (activeFilterCount()) { <small>{{ activeFilterCount() }}</small> }
+      <span aria-hidden="true">{{ filtersOpen() ? '−' : '+' }}</span>
     </button>
   }
   <div id="catalogue-filter-fields" class="filter-fields" [class.collapsed]="!filtersOpen()">
   @if (!packMode) {
-    <label
-      >Catégorie<select name="category" [(ngModel)]="filters.categoryId">
-        <option value="">Toutes les catégories</option>
-        @for (category of categories(); track category.id) {
-          <option [value]="category.id">{{ categoryName(category) }}</option>
-        }
-      </select></label
-    >
-    <label
-      >Marque<select name="brand" [(ngModel)]="filters.brandId">
-        <option value="">Toutes les marques</option>
-        @for (brand of brands(); track brand.id) {
-          <option [value]="brand.id">{{ brand.name }}</option>
-        }
-      </select></label
-    >
+    <div class="picker-field">
+      <span>Rayon et catégorie</span>
+      <button type="button" class="picker-trigger" (click)="openCategoryPicker()"
+        aria-haspopup="dialog" aria-controls="category-picker">
+        <span>{{ currentCategoryName() }}</span><span aria-hidden="true">›</span>
+      </button>
+    </div>
+    <div class="picker-field">
+      <span>Marque</span>
+      <button type="button" class="picker-trigger" (click)="openBrandPicker()"
+        aria-haspopup="dialog" aria-controls="brand-picker">
+        <span>{{ currentBrandName() }}</span><span aria-hidden="true">›</span>
+      </button>
+    </div>
     <label
       >Prix minimum (TND)<input
         name="min"
@@ -94,6 +109,74 @@
     </p>
   }
 </form>
+@if (!packMode) {
+  <dialog #categoryDialog id="category-picker" class="browse-picker" aria-labelledby="category-picker-title">
+    <div class="picker-head">
+      <h2 id="category-picker-title">Choisir une catégorie</h2>
+      <button type="button" aria-label="Fermer" (click)="categoryDialog.close()">×</button>
+    </div>
+    <div class="picker-content">
+      <label for="category-search">Rechercher parmi les catégories</label>
+      <input id="category-search" type="search" autocomplete="off" placeholder="Ex. perceuse, robinet, peinture…"
+        [ngModel]="categoryQuery()" (ngModelChange)="categoryQuery.set($event)" />
+      @if (categoryQuery().trim()) {
+        <p class="picker-hint">{{ categoryMatches().length }} résultat(s)</p>
+        <div class="picker-list">
+          @for (node of categoryMatches().slice(0, 50); track node.category.id) {
+            <button type="button" (click)="selectCategory(node.category.id)">{{ node.path }}</button>
+          } @empty { <p>Aucune catégorie trouvée. Essayez un terme plus court.</p> }
+        </div>
+        @if (categoryMatches().length > 50) { <p class="picker-hint">Précisez votre recherche pour voir les autres résultats.</p> }
+      } @else if (activeDepartment(); as department) {
+        <button type="button" class="picker-back" (click)="departmentId.set('')">← Tous les rayons</button>
+        <h3 class="picker-department-title"><app-department-icon [kind]="department.icon" />{{ department.name }}</h3>
+        @for (group of department.groups; track group.name) {
+          <details class="picker-group">
+            <summary>{{ group.name }} <small>{{ group.nodes.length }} catégories</small></summary>
+            <div class="picker-list">
+              @for (node of group.nodes; track node.category.id) {
+                <button type="button" (click)="selectCategory(node.category.id)">{{ node.path }}</button>
+              }
+            </div>
+          </details>
+        }
+      } @else {
+        <button type="button" class="picker-all" (click)="selectCategory('')">Toutes les catégories</button>
+        <p class="picker-hint">Choisissez un rayon, puis une catégorie précise.</p>
+        <div class="picker-departments">
+          @for (department of departments(); track department.id) {
+            <button type="button" (click)="departmentId.set(department.id)">
+              <app-department-icon [kind]="department.icon" />
+              <span>{{ department.name }}</span>
+              <small>{{ department.count }} catégories</small>
+            </button>
+          }
+        </div>
+      }
+    </div>
+  </dialog>
+  <dialog #brandDialog id="brand-picker" class="browse-picker" aria-labelledby="brand-picker-title">
+    <div class="picker-head">
+      <h2 id="brand-picker-title">Choisir une marque</h2>
+      <button type="button" aria-label="Fermer" (click)="brandDialog.close()">×</button>
+    </div>
+    <div class="picker-content">
+      <label for="brand-search">Rechercher une marque</label>
+      <input id="brand-search" type="search" autocomplete="off" placeholder="Nom de la marque…"
+        [ngModel]="brandQuery()" (ngModelChange)="brandQuery.set($event)" />
+      <button type="button" class="picker-all" (click)="selectBrand('')">Toutes les marques</button>
+      <p class="picker-hint">{{ brandMatches().length }} marque(s) {{ brandQuery() ? 'trouvée(s)' : 'disponible(s)' }}</p>
+      <div class="picker-list">
+        @for (brand of brandMatches().slice(0, brandQuery() ? 60 : 24); track brand.id) {
+          <button type="button" (click)="selectBrand(brand.id)">{{ brand.name }}</button>
+        } @empty { <p>Aucune marque trouvée.</p> }
+      </div>
+      @if (brandMatches().length > (brandQuery() ? 60 : 24)) {
+        <p class="picker-hint">Saisissez un nom pour afficher les autres marques.</p>
+      }
+    </div>
+  </dialog>
+}
 <div class="browse-results">
 @if (filterError()) {
   <p role="status">{{ filterError() }}</p>
