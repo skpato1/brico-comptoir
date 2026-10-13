@@ -11,9 +11,9 @@ import { CheckoutComponent } from '../checkout/checkout';
   template: `
     <div class="content-narrow">
       <p class="eyebrow">VOTRE ESPACE</p>
-      <h1>Mon compte.</h1>
+      <h1>Mon compte</h1>
       @if (session.account(); as account) {
-        <p>Connecté à BricoComptoir : {{ account.email }}</p>
+        <p class="account-status">Connecté à BricoComptoir : <strong>{{ account.email }}</strong></p>
         <p><a routerLink="/mes-donnees">Mes données et mon choix marketing</a></p>
         <div class="actions">
           <button class="secondary" (click)="logout()" [disabled]="busy()">Se déconnecter</button>
@@ -31,6 +31,7 @@ import { CheckoutComponent } from '../checkout/checkout';
           Retrouvez votre panier et vos commandes. Vous pouvez aussi
           <a routerLink="/panier">commander sans compte</a>.
         </p>
+        <div class="auth-card">
         <h2>
           {{
             mode() === 'register'
@@ -111,6 +112,7 @@ import { CheckoutComponent } from '../checkout/checkout';
             <button class="secondary" (click)="show('request')">Mot de passe oublié</button>
           }
         </div>
+        </div>
       }
       @if (message()) {
         <p role="status">{{ message() }}</p>
@@ -119,11 +121,14 @@ import { CheckoutComponent } from '../checkout/checkout';
   `,
   styles: [
     `
+      .account-status { padding: 14px 18px; border-radius: var(--radius); background: var(--surface); overflow-wrap: anywhere; }
+      .auth-card { max-width: 520px; padding: 26px; border: 1px solid var(--line); border-radius: var(--radius); background: #fff; }
+      .auth-card h2 { margin-top: 0; }
       form {
         display: grid;
         gap: 10px;
-        max-width: 460px;
       }
+      form input { width: 100%; }
       form button {
         margin-top: 12px;
       }
@@ -137,6 +142,7 @@ import { CheckoutComponent } from '../checkout/checkout';
       .auth-links button {
         font-size: 0.8rem;
       }
+      @media (max-width: 600px) { .auth-card { padding: 18px; } }
     `,
   ],
 })

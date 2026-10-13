@@ -1,4 +1,4 @@
-<main class="page-wrap contact-page">
+<section class="page-wrap contact-page">
   <p class="eyebrow">BRICOCOMPTOIR</p><h1>Nous contacter</h1>
   <p>Une question sur un article, un pack ou votre commande ? Écrivez-nous avec les informations utiles.</p>
   @if (details(); as info) {
@@ -19,4 +19,4 @@
     <p>Ces données servent uniquement à traiter votre demande. N’envoyez pas de mot de passe.</p>
     <button type="submit" [disabled]="busy()">{{ busy() ? 'Envoi…' : 'Envoyer le message' }}</button>
   </form>
-</main>
+</section>

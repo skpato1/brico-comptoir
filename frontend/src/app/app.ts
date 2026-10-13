@@ -52,6 +52,10 @@ export class App implements OnInit {
   search(): void {
     void this.router.navigate(['/catalogue'], { queryParams: { q: this.query.trim() || null } });
   }
+  focusSearch(): void {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    document.getElementById('global-search')?.focus({ preventScroll: true });
+  }
   count(): number {
     return this.cart.view().items.reduce((total, item) => total + item.quantity, 0);
   }

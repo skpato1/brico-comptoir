@@ -159,6 +159,7 @@ describe('Storefront routes and real API contracts', () => {
   });
   it('shows zero-stock products as sold out and prevents adding them to the cart', async () => {
     const page = await harness.navigateByUrl('/produits/item', DetailPage);
+    http.expectOne('/api/v1/brands').flush([]);
     http.expectOne('/api/v1/products/item').flush({
       id: 'item', categoryId: 'category', brandId: null, name: 'Vis test', description: '',
       characteristics: {}, status: 'PUBLISHED', demo: false, version: 0,

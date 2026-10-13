@@ -3,11 +3,12 @@ import { KeyValuePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { CatalogApi, Product, ProductImage } from '../../core/catalog-api';
+import { Brand, CatalogApi, Product, ProductImage } from '../../core/catalog-api';
 import { Pack, PackImage, PacksApi, PackVariant } from '../../core/packs-api';
 import { CartState } from '../../core/cart-state';
 import { SessionState } from '../../core/session-state';
 import { ProductPhoto } from '../../shared/product-photo';
+import { variantLabel } from '../../shared/offer-label';
 export function omittedComponents(
   pack: Pack,
   selected: PackVariant,
@@ -41,6 +42,7 @@ export class DetailPage implements OnInit {
   readonly product = signal<Product | null>(null);
   readonly pack = signal<Pack | null>(null);
   readonly images = signal<(ProductImage | PackImage)[]>([]);
+  readonly brands = signal<Brand[]>([]);
   readonly loading = signal(true);
   readonly error = signal('');
   readonly notice = signal('');
@@ -52,7 +54,15 @@ export class DetailPage implements OnInit {
   private generation = 0;
   private availabilityGeneration = 0;
   ngOnInit(): void {
+    if (!this.packMode) {
+      this.api.brands().pipe(takeUntilDestroyed(this.destroy)).subscribe({
+        next: brands => this.brands.set(brands), error: () => this.brands.set([]),
+      });
+    }
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroy)).subscribe(() => this.load());
+  }
+  brandName(): string {
+    return this.brands().find(brand => brand.id === this.product()?.brandId)?.name ?? '';
   }
   load(): void {
     const id = this.route.snapshot.paramMap.get('id')!;
@@ -131,6 +141,12 @@ export class DetailPage implements OnInit {
       (v) => v.id === this.selected,
     );
   }
+  variantLabel(label: string): string {
+    return variantLabel(label, (this.packMode ? this.pack()?.variants : this.product()?.variants)?.length ?? 0);
+  }
+  selectedSku(): string | null {
+    return this.product()?.variants.find(variant => variant.id === this.selected)?.sku ?? null;
+  }
   packVariant() {
     return this.pack()?.variants.find((v) => v.id === this.selected);
   }
@@ -148,6 +164,12 @@ export class DetailPage implements OnInit {
   productCanAdd(): boolean {
     const available = this.available();
     return available !== null && available >= this.quantity;
+  }
+  canAdd(): boolean {
+    return !!this.selected && this.canBuy() && !this.cart.busy() &&
+      !this.cart.recoveryPending() && Number.isInteger(this.quantity) &&
+      this.quantity >= 1 && this.quantity <= 999 &&
+      (this.packMode ? (this.packVariant()?.available ?? 0) >= this.quantity : this.productCanAdd());
   }
   onVariantChanged(): void {
     this.notice.set('');
@@ -170,15 +192,7 @@ export class DetailPage implements OnInit {
     });
   }
   add(): void {
-    if (
-      !this.selected ||
-      (!this.packMode && !this.productCanAdd()) ||
-      this.cart.busy() ||
-      !Number.isInteger(this.quantity) ||
-      this.quantity < 1 ||
-      this.quantity > 999
-    )
-      return;
+    if (!this.canAdd()) return;
     const kind = this.packMode ? 'PACK' : 'PRODUCT';
     const current =
       this.cart.view().items.find((i) => i.kind === kind && i.offerId === this.selected)

@@ -2,6 +2,7 @@ import { Component, Input, OnChanges } from '@angular/core';
 import { Account } from '../../core/identity-api';
 import { CartItem } from '../../core/cart-api';
 import { CartState } from '../../core/cart-state';
+import { offerLabel } from '../../shared/offer-label';
 
 @Component({
   selector: 'app-cart',
@@ -12,6 +13,7 @@ export class CartComponent implements OnChanges {
   @Input() account: Account | null = null;
   @Input() manageSession = true;
   constructor(readonly cart: CartState) { }
+  readonly offerLabel = offerLabel;
   ngOnChanges(): void { if (this.manageSession) this.cart.activate(this.account); }
   quantityChanged(event: Event, item: CartItem): void {
     const raw = (event.target as HTMLInputElement).value;

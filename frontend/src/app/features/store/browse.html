@@ -23,6 +23,7 @@
     }}
   </p>
 </div>
+<div class="browse-layout">
 <form class="filters" role="search" #filtersForm="ngForm" (ngSubmit)="search()">
   <label class="query"
     >{{ packMode ? 'Votre besoin' : 'Produit ou référence'
@@ -33,6 +34,13 @@
       maxlength="120"
       [placeholder]="packMode ? 'Rechercher parmi les packs…' : 'Nom ou référence…'"
   /></label>
+  @if (!packMode) {
+    <button class="filter-toggle secondary" type="button" (click)="filtersOpen.set(!filtersOpen())"
+      [attr.aria-expanded]="filtersOpen()" aria-controls="catalogue-filter-fields">
+      Filtres et tri <span aria-hidden="true">{{ filtersOpen() ? '−' : '+' }}</span>
+    </button>
+  }
+  <div id="catalogue-filter-fields" class="filter-fields" [class.collapsed]="!filtersOpen()">
   @if (!packMode) {
     <label
       >Catégorie<select name="category" [(ngModel)]="filters.categoryId">
@@ -75,8 +83,9 @@
       </select></label
     >
   }
+  </div>
   <div class="actions">
-    <button type="submit" [disabled]="filtersForm.invalid">Rechercher</button
+    <button type="submit" [disabled]="filtersForm.invalid">Afficher les résultats</button
     ><button type="button" class="secondary" (click)="reset()">Effacer</button>
   </div>
   @if (filtersForm.invalid) {
@@ -85,12 +94,18 @@
     </p>
   }
 </form>
+<div class="browse-results">
 @if (filterError()) {
   <p role="status">{{ filterError() }}</p>
 }
 @if (loading()) {
-  <div class="state-box" role="status" aria-live="polite">
-    Chargement {{ packMode ? 'des packs' : 'des produits' }}…
+  <div role="status" aria-live="polite">
+    <span class="sr-only">Chargement {{ packMode ? 'des packs' : 'des produits' }}…</span>
+    <div class="offer-grid loading-grid" aria-hidden="true">
+      @for (slot of [1, 2, 3, 4, 5, 6]; track slot) {
+        <div class="loading-card"><div></div><span></span><span></span><span></span></div>
+      }
+    </div>
   </div>
 } @else if (error()) {
   <div class="state-box" role="alert">
@@ -117,12 +132,32 @@
     }
   </div>
 } @else if (page(); as result) {
-  <p class="result-count" role="status">{{ result.totalElements }} produit(s) trouvé(s)</p>
+  <div class="results-heading">
+    <p class="result-count" role="status">{{ result.totalElements }} produit(s) trouvé(s)</p>
+    @if (applied().q || applied().categoryId || applied().brandId || applied().minPrice || applied().maxPrice) {
+      <button class="clear-filters" type="button" (click)="reset()">Effacer les filtres</button>
+    }
+  </div>
+  @if (applied().q || applied().categoryId || applied().brandId || applied().minPrice || applied().maxPrice) {
+    <div class="active-filters" aria-label="Filtres appliqués">
+      @if (applied().q) { <span>Recherche : {{ applied().q }}</span> }
+      @if (applied().categoryId) { <span>Catégorie : {{ selectedCategoryName() }}</span> }
+      @if (applied().brandId) { <span>Marque : {{ brandName(applied().brandId) || 'Marque sélectionnée' }}</span> }
+      @if (applied().minPrice) { <span>Dès {{ applied().minPrice }} TND</span> }
+      @if (applied().maxPrice) { <span>Jusqu’à {{ applied().maxPrice }} TND</span> }
+    </div>
+  }
   @if (!result.items.length) {
     <div class="state-box">
-      <h2>Aucun produit trouvé.</h2>
-      <p>Essayez une recherche plus simple ou retirez un filtre.</p>
+      <h2>@if (applied().q) { Aucun produit trouvé pour « {{ applied().q }} ». } @else { Aucun produit trouvé avec ces filtres. }</h2>
+      <p>Vérifiez l’orthographe, essayez un terme plus court ou retirez un filtre.</p>
       <button class="secondary" (click)="reset()">Voir tout le catalogue</button>
+      <div class="search-suggestions" aria-label="Autres recherches dans le catalogue">
+        <span>Explorer aussi :</span>
+        <a routerLink="/catalogue" [queryParams]="{ q: 'peinture' }">Peinture</a>
+        <a routerLink="/catalogue" [queryParams]="{ q: 'perceuse' }">Perceuses</a>
+        <a routerLink="/catalogue" [queryParams]="{ q: 'robinet' }">Robinetterie</a>
+      </div>
     </div>
   }
   <div class="offer-grid">
@@ -131,6 +166,7 @@
         [offer]="product"
         [description]="product.description"
         [image]="primary(product.id)"
+        [brandName]="brandName(product.brandId)"
       />
     }
   </div>
@@ -149,3 +185,5 @@
     </nav>
   }
 }
+</div>
+</div>

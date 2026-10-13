@@ -1,6 +1,6 @@
 <a class="skip-link" href="#content">Aller au contenu</a>
 <div class="topline">
-  <span>Votre quincaillerie, simplement.</span><span>Tunisie · Prix en TND</span>
+  <span>Les bonnes pièces pour vos projets</span><span>Tunisie · Prix en TND · Paiement à la livraison <a routerLink="/contact">Nous contacter</a></span>
 </div>
 <header class="site-header">
   <a class="brand" routerLink="/" aria-label="BricoComptoir, accueil"
@@ -13,10 +13,10 @@
       id="global-search"
       name="q"
       [(ngModel)]="query"
-      placeholder="Un produit, une référence…"
+      placeholder="Produit ou référence…"
       type="search"
       maxlength="120"
-    /><button type="submit" aria-label="Rechercher">⌕</button>
+    /><button type="submit" aria-label="Lancer la recherche">Rechercher</button>
   </form>
   <div class="header-actions">
     <a class="account-link" routerLink="/compte" routerLinkActive="active">Mon compte</a>
@@ -33,10 +33,24 @@
   </div>
 </header>
 <nav class="main-nav" aria-label="Navigation principale">
-  <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Accueil</a
-  ><a routerLink="/solutions" routerLinkActive="active">Je cherche une solution</a
-  ><a routerLink="/catalogue" routerLinkActive="active">Je cherche un produit</a
-  ><a routerLink="/packs" routerLinkActive="active">Tous les packs</a>
+  <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Accueil</a>
+  <button type="button" (click)="openMenu()" [attr.aria-expanded]="menuOpen()" aria-controls="mobile-navigation">Catégories <span aria-hidden="true">⌄</span></button>
+  <a routerLink="/catalogue" routerLinkActive="active">Tous les produits</a>
+  <a routerLink="/packs" routerLinkActive="active">Packs</a>
+  <a routerLink="/solutions" routerLinkActive="active">Trouver une solution</a>
+</nav>
+<nav class="mobile-shortcuts" aria-label="Accès rapide">
+  <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+    <span aria-hidden="true">⌂</span>Accueil
+  </a>
+  <button type="button" (click)="openMenu()" [attr.aria-expanded]="menuOpen()" aria-controls="mobile-navigation">
+    <span aria-hidden="true">☷</span>Rayons
+  </button>
+  <button type="button" (click)="focusSearch()"><span aria-hidden="true">⌕</span>Recherche</button>
+  <a routerLink="/panier" routerLinkActive="active">
+    <span aria-hidden="true">▣</span>Panier @if (count()) {<small>{{ count() }}</small>}
+  </a>
+  <a routerLink="/compte" routerLinkActive="active"><span aria-hidden="true">◯</span>Compte</a>
 </nav>
 <dialog #mobileDialog id="mobile-navigation" class="mobile-menu" aria-labelledby="mobile-menu-title"
   (close)="onMenuClosed()" (click)="onDialogClick($event)">

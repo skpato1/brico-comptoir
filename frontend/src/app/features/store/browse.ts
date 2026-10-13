@@ -35,6 +35,7 @@ export class BrowsePage implements OnInit {
   readonly page = signal<Page<Product> | null>(null);
   readonly packs = signal<Pack[]>([]);
   readonly images = signal<Record<string, (ProductImage | PackImage)[]>>({});
+  readonly filtersOpen = signal(false);
   filters: ProductFilters = {
     q: '',
     categoryId: '',
@@ -45,6 +46,7 @@ export class BrowsePage implements OnInit {
     page: 0,
     size: 12,
   };
+  readonly applied = signal<ProductFilters>({ ...this.filters });
   private generation = 0;
   ngOnInit(): void {
     if (!this.packMode) {
@@ -83,6 +85,7 @@ export class BrowsePage implements OnInit {
         page: Number.isInteger(page) && page >= 0 && page < 100000 ? page : 0,
         size: 12,
       };
+      this.applied.set({ ...this.filters });
       this.load();
     });
   }
@@ -156,6 +159,7 @@ export class BrowsePage implements OnInit {
       });
   }
   search(page = 0): void {
+    this.filtersOpen.set(false);
     const params = { ...this.filters, page, size: undefined };
     void this.router.navigate([], {
       relativeTo: this.route,
@@ -165,7 +169,15 @@ export class BrowsePage implements OnInit {
     });
   }
   reset(): void {
+    this.filtersOpen.set(false);
     void this.router.navigate([], { relativeTo: this.route, queryParams: {} });
+  }
+  brandName(id: string | null): string {
+    return this.brands().find(brand => brand.id === id)?.name ?? '';
+  }
+  selectedCategoryName(): string {
+    const category = this.categories().find(item => item.id === this.applied().categoryId);
+    return category ? this.categoryName(category) : 'Catégorie sélectionnée';
   }
   primary(id: string): ProductImage | PackImage | undefined {
     const images = this.images()[id] ?? [];

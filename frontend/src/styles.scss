@@ -1,4 +1,6 @@
 @use './app/mobile-menu';
+// Shared navigation stays outside the shell component's style budget.
+@use './app/mobile-shortcuts';
 
 :root {
   font-family:
@@ -8,18 +10,47 @@
     BlinkMacSystemFont,
     'Segoe UI',
     sans-serif;
-  color: #252525;
+  color: #24211f;
   background: #fff;
   font-synthesis: none;
-  --red: #be252b;
-  --line: #e4e4e4;
-  --muted: #626262;
+  --red: #b5252b;
+  --red-dark: #921b23;
+  --ink: #24211f;
+  --muted: #625f5b;
+  --line: #dedbd5;
+  --surface: #f7f6f3;
+  --surface-warm: #f2eee7;
+  --radius: 10px;
+  --shadow: 0 12px 32px rgb(34 28 22 / 8%);
 }
 * {
   box-sizing: border-box;
 }
 body {
   margin: 0;
+}
+.topline {
+  background: #282521;
+  color: #fff;
+  padding: 8px max(calc((100vw - 1192px) / 2), 24px);
+  font-size: 0.72rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.topline a { margin-left: 16px; text-underline-offset: 3px; }
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 12px;
+  z-index: 20;
+  background: #fff;
+  padding: 12px;
+}
+.skip-link:focus { top: 12px; }
+@media (max-width: 440px) {
+  .topline > span:first-child, .topline a { display: none; }
+  .topline { justify-content: center; }
 }
 a {
   color: inherit;
@@ -38,7 +69,7 @@ button,
   gap: 8px;
   min-height: 44px;
   border: 1px solid transparent;
-  border-radius: 5px;
+  border-radius: 7px;
   padding: 11px 19px;
   background: var(--red);
   color: white;
@@ -49,7 +80,7 @@ button,
 }
 button:hover:not(:disabled),
 .button:hover {
-  background: #9e1a21;
+  background: var(--red-dark);
 }
 button:disabled {
   opacity: 0.55;
@@ -70,8 +101,8 @@ select,
 textarea {
   min-height: 44px;
   padding: 11px 12px;
-  border: 1px solid #aaa;
-  border-radius: 4px;
+  border: 1px solid #a9a6a1;
+  border-radius: 7px;
   background: #fff;
   color: #252525;
   max-width: 100%;
@@ -125,8 +156,8 @@ fieldset {
   padding: 40px 24px;
   text-align: center;
   border: 1px solid var(--line);
-  background: #fafafa;
-  border-radius: 7px;
+  background: var(--surface);
+  border-radius: var(--radius);
   margin-block: 24px;
 }
 .error {

@@ -1,18 +1,20 @@
 import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { CatalogApi, Product, ProductImage } from '../../core/catalog-api';
+import { Brand, CatalogApi, Product, ProductImage } from '../../core/catalog-api';
 import { HeroCarousel } from './hero-carousel';
 import { BrandShowcase } from './brand-showcase';
-import { OfferCard } from '../../shared/offer-card';
+import { minimumPrice, OfferCard } from '../../shared/offer-card';
+import { ProductPhoto } from '../../shared/product-photo';
 import { AdminApi, HomeContent } from '../../core/admin-api';
 @Component({
   selector: 'app-home',
-  imports: [RouterLink, OfferCard, HeroCarousel, BrandShowcase],
+  imports: [RouterLink, OfferCard, ProductPhoto, HeroCarousel, BrandShowcase],
   templateUrl: './home.html',
   styleUrl: './home.scss',
 })
 export class HomePage implements OnInit {
+  readonly minimumPrice = minimumPrice;
   private readonly api = inject(CatalogApi);
   private readonly contentApi = inject(AdminApi);
   readonly content = signal<HomeContent | null>(null);
@@ -20,11 +22,15 @@ export class HomePage implements OnInit {
   private readonly destroy = inject(DestroyRef);
   readonly products = signal<Product[]>([]);
   readonly images = signal<Record<string, ProductImage[]>>({});
+  readonly brands = signal<Brand[]>([]);
   readonly loading = signal(true);
   readonly error = signal(false);
   ngOnInit(): void {
     this.loadContent();
     this.load();
+  }
+  brandName(id: string | null): string {
+    return this.brands().find(brand => brand.id === id)?.name ?? '';
   }
   loadContent(): void {
     this.contentError.set(false);
@@ -49,7 +55,7 @@ export class HomePage implements OnInit {
         maxPrice: '',
         sort: 'newest',
         page: 0,
-        size: 4,
+        size: 5,
       })
       .pipe(takeUntilDestroyed(this.destroy))
       .subscribe({

@@ -1637,3 +1637,41 @@ fictifs dans un test ; après retrait de ce cas, les quatre tests et
 E2E complète n'ont pas été relancés car aucun code métier Java ni composant
 Angular n'a changé. Aucun déploiement ni modification de la production n'a
 été effectué pour cette préparation.
+
+## 13 octobre 2026 — Refonte UX progressive de la boutique (branche locale)
+
+La branche locale `codex/storefront-ux-redesign` part de la préparation VS Code
+existante. L'[audit UX](storefront-ux-audit.md) documente les routes, contrats,
+priorités et limites des données avant les changements. Aucun backend, contrat
+API, base locale ou environnement de production n'a été modifié.
+
+Le parcours public Angular utilise désormais des tokens visuels communs, une
+recherche plus lisible, un accès aux catégories et une navigation inférieure
+mobile. L'accueil propose quatre entrées de recherche réellement disponibles et
+une fiche publiée mise en avant, alimentée par le catalogue ;
+les cartes montrent la marque quand elle existe, le nom, le prix et une action
+explicite. Le catalogue affiche les filtres dans une colonne sur ordinateur,
+les replie sur mobile, montre les critères appliqués, un chargement en
+squelettes et des pistes de recherche après zéro résultat. La fiche garde prix
+et achat visibles sur mobile, synchronisés avec
+la variante, la quantité et la disponibilité. Le panier et le checkout rendent
+le sous-total, les frais encore à calculer puis le total vérifié plus clairs ;
+le récapitulatif serveur, la clé d'idempotence et la commande invitée sont
+conservés. Confirmation, compte et contact ont été harmonisés. Le libellé
+source « Default Title » est masqué uniquement comme segment de variante.
+
+Vérifications : `npm.cmd run test:ci` (74 tests réussis après les changements
+fonctionnels d'interface), `npm.cmd run build` (réussi ; avertissements de
+budget CSS préexistants sur l'administration et le hero, sans échec de compilation),
+Playwright local sur 320, 375, 390, 430, 768, 1024, 1280, 1440 et 1920 px
+(accueil, catalogue, fiche, panier ; aucun débordement horizontal ni erreur
+JavaScript), ouverture du panneau de filtres mobile et parcours invité jusqu'à
+la prévisualisation : 42.000 TND d'article + 8.000 TND de livraison =
+50.000 TND. Aucune commande n'a été confirmée pendant cette vérification.
+Les captures de revue restent ignorées sous `.local/ux-audit/`.
+
+Limites connues : l'API de liste ne fournit ni stock ni classement des ventes ;
+le panier ne fournit pas de lien fiable vers une photo ; aucun avis, remise,
+délai, ville normalisée ou note de commande n'est disponible dans les contrats.
+Ces éléments ne sont pas simulés. Aucun test de production ni mesure de
+conversion réelle n'a été effectué.

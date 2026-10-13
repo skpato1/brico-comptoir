@@ -25,8 +25,8 @@ describe('Public shell', () => {
     http.expectOne('/api/v1/auth/me').flush({}, { status: 401, statusText: 'Unauthorized' });
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.skip-link').getAttribute('href')).toBe('#content');
-    expect(fixture.nativeElement.textContent).toContain('Je cherche une solution');
-    expect(fixture.nativeElement.textContent).toContain('Je cherche un produit');
+    expect(fixture.nativeElement.querySelector('.main-nav').textContent).toContain('Trouver une solution');
+    expect(fixture.nativeElement.querySelector('.main-nav').textContent).toContain('Tous les produits');
     expect(fixture.nativeElement.querySelector('main').tabIndex).toBe(-1);
   });
   it('does not silently switch an unavailable authenticated session to guest checkout', () => {
