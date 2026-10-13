@@ -1572,3 +1572,29 @@ panneau visible sans débordement horizontal, sous-catégorie ouvrant le catalog
 filtré, fermeture par Échap ; à 1280 px, la navigation desktop reste visible
 et le burger masqué. Le menu n'est pas encore déployé en production.
 Le backend et ses tests n'ont pas été modifiés par cette étape.
+
+## 13 octobre 2026 — Hauteur uniforme des bannières du hero sur ordinateur
+
+Les première et dernière diapositives promotionnelles sont alignées sur la
+hauteur de la deuxième diapositive à partir de 1024 px. L'image remplit la
+bannière et la légende avec son bouton se superpose en bas sur un dégradé,
+sans modifier la disposition mobile. Sur le site public à 1440 px de large,
+la prévisualisation Playwright mesurait 921 px pour ces diapositives contre
+619 px pour la deuxième avant correction ; l'aperçu avec les nouvelles règles
+mesure 619 px pour chacune des trois.
+
+Vérifications locales : `npm run test:ci` (65 tests réussis), `npm run build`
+(réussi ; avertissements de taille CSS préexistants pour l'administration et
+le hero), `node scripts/check-repository.mjs` (15 migrations),
+`node scripts/check-release.mjs` (réussi), `git diff --check` (réussi),
+prévisualisation Playwright des trois diapositives à 1440 px. Cette
+prévisualisation appliquait les règles CSS à la page publique ; elle ne
+constitue pas une vérification du déploiement de la correction.
+
+Après intégration de `main` dans la branche de la PR, le conflit de ce journal
+est résolu en conservant également l'entrée de navigation mobile par
+catégories. Vérifications sur l'ensemble fusionné : `npm run test:ci`
+(72 tests réussis), `npm run build` (réussi, mêmes avertissements de taille
+CSS), `node scripts/check-repository.mjs` (15 migrations) et
+`node scripts/check-release.mjs` (réussi). Aucun fichier backend n'a été
+modifié par cette résolution.
