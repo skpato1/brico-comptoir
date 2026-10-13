@@ -84,7 +84,7 @@
 .header-actions a {
   text-decoration: none;
 }
-.cart-link span {
+.cart-count {
   background: #bd2525;
   color: #fff;
   border-radius: 50%;
@@ -94,6 +94,10 @@
   place-items: center;
   margin-left: 4px;
   font-size: 0.7rem;
+}
+.cart-icon,
+.menu-toggle {
+  display: none;
 }
 .main-nav {
   border-block: 1px solid #e6e6e6;
@@ -185,6 +189,50 @@ main {
   .footer-bottom {
     grid-column: 1/-1;
   }
+}
+@media (max-width: 799px) {
+  .main-nav,
+  .account-link,
+  .cart-label {
+    display: none;
+  }
+  .cart-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+  }
+  .cart-icon {
+    display: block;
+    width: 24px;
+    height: 24px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .menu-toggle {
+    display: flex;
+    width: 42px;
+    height: 42px;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    border: 1px solid #d5d5d5;
+    border-radius: 7px;
+    background: #fff;
+    cursor: pointer;
+  }
+  .menu-toggle span {
+    width: 20px;
+    height: 2px;
+    border-radius: 2px;
+    background: #252525;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mobile-menu { animation: none; }
 }
 @media (max-width: 440px) {
   .topline > span:first-child {

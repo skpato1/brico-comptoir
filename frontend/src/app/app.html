@@ -19,10 +19,17 @@
     /><button type="submit" aria-label="Rechercher">⌕</button>
   </form>
   <div class="header-actions">
-    <a routerLink="/compte" routerLinkActive="active">Mon compte</a
-    ><a class="cart-link" routerLink="/panier" routerLinkActive="active"
-      >Panier <span>{{ count() }}</span></a
-    >
+    <a class="account-link" routerLink="/compte" routerLinkActive="active">Mon compte</a>
+    <a class="cart-link" routerLink="/panier" routerLinkActive="active"
+      [attr.aria-label]="count() + ' article' + (count() > 1 ? 's' : '') + ' dans le panier'">
+      <span class="cart-label">Panier</span>
+      <svg class="cart-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 3h2l2.3 11.3a2 2 0 0 0 2 1.7H19a2 2 0 0 0 2-1.6l1-7.4H5M9 21h.01M18 21h.01" /></svg>
+      <span class="cart-count">{{ count() }}</span>
+    </a>
+    <button id="mobile-menu-toggle" class="menu-toggle" type="button" aria-label="Ouvrir le menu"
+      aria-controls="mobile-navigation" [attr.aria-expanded]="menuOpen()" (click)="openMenu()">
+      <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+    </button>
   </div>
 </header>
 <nav class="main-nav" aria-label="Navigation principale">
@@ -31,6 +38,107 @@
   ><a routerLink="/catalogue" routerLinkActive="active">Je cherche un produit</a
   ><a routerLink="/packs" routerLinkActive="active">Tous les packs</a>
 </nav>
+<dialog #mobileDialog id="mobile-navigation" class="mobile-menu" aria-labelledby="mobile-menu-title"
+  (close)="onMenuClosed()" (click)="onDialogClick($event)">
+  <div class="mobile-menu-panel">
+    <div class="mobile-menu-head">
+      <strong id="mobile-menu-title">Explorer BricoComptoir</strong>
+      <button type="button" class="menu-close" aria-label="Fermer le menu" (click)="closeMenu()">×</button>
+    </div>
+    <nav aria-label="Navigation mobile">
+      <div class="menu-quick-links">
+        <a routerLink="/" (click)="closeMenu()">Accueil</a>
+        <a routerLink="/solutions" (click)="closeMenu()">Je cherche une solution</a>
+        <a routerLink="/catalogue" (click)="closeMenu()">Tous les produits</a>
+        <a routerLink="/packs" (click)="closeMenu()">Tous les packs</a>
+      </div>
+      <div class="menu-categories">
+        <h2>Catégories</h2>
+        <label class="sr-only" for="menu-category-search">Rechercher une catégorie</label>
+        <input id="menu-category-search" type="search" placeholder="Rechercher une catégorie…"
+          [ngModel]="menuQuery()" (ngModelChange)="menuQuery.set($event)" autocomplete="off" />
+        @if (categoryLoading()) {
+          <p class="menu-state" role="status">Chargement des catégories…</p>
+        } @else if (categoryError()) {
+          <div class="menu-state" role="alert">
+            <p>Les catégories ne sont pas disponibles pour le moment.</p>
+            <button type="button" (click)="retryCategories()">Réessayer</button>
+          </div>
+        } @else if (categoryLoaded()) {
+          @if (menuQuery().trim()) {
+            @if (categoryMatches().length) {
+              <ul class="menu-search-results">
+                @for (node of categoryMatches(); track node.category.id) {
+                  <li><a routerLink="/catalogue" [queryParams]="{ categoryId: node.category.id }"
+                    (click)="closeMenu()">{{ node.path }}</a></li>
+                }
+              </ul>
+            } @else {
+              <p class="menu-state">Aucune catégorie trouvée.</p>
+            }
+          } @else {
+            @for (branch of categoryMenu().branches; track branch.category.id) {
+              <details class="menu-branch">
+                <summary>{{ branch.category.name }} <span aria-hidden="true">⌄</span></summary>
+                <div class="menu-branch-content">
+                  <a class="menu-parent-link" routerLink="/catalogue"
+                    [queryParams]="{ categoryId: branch.category.id }" (click)="closeMenu()">
+                    Voir toute la catégorie {{ branch.category.name }}
+                  </a>
+                  <ng-container [ngTemplateOutlet]="categoryTree"
+                    [ngTemplateOutletContext]="{ $implicit: branch.children }" />
+                </div>
+              </details>
+            }
+            @if (categoryMenu().alphabet.length) {
+              <p class="menu-index-title">Toutes les catégories · A–Z</p>
+              @for (group of categoryMenu().alphabet; track group.letter) {
+                <details class="menu-letter">
+                  <summary>{{ group.letter }} <span>{{ group.nodes.length }}</span></summary>
+                  <ul>
+                    @for (node of group.nodes; track node.category.id) {
+                      <li><a routerLink="/catalogue" [queryParams]="{ categoryId: node.category.id }"
+                        (click)="closeMenu()">{{ node.category.name }}</a></li>
+                    }
+                  </ul>
+                </details>
+              }
+            } @else if (!categoryMenu().branches.length) {
+              <p class="menu-state">Aucune catégorie disponible.</p>
+            }
+          }
+        }
+      </div>
+      <div class="menu-secondary-links">
+        <a routerLink="/compte" (click)="closeMenu()">Mon compte</a>
+        <a routerLink="/panier" (click)="closeMenu()">Mon panier</a>
+        <a routerLink="/contact" (click)="closeMenu()">Nous contacter</a>
+      </div>
+    </nav>
+  </div>
+</dialog>
+<ng-template #categoryTree let-nodes>
+  <ul class="menu-tree">
+    @for (node of nodes; track node.category.id) {
+      <li>
+        @if (node.children.length) {
+          <details>
+            <summary>{{ node.category.name }} <span aria-hidden="true">⌄</span></summary>
+            <a class="menu-parent-link" routerLink="/catalogue"
+              [queryParams]="{ categoryId: node.category.id }" (click)="closeMenu()">
+              Voir toute la catégorie {{ node.category.name }}
+            </a>
+            <ng-container [ngTemplateOutlet]="categoryTree"
+              [ngTemplateOutletContext]="{ $implicit: node.children }" />
+          </details>
+        } @else {
+          <a routerLink="/catalogue" [queryParams]="{ categoryId: node.category.id }"
+            (click)="closeMenu()">{{ node.category.name }}</a>
+        }
+      </li>
+    }
+  </ul>
+</ng-template>
 <main id="content" tabindex="-1">
   @if (session.error()) {
     <div class="state-box" role="alert">

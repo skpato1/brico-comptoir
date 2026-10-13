@@ -1548,6 +1548,31 @@ production. Les tests Java/PostgreSQL ne sont pas exécutables sur ce poste :
 JDK 21 absent du PATH et moteur Docker indisponible ; la CI doit les exécuter
 avant intégration. Le déploiement public attend l'intégration de cette branche.
 
+## 6 octobre 2026 — Navigation mobile par catégories
+
+Le header public remplace la barre de navigation horizontale par un bouton
+burger sous 800 px. Son panneau modal garde les accès aux solutions, produits,
+packs, compte, panier et contact. Il charge les catégories publiques à la
+première ouverture, affiche les sous-catégories selon leurs vrais `parentId`,
+permet une recherche sans accents et classe les catégories sans parent dans
+un index A–Z. Chaque lien applique le filtre `categoryId` au catalogue ; un
+parent inclut ses descendants via l'API existante. L'état de chargement,
+l'erreur et la reprise sont visibles. La navigation desktop reste inchangée.
+
+L'API publique de production retournait 358 catégories racines et aucune
+sous-catégorie lors de l'inspection ; aucune hiérarchie commerciale n'a été
+inventée. L'index A–Z sert ces catégories actuelles. La hiérarchie apparaîtra
+quand des parents seront renseignés dans l'administration.
+
+Vérifications locales : 72 tests Angular réussis ; build de production réussi
+(seuls les avertissements CSS préexistants de l'administration et du hero
+subsistent) ; contrôles dépôt et release réussis ; `git diff --check` sans
+erreur. Parcours Playwright local avec réponses API simulées à 375 et 320 px :
+panneau visible sans débordement horizontal, sous-catégorie ouvrant le catalogue
+filtré, fermeture par Échap ; à 1280 px, la navigation desktop reste visible
+et le burger masqué. Le menu n'est pas encore déployé en production.
+Le backend et ses tests n'ont pas été modifiés par cette étape.
+
 ## 13 octobre 2026 — Hauteur uniforme des bannières du hero sur ordinateur
 
 Les première et dernière diapositives promotionnelles sont alignées sur la
@@ -1565,3 +1590,11 @@ le hero), `node scripts/check-repository.mjs` (15 migrations),
 prévisualisation Playwright des trois diapositives à 1440 px. Cette
 prévisualisation appliquait les règles CSS à la page publique ; elle ne
 constitue pas une vérification du déploiement de la correction.
+
+Après intégration de `main` dans la branche de la PR, le conflit de ce journal
+est résolu en conservant également l'entrée de navigation mobile par
+catégories. Vérifications sur l'ensemble fusionné : `npm run test:ci`
+(72 tests réussis), `npm run build` (réussi, mêmes avertissements de taille
+CSS), `node scripts/check-repository.mjs` (15 migrations) et
+`node scripts/check-release.mjs` (réussi). Aucun fichier backend n'a été
+modifié par cette résolution.

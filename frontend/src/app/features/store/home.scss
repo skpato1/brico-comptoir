@@ -23,62 +23,9 @@
 .section-heading .eyebrow {
   margin-bottom: 12px;
 }
-.pathways,
 .offer-grid {
   display: grid;
   gap: 20px;
-}
-.pathways > a {
-  display: flex;
-  flex-direction: column;
-  padding: clamp(24px, 3vw, 36px);
-  text-decoration: none;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  transition:
-    border-color 160ms ease,
-    background-color 160ms ease;
-}
-.pathways > a:first-child {
-  background: var(--paper);
-}
-.pathways > a:hover,
-.pathways > a:focus-visible {
-  border-color: var(--red);
-  background: #fffafa;
-}
-.path-number {
-  font-size: 0.7rem;
-  letter-spacing: 1.5px;
-  color: var(--red);
-  font-weight: 700;
-}
-.pathways h3 {
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
-  font-size: clamp(1.5rem, 2.5vw, 2rem);
-  margin: 24px 0 12px;
-  overflow-wrap: anywhere;
-}
-.pathways h3 span {
-  color: var(--red);
-  font-weight: 400;
-}
-.pathways p {
-  font-size: 0.9375rem;
-  color: var(--muted);
-  margin: 0 0 24px;
-  max-width: 48ch;
-}
-.path-action {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  margin-top: auto;
-  font-size: 0.875rem;
-  font-weight: 650;
-  color: var(--red);
 }
 .how {
   margin-top: 56px;
@@ -131,7 +78,6 @@
   width: 60%;
 }
 @media (min-width: 600px) {
-  .pathways,
   .offer-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
