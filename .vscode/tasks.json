@@ -1,0 +1,75 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Brico: Initialize local environment",
+      "type": "shell",
+      "command": "node scripts/init-local-env.mjs",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Brico: Start infrastructure",
+      "type": "shell",
+      "command": "docker compose up --detach --wait --wait-timeout 180 postgres minio mailpit",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "dependsOn": "Brico: Initialize local environment",
+      "dependsOrder": "sequence",
+      "problemMatcher": []
+    },
+    {
+      "label": "Brico: Backend (Spring Boot)",
+      "type": "shell",
+      "command": "node scripts/run-backend.mjs",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "dependsOn": "Brico: Start infrastructure",
+      "dependsOrder": "sequence",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Brico: Frontend (Angular)",
+      "type": "shell",
+      "command": "npm.cmd start",
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Brico: Check local app",
+      "type": "shell",
+      "command": "node scripts/check-local.mjs",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Brico: Stop infrastructure",
+      "type": "shell",
+      "command": "docker compose stop postgres minio mailpit",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    }
+  ]
+}

@@ -205,6 +205,8 @@ Ne pas supprimer de volume contenant des données à conserver.
 
 Prérequis supplémentaires : un JDK **21** pour lancer Spring hors Docker.
 Maven est fourni par les wrappers `backend/mvnw` et `backend/mvnw.cmd`.
+Pour les tâches VS Code, la séparation des services et la base catalogue locale,
+voir [le guide de développement local](docs/local-development.md).
 
 ```sh
 node scripts/init-local-env.mjs
@@ -212,8 +214,9 @@ docker compose up --build --detach --wait postgres minio mailpit
 node scripts/run-backend.mjs
 ```
 
-Le lanceur lit `.env`, sélectionne le profil `local` et adapte l'URL PostgreSQL
-aux ports locaux. Dans un second terminal :
+Le lanceur lit `.env`, impose le profil `local` et refuse une URL PostgreSQL
+hors du port Compose sur localhost. Il utilise toujours MinIO et Mailpit
+locaux. Dans un second terminal :
 
 ```sh
 cd frontend
@@ -221,8 +224,9 @@ npm ci
 npm start
 ```
 
-Le proxy Angular utilise `http://localhost:8080` par défaut. Si le port API a
-changé, définir `API_PROXY_TARGET` avant `npm start` (PowerShell :
+Le proxy Angular utilise `http://localhost:8080` par défaut et refuse une
+origine distante. Si le port API local a changé, définir `API_PROXY_TARGET`
+avant `npm start` (PowerShell :
 `$env:API_PROXY_TARGET='http://localhost:8081'` ; Bash :
 `API_PROXY_TARGET=http://localhost:8081 npm start`). Ne pas lancer les conteneurs
 `backend`/`frontend` sur les mêmes ports que les serveurs natifs ; les arrêter
