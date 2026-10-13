@@ -1598,3 +1598,42 @@ catégories. Vérifications sur l'ensemble fusionné : `npm run test:ci`
 CSS), `node scripts/check-repository.mjs` (15 migrations) et
 `node scripts/check-release.mjs` (réussi). Aucun fichier backend n'a été
 modifié par cette résolution.
+
+## 13 octobre 2026 — Développement VS Code isolé de la production
+
+Les tâches VS Code versionnées initialisent l'environnement local, démarrent
+PostgreSQL/MinIO/Mailpit en Compose, puis lancent Spring et Angular séparément.
+Le lanceur Spring refuse une URL JDBC hors du port PostgreSQL de Compose sur
+localhost et impose le profil `local`, MinIO, Mailpit, une URL publique locale
+et la désactivation de la purge automatique de confidentialité. Le proxy
+Angular de `ng serve` refuse une origine API distante. Les chemins Java/Maven
+propres au poste sont lus, si nécessaire, depuis `.local/dev-tools.json`, ignoré
+par Git. Le [guide local](local-development.md) distingue cet outillage des
+connexions Render/Vercel de production.
+
+Sur le poste de préparation, une base Compose séparée contient un instantané
+du catalogue de production au 13 octobre : 323 marques, 358 catégories,
+6 652 fiches dont 6 620 publiées, 9 400 variantes et 344 métadonnées de photos
+produit. Les 1 035 objets image produit/pack référencés ont été copiés vers
+MinIO local avec vérification SHA-256. Le contact public et les réglages de
+livraison 8.000 TND/toute la Tunisie ont été copiés. La base de démonstration
+initiale, avec ses comptes et commandes, est conservée ; aucun compte client
+ni commande de production n'a été copié. Cet instantané, ses médias et les
+identifiants source restent hors Git et ne se synchronisent pas après un pull.
+
+Vérifications sur cette branche : quatre tests du garde-fou local passent ;
+`node scripts/run-backend.mjs` démarre sur la base locale séparée avec Java 21
+et Flyway valide les 15 migrations ; `node scripts/check-local.mjs` passe ses
+neuf contrôles ; via `localhost:4200`, l'API retourne 323 marques et 6 620
+produits publiés. Le navigateur a affiché 18 logos de marques, le filtre BOSCH
+et une fiche avec variantes sans erreur JavaScript ; une photo et un logo ont
+répondu HTTP 200. La prévisualisation locale de commande a renvoyé 8.000 TND
+de livraison pour un article, sans créer de commande.
+`npm.cmd run build --prefix frontend` réussit avec les deux avertissements de
+budget CSS préexistants ; `node scripts/check-repository.mjs` réussit pour
+15 migrations. Le premier `check-release` a rejeté une URL d'identifiants
+fictifs dans un test ; après retrait de ce cas, les quatre tests et
+`node scripts/check-release.mjs` passent. Les tests backend métier et la suite
+E2E complète n'ont pas été relancés car aucun code métier Java ni composant
+Angular n'a changé. Aucun déploiement ni modification de la production n'a
+été effectué pour cette préparation.
