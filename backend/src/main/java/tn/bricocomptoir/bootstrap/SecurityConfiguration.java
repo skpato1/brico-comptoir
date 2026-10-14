@@ -187,12 +187,15 @@ class SecurityConfiguration {
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/register", "/api/v1/auth/login",
                                 "/api/v1/auth/password-reset/request", "/api/v1/auth/password-reset/complete",
                                 "/api/v1/cart/estimate", "/api/v1/checkout/preview", "/api/v1/orders",
-                                "/api/v1/orders/*/cancel", "/api/v1/contact/messages").permitAll()
+                                "/api/v1/orders/*/cancel", "/api/v1/contact/messages",
+                                "/api/v1/products/*/views").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/orders/*").permitAll()
                         .requestMatchers("/api/v1/privacy/guest/**").permitAll()
                         .requestMatchers("/api/v1/privacy/**").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/v1/orders").hasRole("CUSTOMER")
                         .requestMatchers(HttpMethod.GET, "/api/v1/content/home", "/api/v1/content/hero",
+                                "/api/v1/content/best-sellers", "/api/v1/content/professional-favorites",
+                                "/api/v1/content/social-links",
                                 "/api/v1/contact").permitAll()
                         .requestMatchers("/api/v1/admin/content/**").hasAnyRole("CATALOG_MANAGER", "ADMIN")
                         .requestMatchers("/api/v1/admin/contact/messages", "/api/v1/admin/contact/messages/**")

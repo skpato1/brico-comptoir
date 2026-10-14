@@ -165,6 +165,7 @@ class AdministrationIT {
         assertThat(customer.get("/admin/content/hero").statusCode()).isEqualTo(403);
         Hero before=json.readValue(cm.get("/admin/content/hero").body(),Hero.class);
         assertThat(before.slides()).hasSizeGreaterThan(0);
+        assertThat(before.slides().getFirst().image()).isEqualTo("brico-online");
         assertThat(before.slides()).extracting(Slide::image).contains("brico-projects", "brico-workshop");
         var hidden=new Slide(UUID.randomUUID(),false,"brico-workshop","Cachée","Titre caché","Description cachée","Visuel promotionnel","/packs","Voir","Note");
         var changes=new java.util.ArrayList<>(before.slides());changes.add(hidden);
@@ -196,6 +197,84 @@ class AdministrationIT {
         assertThat(om.request("POST","/admin/contact/messages/"+id+"/resolve","{}",false).statusCode()).isEqualTo(403);
         assertThat(om.request("POST","/admin/contact/messages/"+id+"/resolve","{}",true).statusCode()).isEqualTo(204);
         assertThat(om.request("POST","/admin/contact/messages/"+id+"/resolve","{}",true).statusCode()).isEqualTo(409);
+    }
+
+    @Test void socialLinksArePublicButOnlyManagersCanEditWithCsrfAndCurrentVersion() throws Exception {
+        Browser cm=browser(Role.CATALOG_MANAGER), om=browser(Role.ORDER_MANAGER), guest=new Browser();
+        assertThat(guest.get("/content/social-links").statusCode()).isEqualTo(200);
+        assertThat(om.get("/admin/content/social-links").statusCode()).isEqualTo(403);
+        SocialLinks initial=json.readValue(cm.get("/admin/content/social-links").body(),SocialLinks.class);
+        assertThat(initial.facebookUrl()).isEqualTo("https://www.facebook.com/brico.comptoir.tunisie");
+        assertThat(initial.instagramUrl()).isEmpty();
+        var update=new SocialLinks(initial.facebookUrl(), "https://www.instagram.com/bricocomptoir/", initial.version());
+        assertThat(cm.request("PUT","/admin/content/social-links",json.writeValueAsString(update),false).statusCode()).isEqualTo(403);
+        assertThat(om.request("PUT","/admin/content/social-links",json.writeValueAsString(update),true).statusCode()).isEqualTo(403);
+        assertThat(cm.request("PUT","/admin/content/social-links",json.writeValueAsString(
+                new SocialLinks("https://facebook.com.evil.test/shop", "", initial.version())),true).statusCode()).isEqualTo(400);
+        assertThat(cm.request("PUT","/admin/content/social-links",json.writeValueAsString(update),true).statusCode()).isEqualTo(200);
+        assertThat(json.readValue(guest.get("/content/social-links").body(),SocialLinks.class).instagramUrl())
+                .isEqualTo(update.instagramUrl());
+        assertThat(cm.request("PUT","/admin/content/social-links",json.writeValueAsString(update),true).statusCode()).isEqualTo(409);
+    }
+
+    @Test void bestSellersRequireThreeVisibleProductsAndManagerCsrf() throws Exception {
+        Browser cm=browser(Role.CATALOG_MANAGER), om=browser(Role.ORDER_MANAGER), guest=new Browser();
+        assertThat(guest.get("/content/best-sellers").statusCode()).isEqualTo(200);
+        assertThat(cm.get("/admin/content/best-sellers").statusCode()).isEqualTo(200);
+        assertThat(om.get("/admin/content/best-sellers").statusCode()).isEqualTo(403);
+        var initial=json.readValue(cm.get("/admin/content/best-sellers").body(),BestSellers.class);
+        String token=UUID.randomUUID().toString();
+        var category=catalog.saveCategory(null,null,"best-"+token,"Sélection test",true,null);
+        var ids=new ArrayList<UUID>();
+        for(int i=0;i<3;i++) {
+            var product=catalog.saveProduct(null,category.id(),null,"Produit sélection "+i,"",Map.of(),"PUBLISHED",null);
+            catalog.saveVariant(null,product.id(),"BEST-"+i+"-"+token.toUpperCase(),"Unité","pièce",Map.of(),"10.000","PUBLISHED",null);
+            ids.add(product.id());
+        }
+        var selection=new BestSellers(initial.version(),ids);
+        assertThat(cm.request("PUT","/admin/content/best-sellers",json.writeValueAsString(selection),false).statusCode()).isEqualTo(403);
+        assertThat(om.request("PUT","/admin/content/best-sellers",json.writeValueAsString(selection),true).statusCode()).isEqualTo(403);
+        assertThat(cm.request("PUT","/admin/content/best-sellers",json.writeValueAsString(new BestSellers(initial.version(),List.of(ids.get(0),ids.get(1),ids.get(0)))),true).statusCode()).isEqualTo(400);
+        assertThat(cm.request("PUT","/admin/content/best-sellers",json.writeValueAsString(new BestSellers(initial.version(),List.of(ids.get(0),ids.get(1),UUID.randomUUID()))),true).statusCode()).isEqualTo(400);
+        var saved=cm.request("PUT","/admin/content/best-sellers",json.writeValueAsString(selection),true);
+        assertThat(saved.statusCode()).isEqualTo(200);
+        assertThat(json.readValue(guest.get("/content/best-sellers").body(),BestSellers.class).productIds()).containsExactlyElementsOf(ids);
+        assertThat(cm.request("PUT","/admin/content/best-sellers",json.writeValueAsString(selection),true).statusCode()).isEqualTo(409);
+        var published=catalog.product(ids.get(0),true);
+        catalog.saveProduct(ids.get(0),published.categoryId(),published.brandId(),published.name(),published.description(),published.characteristics(),"DRAFT",published.version());
+        assertThat(json.readValue(guest.get("/content/best-sellers").body(),BestSellers.class).productIds()).isEmpty();
+        assertThat(json.readValue(cm.get("/admin/content/best-sellers").body(),BestSellers.class).productIds()).containsExactlyElementsOf(ids);
+    }
+
+    @Test void professionalFavoritesRequireFourPublishedProductsAndManagerCsrf() throws Exception {
+        Browser cm=browser(Role.CATALOG_MANAGER), om=browser(Role.ORDER_MANAGER), guest=new Browser();
+        assertThat(guest.get("/content/professional-favorites").statusCode()).isEqualTo(200);
+        assertThat(om.get("/admin/content/professional-favorites").statusCode()).isEqualTo(403);
+        var initial=json.readValue(cm.get("/admin/content/professional-favorites").body(),ProfessionalFavorites.class);
+        String token=UUID.randomUUID().toString();
+        var category=catalog.saveCategory(null,null,"favorites-"+token,"Sélection test",true,null);
+        var ids=new ArrayList<UUID>();
+        for(int i=0;i<4;i++) {
+            var product=catalog.saveProduct(null,category.id(),null,"Produit favori "+i,"",Map.of(),"PUBLISHED",null);
+            catalog.saveVariant(null,product.id(),"FAVORITE-"+i+"-"+token.toUpperCase(),"Unité","pièce",Map.of(),"10.000","PUBLISHED",null);
+            ids.add(product.id());
+        }
+        var selection=new ProfessionalFavorites(initial.version(),ids);
+        assertThat(cm.request("PUT","/admin/content/professional-favorites",json.writeValueAsString(selection),false).statusCode()).isEqualTo(403);
+        assertThat(om.request("PUT","/admin/content/professional-favorites",json.writeValueAsString(selection),true).statusCode()).isEqualTo(403);
+        assertThat(cm.request("PUT","/admin/content/professional-favorites",json.writeValueAsString(
+                new ProfessionalFavorites(initial.version(),List.of(ids.get(0),ids.get(1),ids.get(2),ids.get(0)))),true).statusCode()).isEqualTo(400);
+        assertThat(cm.request("PUT","/admin/content/professional-favorites",json.writeValueAsString(
+                new ProfessionalFavorites(initial.version(),List.of(ids.get(0),ids.get(1),ids.get(2),UUID.randomUUID()))),true).statusCode()).isEqualTo(400);
+        assertThat(cm.request("PUT","/admin/content/professional-favorites",json.writeValueAsString(selection),true).statusCode()).isEqualTo(200);
+        assertThat(json.readValue(guest.get("/content/professional-favorites").body(),ProfessionalFavorites.class).productIds())
+                .containsExactlyElementsOf(ids);
+        assertThat(cm.request("PUT","/admin/content/professional-favorites",json.writeValueAsString(selection),true).statusCode()).isEqualTo(409);
+        var published=catalog.product(ids.get(0),true);
+        catalog.saveProduct(ids.get(0),published.categoryId(),published.brandId(),published.name(),published.description(),published.characteristics(),"DRAFT",published.version());
+        assertThat(json.readValue(guest.get("/content/professional-favorites").body(),ProfessionalFavorites.class).productIds()).isEmpty();
+        assertThat(json.readValue(cm.get("/admin/content/professional-favorites").body(),ProfessionalFavorites.class).productIds())
+                .containsExactlyElementsOf(ids);
     }
 
     @Test void supportCanReadExactAccountAndSavedCartOnlyAsAdmin() throws Exception {

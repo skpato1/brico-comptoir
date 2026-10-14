@@ -15,7 +15,7 @@ export interface HomeContent {
 export interface HeroSlide {
   id: string;
   visible: boolean;
-  image: 'kits' | 'hardware' | 'tools' | 'brico-projects' | 'brico-workshop';
+  image: 'kits' | 'hardware' | 'tools' | 'brico-online' | 'brico-projects' | 'brico-workshop';
   label: string;
   title: string;
   description: string;
@@ -27,6 +27,19 @@ export interface HeroSlide {
 export interface HeroContent {
   version: number;
   slides: HeroSlide[];
+}
+export interface BestSellersContent {
+  version: number;
+  productIds: string[];
+}
+export interface ProfessionalFavoritesContent {
+  version: number;
+  productIds: string[];
+}
+export interface SocialLinksContent {
+  facebookUrl: string;
+  instagramUrl: string;
+  version: number;
 }
 export interface ContactDetails {
   email: string;
@@ -120,6 +133,24 @@ export class AdminApi {
   }
   saveHero(value: HeroContent) {
     return this.write<HeroContent>('/content/hero', value);
+  }
+  bestSellers(admin = false) {
+    return this.http.get<BestSellersContent>('/api/v1/' + (admin ? 'admin/' : '') + 'content/best-sellers');
+  }
+  saveBestSellers(value: BestSellersContent) {
+    return this.write<BestSellersContent>('/content/best-sellers', value);
+  }
+  professionalFavorites(admin = false) {
+    return this.http.get<ProfessionalFavoritesContent>('/api/v1/' + (admin ? 'admin/' : '') + 'content/professional-favorites');
+  }
+  saveProfessionalFavorites(value: ProfessionalFavoritesContent) {
+    return this.write<ProfessionalFavoritesContent>('/content/professional-favorites', value);
+  }
+  socialLinks(admin = false) {
+    return this.http.get<SocialLinksContent>('/api/v1/' + (admin ? 'admin/' : '') + 'content/social-links');
+  }
+  saveSocialLinks(value: SocialLinksContent) {
+    return this.write<SocialLinksContent>('/content/social-links', value);
   }
   contact(admin = false) {
     return this.http.get<ContactDetails>('/api/v1/' + (admin ? 'admin/' : '') + 'contact');

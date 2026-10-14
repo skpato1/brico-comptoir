@@ -66,10 +66,7 @@ export class CartPage {
     </nav>
     <h1>On vous livre où ?</h1>
     @if (!session.account()) {
-      <p>
-        Commandez en invité, ou <a routerLink="/compte">connectez-vous</a> pour retrouver vos
-        commandes.
-      </p>
+      <p>Pas de compte à créer : indiquez vos coordonnées, vérifiez le total puis confirmez votre commande.</p>
     }
     @if (!cart.view().items.length && !cart.busy()) {
       <div class="state-box">
@@ -115,7 +112,7 @@ export class CheckoutPage {
         <h1>Commande inaccessible</h1>
         <p>{{ error() }}</p>
         <button (click)="load()">Réessayer</button>
-        <p><a routerLink="/compte">Se connecter à mon compte</a></p>
+        <p>Pour toute question concernant une commande invitée, <a routerLink="/contact">contactez-nous</a> avec sa référence.</p>
       </div>
     } @else if (order(); as order) {
       <div class="confirmation-heading">

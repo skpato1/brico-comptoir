@@ -53,6 +53,17 @@
   display: grid;
   gap: 20px;
 }
+.best-sellers {
+  margin-top: 56px;
+  padding: clamp(22px, 3vw, 38px);
+  border: 1px solid #e8e3da;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #faf8f4, #fff 72%);
+}
+.best-sellers-heading { margin-top: 0; margin-bottom: 24px; }
+.best-sellers-heading h2 { margin: 0 0 8px; font-size: clamp(1.6rem, 3vw, 2.4rem); }
+.best-sellers-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.best-sellers-swipe { display: none; }
 .how {
   margin-top: 56px;
   padding: 32px 24px;
@@ -138,4 +149,15 @@
   :host > .state-box {
     margin-inline: 16px;
   }
+}
+@media (max-width: 699px) {
+  .best-sellers { padding: 22px 0 22px 18px; overflow: hidden; }
+  .best-sellers-heading { padding-right: 18px; align-items: start; }
+  .best-sellers-grid {
+    display: flex; gap: 12px; overflow-x: auto; padding: 2px 18px 16px 0;
+    scroll-snap-type: x mandatory; scroll-padding-inline: 18px; overscroll-behavior-inline: contain;
+    scrollbar-width: none;
+  }
+  .best-sellers-grid > * { flex: 0 0 min(79vw, 310px); min-width: 0; scroll-snap-align: start; }
+  .best-sellers-swipe { display: flex; align-items: center; margin: 0 18px 0 0; color: var(--muted); font-size: .8rem; }
 }

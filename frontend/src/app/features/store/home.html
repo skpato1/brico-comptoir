@@ -26,6 +26,25 @@
   </div>
 </section>
 <app-brand-showcase (brandsLoaded)="brands.set($event)" />
+@if (bestSellers().length === 3) {
+  <section class="best-sellers" aria-labelledby="best-sellers-title">
+    <div class="section-heading best-sellers-heading">
+      <div>
+        <p class="eyebrow">LA SÉLECTION DU COMPTOIR</p>
+        <h2 id="best-sellers-title">Meilleures ventes</h2>
+        <p>Trois références à retrouver dans notre catalogue.</p>
+      </div>
+      <a class="text-link" routerLink="/catalogue">Explorer le catalogue <span aria-hidden="true">→</span></a>
+    </div>
+    <div class="best-sellers-grid">
+      @for (product of bestSellers(); track product.id) {
+        <app-offer-card [offer]="product" [description]="product.description"
+          [image]="bestSellerImage(product.id)" [brandName]="brandName(product.brandId)" />
+      }
+    </div>
+    <p class="best-sellers-swipe">Faites glisser pour découvrir les trois produits <span aria-hidden="true">→</span></p>
+  </section>
+}
 @if (products()[0]; as featured) {
   <section class="featured-product" aria-labelledby="featured-title">
     <div class="featured-image"><app-product-photo [image]="primaryImage(featured.id)" [detail]="true" [alt]="featured.name" /></div>

@@ -19,6 +19,17 @@ export class HeroCarousel implements OnInit {
   private readonly api = inject(AdminApi);
   readonly slides = signal<HeroSlide[]>([
     {
+      id: 'default-online', visible: true,
+      image: 'brico-online',
+      label: 'Commande en ligne',
+      title: 'BricoComptoir, commandez en ligne',
+      description: 'Parcourez le catalogue et choisissez les produits de votre projet.',
+      alt: 'Visuel BricoComptoir de la commande en ligne : téléphone et outils de bricolage illustratifs.',
+      link: '/catalogue',
+      action: 'Voir le catalogue',
+      detail: 'Visuel promotionnel · Produits illustratifs',
+    },
+    {
       id: 'default-kits', visible: true,
       image: 'brico-projects',
       label: 'Tout pour vos projets',

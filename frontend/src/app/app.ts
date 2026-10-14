@@ -1,5 +1,5 @@
 import {
-  Component, computed, DestroyRef, ElementRef, HostListener, inject, OnInit, signal, ViewChild,
+  Component, computed, DestroyRef, ElementRef, HostBinding, HostListener, inject, OnInit, signal, ViewChild,
 } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -11,6 +11,7 @@ import { CatalogApi, Category, Product } from './core/catalog-api';
 import { buildCategoryMenu, searchCategoryMenu } from './core/category-menu';
 import { buildCategoryDepartments } from './core/category-departments';
 import { DepartmentIcon } from './shared/department-icon';
+import { AdminApi, SocialLinksContent } from './core/admin-api';
 @Component({
   selector: 'app-root',
   imports: [RouterOutlet, RouterLink, RouterLinkActive, FormsModule, DepartmentIcon],
@@ -18,13 +19,16 @@ import { DepartmentIcon } from './shared/department-icon';
   styleUrl: './app.scss',
 })
 export class App implements OnInit {
+  @HostBinding('class.management-route') get managementRoute() { return this.router.url.split('?')[0] === '/gestion'; }
   @ViewChild('mobileDialog') mobileDialog?: ElementRef<HTMLDialogElement>;
   readonly session = inject(SessionState);
   readonly cart = inject(CartState);
   private readonly catalog = inject(CatalogApi);
+  private readonly adminApi = inject(AdminApi);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   readonly menuOpen = signal(false);
+  readonly socialLinks = signal<SocialLinksContent | null>(null);
   readonly categoryLoading = signal(false);
   readonly categoryLoaded = signal(false);
   readonly categoryError = signal(false);
@@ -42,6 +46,10 @@ export class App implements OnInit {
   query = '';
   ngOnInit(): void {
     this.session.start();
+    this.adminApi.socialLinks().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: value => this.socialLinks.set(value),
+      error: () => this.socialLinks.set(null),
+    });
     this.searchTerms.pipe(
       map(value => value.trim().slice(0, 120)),
       debounceTime(280),
@@ -68,7 +76,7 @@ export class App implements OnInit {
         });
       });
     if (location.hash.startsWith('#reset='))
-      void this.router.navigateByUrl('/compte' + location.hash);
+      void this.router.navigateByUrl('/acces-equipe' + location.hash);
   }
   search(): void {
     void this.router.navigate(['/catalogue'], { queryParams: { q: this.query.trim() || null } });

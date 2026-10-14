@@ -15,6 +15,54 @@ public class JdbcManagedContentStore implements ManagedContentStore {
     private final JdbcTemplate jdbc;
     public JdbcManagedContentStore(JdbcTemplate jdbc) { this.jdbc = jdbc; }
 
+    @Override public SocialLinks socialLinks() {
+        return jdbc.queryForObject("SELECT facebook_url,instagram_url,version FROM content_social_links WHERE id=1",
+                (r, n) -> new SocialLinks(r.getString(1), r.getString(2), r.getLong(3)));
+    }
+
+    @Override public SocialLinks saveSocialLinks(SocialLinks value, UUID actor) {
+        int changed = jdbc.update("UPDATE content_social_links SET facebook_url=?,instagram_url=?,version=version+1,updated_at=now(),updated_by=? WHERE id=1 AND version=?",
+                value.facebookUrl(), value.instagramUrl(), "C:" + actor, value.version());
+        if (changed != 1) throw new IllegalStateException("Social links version conflict");
+        return socialLinks();
+    }
+
+    @Override public BestSellers bestSellers() {
+        long version = jdbc.queryForObject("SELECT version FROM content_best_sellers WHERE id=1", Long.class);
+        List<UUID> ids = jdbc.query("SELECT product_id FROM content_best_seller_product ORDER BY position",
+                (r, n) -> r.getObject(1, UUID.class));
+        return new BestSellers(version, ids);
+    }
+
+    @Override public BestSellers saveBestSellers(BestSellers value, UUID actor) {
+        int changed = jdbc.update("UPDATE content_best_sellers SET version=version+1,updated_at=now(),updated_by=? WHERE id=1 AND version=?",
+                "C:" + actor, value.version());
+        if (changed != 1) throw new IllegalStateException("Best sellers version conflict");
+        jdbc.update("DELETE FROM content_best_seller_product");
+        for (int i = 0; i < value.productIds().size(); i++)
+            jdbc.update("INSERT INTO content_best_seller_product(position,product_id) VALUES (?,?)",
+                    i, value.productIds().get(i));
+        return bestSellers();
+    }
+
+    @Override public ProfessionalFavorites professionalFavorites() {
+        long version = jdbc.queryForObject("SELECT version FROM content_professional_favorites WHERE id=1", Long.class);
+        List<UUID> ids = jdbc.query("SELECT product_id FROM content_professional_favorite_product ORDER BY position",
+                (r, n) -> r.getObject(1, UUID.class));
+        return new ProfessionalFavorites(version, ids);
+    }
+
+    @Override public ProfessionalFavorites saveProfessionalFavorites(ProfessionalFavorites value, UUID actor) {
+        int changed = jdbc.update("UPDATE content_professional_favorites SET version=version+1,updated_at=now(),updated_by=? WHERE id=1 AND version=?",
+                "C:" + actor, value.version());
+        if (changed != 1) throw new IllegalStateException("Professional favorites version conflict");
+        jdbc.update("DELETE FROM content_professional_favorite_product");
+        for (int i = 0; i < value.productIds().size(); i++)
+            jdbc.update("INSERT INTO content_professional_favorite_product(position,product_id) VALUES (?,?)",
+                    i, value.productIds().get(i));
+        return professionalFavorites();
+    }
+
     @Override public Hero hero(boolean publicOnly) {
         long version = jdbc.queryForObject("SELECT version FROM content_hero WHERE id=1", Long.class);
         String sql = "SELECT * FROM content_hero_slide" + (publicOnly ? " WHERE visible" : "") + " ORDER BY position";

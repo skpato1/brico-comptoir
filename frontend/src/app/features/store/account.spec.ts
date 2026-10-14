@@ -4,7 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { NgForm } from '@angular/forms';
 import { AccountPage } from './account';
-describe('Customer account', () => {
+describe('Secure access for existing accounts', () => {
   let http: HttpTestingController;
   beforeEach(() => {
     localStorage.clear();
@@ -16,18 +16,12 @@ describe('Customer account', () => {
   });
   afterEach(() => http.verify());
   const valid = { invalid: false } as NgForm;
-  it('registers customers without client supplied roles', () => {
+  it('does not offer new customer account creation', () => {
     const fixture = TestBed.createComponent(AccountPage);
-    const page = fixture.componentInstance;
-    page.show('register');
-    page.email = 'client@test.invalid';
-    page.password = 'Correct-Horse-2026!';
-    page.submit(valid);
-    http.expectOne('/api/v1/auth/csrf').flush(null, { status: 204, statusText: 'No Content' });
-    const request = http.expectOne('/api/v1/auth/register');
-    expect(request.request.body).toEqual({ email: page.email, password: page.password });
-    request.flush({});
-    expect(page.message()).toContain('Compte créé');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Connexion à l’administration');
+    expect(fixture.nativeElement.textContent).not.toContain('Créer un compte');
+    http.expectNone('/api/v1/auth/register');
   });
   it('waits for CSRF renewal before restoring the customer cart', () => {
     const fixture = TestBed.createComponent(AccountPage);

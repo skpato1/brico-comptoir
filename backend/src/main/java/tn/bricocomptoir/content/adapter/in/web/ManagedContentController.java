@@ -23,6 +23,46 @@ public class ManagedContentController {
     private final Map<String, ArrayDeque<Instant>> submissions = new HashMap<>();
     public ManagedContentController(ManagedContentTransactions content) { this.content = content; }
 
+    @GetMapping("/content/social-links")
+    public ResponseEntity<SocialLinks> publicSocialLinks() {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(content.socialLinks());
+    }
+    @GetMapping("/admin/content/social-links")
+    public ResponseEntity<SocialLinks> adminSocialLinks() { return publicSocialLinks(); }
+    @PutMapping("/admin/content/social-links")
+    public SocialLinks saveSocialLinks(@RequestBody SocialLinks value,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal(expression="id") UUID actor) {
+        return content.saveSocialLinks(value, actor);
+    }
+
+    @GetMapping("/content/best-sellers")
+    public ResponseEntity<BestSellers> publicBestSellers() {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(content.bestSellers(true));
+    }
+    @GetMapping("/admin/content/best-sellers")
+    public ResponseEntity<BestSellers> adminBestSellers() {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(content.bestSellers(false));
+    }
+    @PutMapping("/admin/content/best-sellers")
+    public BestSellers saveBestSellers(@RequestBody BestSellers value,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal(expression="id") UUID actor) {
+        return content.saveBestSellers(value, actor);
+    }
+
+    @GetMapping("/content/professional-favorites")
+    public ResponseEntity<ProfessionalFavorites> publicProfessionalFavorites() {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(content.professionalFavorites(true));
+    }
+    @GetMapping("/admin/content/professional-favorites")
+    public ResponseEntity<ProfessionalFavorites> adminProfessionalFavorites() {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(content.professionalFavorites(false));
+    }
+    @PutMapping("/admin/content/professional-favorites")
+    public ProfessionalFavorites saveProfessionalFavorites(@RequestBody ProfessionalFavorites value,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal(expression="id") UUID actor) {
+        return content.saveProfessionalFavorites(value, actor);
+    }
+
     @GetMapping("/content/hero")
     public ResponseEntity<Hero> publicHero() { return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(content.hero(true)); }
     @GetMapping("/admin/content/hero")

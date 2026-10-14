@@ -63,10 +63,10 @@ describe('HeroCarousel accessibility and rotation', () => {
     const c = f.componentInstance;
     c.select(-1);
     f.detectChanges();
-    expect(c.active()).toBe(2);
+    expect(c.active()).toBe(3);
     const slides = f.nativeElement.querySelectorAll('.slide');
     expect(slides[0].hasAttribute('inert')).toBe(true);
-    expect(slides[2].hasAttribute('inert')).toBe(false);
+    expect(slides[3].hasAttribute('inert')).toBe(false);
     c.toggleRotation();
     f.nativeElement
       .querySelector('.caption a')
@@ -125,14 +125,18 @@ describe('HeroCarousel accessibility and rotation', () => {
     const f = create();
     const first = f.nativeElement.querySelector('.slide');
     expect(first.classList.contains('promotional')).toBe(true);
-    expect(first.querySelector('img').getAttribute('src')).toBe('/images/hero/brico-projects-1440.jpg');
-    expect(first.querySelector('img').getAttribute('srcset')).toContain('brico-projects-720.jpg 720w');
+    expect(first.querySelector('img').getAttribute('src')).toBe('/images/hero/brico-online-1440.jpg');
+    expect(first.querySelector('img').getAttribute('srcset')).toContain('brico-online-720.jpg 720w');
+    expect(first.querySelector('source[media="(max-width: 699px)"]').getAttribute('srcset'))
+      .toBe('/images/hero/brico-online-mobile.jpg');
     expect(first.querySelector('h1').classList.contains('visually-hidden')).toBe(true);
     expect(first.querySelector('.description')).toBeNull();
     expect(first.querySelector('.hero-actions a').getAttribute('href')).toBe('/catalogue');
-    expect(f.nativeElement.querySelectorAll('.slide')[2].querySelector('img').getAttribute('src'))
-      .toBe('/images/hero/brico-workshop-1440.jpg');
     expect(f.nativeElement.querySelectorAll('.slide')[1].querySelector('img').getAttribute('src'))
+      .toBe('/images/hero/brico-projects-1440.jpg');
+    expect(f.nativeElement.querySelectorAll('.slide')[3].querySelector('img').getAttribute('src'))
+      .toBe('/images/hero/brico-workshop-1440.jpg');
+    expect(f.nativeElement.querySelectorAll('.slide')[2].querySelector('img').getAttribute('src'))
       .toBe('/images/hero/hardware-1440.webp');
   });
   it('uses visible server-managed slides and wraps using the actual slide count', () => {

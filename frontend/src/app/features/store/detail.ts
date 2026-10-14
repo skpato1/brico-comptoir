@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, ElementRef, ViewChild, inject, OnInit, signal } from '@angular/core';
 import { KeyValuePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -9,6 +9,9 @@ import { CartState } from '../../core/cart-state';
 import { SessionState } from '../../core/session-state';
 import { ProductPhoto } from '../../shared/product-photo';
 import { variantLabel } from '../../shared/offer-label';
+import { AdminApi } from '../../core/admin-api';
+import { OfferCard } from '../../shared/offer-card';
+import { catchError, forkJoin, of } from 'rxjs';
 export function omittedComponents(
   pack: Pack,
   selected: PackVariant,
@@ -27,13 +30,14 @@ export function omittedComponents(
 }
 @Component({
   selector: 'app-detail',
-  imports: [RouterLink, FormsModule, KeyValuePipe, ProductPhoto],
+  imports: [RouterLink, FormsModule, KeyValuePipe, ProductPhoto, OfferCard],
   templateUrl: './detail.html',
   styleUrl: './detail.scss',
 })
 export class DetailPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(CatalogApi);
+  private readonly contentApi = inject(AdminApi);
   private readonly packsApi = inject(PacksApi);
   private readonly destroy = inject(DestroyRef);
   readonly cart = inject(CartState);
@@ -43,6 +47,9 @@ export class DetailPage implements OnInit {
   readonly pack = signal<Pack | null>(null);
   readonly images = signal<(ProductImage | PackImage)[]>([]);
   readonly brands = signal<Brand[]>([]);
+  readonly recommendations = signal<Product[]>([]);
+  readonly recommendationImages = signal<Record<string, ProductImage[]>>({});
+  @ViewChild('recommendationTrack') recommendationTrack?: ElementRef<HTMLElement>;
   readonly loading = signal(true);
   readonly error = signal('');
   readonly notice = signal('');
@@ -64,6 +71,52 @@ export class DetailPage implements OnInit {
   brandName(): string {
     return this.brands().find(brand => brand.id === this.product()?.brandId)?.name ?? '';
   }
+  recommendationBrandName(id: string | null): string {
+    return this.brands().find(brand => brand.id === id)?.name ?? '';
+  }
+  recommendationImage(id: string): ProductImage | undefined {
+    const images = this.recommendationImages()[id] ?? [];
+    return images.find(image => image.primary) ?? images[0];
+  }
+  scrollRecommendations(direction: -1 | 1): void {
+    const track = this.recommendationTrack?.nativeElement;
+    if (!track) return;
+    const card = track.querySelector<HTMLElement>('app-offer-card');
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    track.scrollBy({ left: direction * ((card?.offsetWidth ?? 280) + 14), behavior: reduceMotion ? 'auto' : 'smooth' });
+  }
+  private loadRecommendations(currentId: string, generation: number): void {
+    this.contentApi.professionalFavorites().pipe(takeUntilDestroyed(this.destroy)).subscribe({
+      next: selection => {
+        if (generation !== this.generation || selection.productIds.length !== 4) return;
+        const ids = selection.productIds.filter(id => id !== currentId);
+        if (ids.length < 3) return;
+        forkJoin({
+          products: forkJoin(ids.map(id => this.api.detail(id))),
+          images: this.api.publicImages(ids).pipe(catchError(() => of({} as Record<string, ProductImage[]>))),
+        }).pipe(takeUntilDestroyed(this.destroy)).subscribe({
+          next: ({ products, images }) => {
+            if (generation !== this.generation) return;
+            forkJoin(products.map(product => product.variants.length
+              ? forkJoin(product.variants.map(variant => this.api.availability(variant.id)
+                  .pipe(catchError(() => of(null)))))
+              : of([])))
+              .pipe(takeUntilDestroyed(this.destroy)).subscribe(availability => {
+                if (generation !== this.generation) return;
+                const availableProducts = products.filter((_, index) =>
+                  availability[index].some(stock => stock !== null && stock.available > 0)).slice(0, 3);
+                this.recommendations.set(availableProducts.length === 3 ? availableProducts : []);
+                this.recommendationImages.set(images);
+              });
+          },
+          error: () => {
+            if (generation === this.generation) this.recommendations.set([]);
+          },
+        });
+      },
+      error: () => {},
+    });
+  }
   load(): void {
     const id = this.route.snapshot.paramMap.get('id')!;
     const generation = ++this.generation;
@@ -71,6 +124,10 @@ export class DetailPage implements OnInit {
     this.error.set('');
     this.notice.set('');
     this.images.set([]);
+    this.product.set(null);
+    this.pack.set(null);
+    this.recommendations.set([]);
+    this.recommendationImages.set({});
     ++this.availabilityGeneration;
     this.available.set(null);
     this.availabilityError.set(false);
@@ -113,8 +170,10 @@ export class DetailPage implements OnInit {
           next: (p) => {
             if (generation !== this.generation) return;
             this.product.set(p);
+            this.api.recordView(p.id).pipe(takeUntilDestroyed(this.destroy)).subscribe({ error: () => {} });
             this.selected = p.variants[0]?.id ?? '';
             this.loadAvailability();
+            this.loadRecommendations(p.id, generation);
             this.loading.set(false);
             this.api
               .publicImages([p.id], true)

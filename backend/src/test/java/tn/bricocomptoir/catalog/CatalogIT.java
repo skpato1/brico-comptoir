@@ -114,6 +114,29 @@ class CatalogIT {
         assertThat(variant.statusCode()).isEqualTo(201);
         assertThat(variant.body()).contains("\"amount\":\"2.375\"", "\"currency\":\"TND\"");
         assertThat(anonymous.get("/products/" + publicId).body()).contains("DEMO-VIS-001", "DÉMO Vis exemple");
+        String viewsPath = "/products/" + publicId + "/views";
+        String reportPath = "/admin/catalog/product-views?q=DEMO-VIS-001";
+        assertThat(anonymous.get(reportPath).statusCode()).isEqualTo(401);
+        assertThat(order.get(reportPath).statusCode()).isEqualTo(403);
+        assertThat(customer.get(reportPath).statusCode()).isEqualTo(403);
+        assertThat(manager.get(reportPath).body()).contains("\"totalViews\":0", "\"views7\":0");
+        assertThat(anonymous.postWithoutCsrf(viewsPath, "{}").statusCode()).isEqualTo(403);
+        assertThat(anonymous.post("/products/" + draftId + "/views", "{}").statusCode()).isEqualTo(404);
+        anonymous.get("/auth/csrf");
+        assertThat(anonymous.post(viewsPath, "{}").statusCode()).isEqualTo(204);
+        assertThat(anonymous.post(viewsPath, "{}").statusCode()).isEqualTo(204);
+        assertThat(customer.post(viewsPath, "{}").statusCode()).isEqualTo(204);
+        assertThat(manager.post(viewsPath, "{}").statusCode()).isEqualTo(204);
+        assertThat(order.post(viewsPath, "{}").statusCode()).isEqualTo(204);
+        assertThat(root.post(viewsPath, "{}").statusCode()).isEqualTo(204);
+        assertThat(manager.get(reportPath).body()).contains("\"totalViews\":3", "\"viewedProducts\":1",
+                "\"views7\":3", "\"views30\":3", "DEMO-VIS-001");
+        assertThat(manager.get(reportPath + "&days=9").statusCode()).isEqualTo(400);
+        assertThat(manager.get(reportPath + "&size=51").statusCode()).isEqualTo(400);
+        jdbc.update("UPDATE catalog_product_view_daily SET day=? WHERE product_id=?",
+                java.time.LocalDate.now(java.time.Clock.systemUTC()).minusDays(10), UUID.fromString(publicId));
+        assertThat(manager.get(reportPath).body()).contains("\"totalViews\":0", "\"views7\":0", "\"views30\":3");
+        assertThat(manager.get(reportPath + "&days=30").body()).contains("\"totalViews\":3", "\"views30\":3");
         assertThat(anonymous.get("/products/" + draftId).statusCode()).isEqualTo(404);
         assertThat(anonymous.get("/products?q=DEMO-VIS-001").body()).contains("DÉMO Vis exemple")
                 .doesNotContain("DÉMO Brouillon");

@@ -1,6 +1,24 @@
 <a class="skip-link" href="#content">Aller au contenu</a>
 <div class="topline">
-  <span>Les bonnes pièces pour vos projets</span><span>Tunisie · Prix en TND · Paiement à la livraison <a routerLink="/contact">Nous contacter</a></span>
+  <span class="topline-tagline">Les bonnes pièces pour vos projets</span>
+  <div class="topline-right">
+    <span class="topline-desktop-message">Tunisie · Prix en TND · Paiement à la livraison <a routerLink="/contact">Nous contacter</a></span>
+    <span class="topline-mobile-message">Tunisie · Prix en TND</span>
+    @if (socialLinks()?.facebookUrl || socialLinks()?.instagramUrl) {
+      <nav class="topline-social" aria-label="Réseaux sociaux">
+        @if (socialLinks()?.facebookUrl) {
+          <a [href]="socialLinks()!.facebookUrl" target="_blank" rel="noopener noreferrer" aria-label="Facebook de BricoComptoir, ouvre un nouvel onglet">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M22 12a10 10 0 1 0-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.5 1.49-3.89 3.77-3.89 1.1 0 2.24.2 2.24.2v2.47h-1.26c-1.25 0-1.64.78-1.64 1.57V12h2.78l-.45 2.89h-2.33v6.99A10 10 0 0 0 22 12Z"/></svg>
+          </a>
+        }
+        @if (socialLinks()?.instagramUrl) {
+          <a [href]="socialLinks()!.instagramUrl" target="_blank" rel="noopener noreferrer" aria-label="Instagram de BricoComptoir, ouvre un nouvel onglet">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="2.5" y="2.5" width="19" height="19" rx="5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="17.7" cy="6.4" r="1.2" fill="currentColor"/></svg>
+          </a>
+        }
+      </nav>
+    }
+  </div>
 </div>
 <header class="site-header">
   <a class="brand" routerLink="/" aria-label="BricoComptoir, accueil"
@@ -38,7 +56,6 @@
     }
   </div>
   <div class="header-actions">
-    <a class="account-link" routerLink="/compte" routerLinkActive="active">Mon compte</a>
     <a class="cart-link" routerLink="/panier" routerLinkActive="active"
       [attr.aria-label]="count() + ' article' + (count() > 1 ? 's' : '') + ' dans le panier'">
       <span class="cart-label">Panier</span>
@@ -69,7 +86,7 @@
   <a routerLink="/panier" routerLinkActive="active">
     <span aria-hidden="true">▣</span>Panier @if (count()) {<small>{{ count() }}</small>}
   </a>
-  <a routerLink="/compte" routerLinkActive="active"><span aria-hidden="true">◯</span>Compte</a>
+  <a routerLink="/contact" routerLinkActive="active"><span aria-hidden="true">✉</span>Contact</a>
 </nav>
 <dialog #mobileDialog id="mobile-navigation" class="mobile-menu" aria-labelledby="mobile-menu-title"
   (close)="onMenuClosed()" (click)="onDialogClick($event)">
@@ -143,8 +160,8 @@
         }
       </div>
       <div class="menu-secondary-links">
-        <a routerLink="/compte" (click)="closeMenu()">Mon compte</a>
         <a routerLink="/panier" (click)="closeMenu()">Mon panier</a>
+        <a routerLink="/commande" (click)="closeMenu()">Passer commande</a>
         <a routerLink="/contact" (click)="closeMenu()">Nous contacter</a>
       </div>
     </nav>
@@ -177,7 +194,7 @@
   </div>
   <div class="footer-bottom">
     Quincaillerie pour particuliers · Tunisie
-    <a routerLink="/compte">Votre compte et vos commandes</a>
+    <a routerLink="/acces-equipe">Accès équipe</a>
     <a routerLink="/mes-donnees">Vos données personnelles</a>
     <a routerLink="/contact">Nous contacter</a>
   </div>

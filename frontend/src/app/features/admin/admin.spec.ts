@@ -12,8 +12,11 @@ import { CatalogComponent } from '../catalog/catalog';
 import { HomePage } from '../store/home';
 import { HomeContent } from '../../core/admin-api';
 import { AdminHero } from './hero';
+import { AdminBestSellers } from './best-sellers';
 import { AdminSupport } from './support';
 import { AdminContact } from './contact';
+import { AdminSocialLinks } from './social-links';
+import { AdminProductStats } from './product-stats';
 import { ContactPage } from '../store/contact';
 
 const home: HomeContent = {
@@ -39,6 +42,67 @@ describe('Administration réelle', () => {
     http = TestBed.inject(HttpTestingController);
   });
   afterEach(() => http.verify());
+  it('shows measured product views and filters the ranking by period and SKU', () => {
+    const fixture = TestBed.createComponent(AdminProductStats);
+    fixture.detectChanges();
+    const initial = http.expectOne(r => r.url === '/api/v1/admin/catalog/product-views');
+    expect(initial.request.params.get('days')).toBe('7');
+    initial.flush({ items: [{ productId: 'item', name: 'Perceuse', brandName: 'Marque',
+      sku: 'TEST-01', views7: 12, views30: 40 }], page: 0, size: 20,
+      totalElements: 1, totalViews: 12, viewedProducts: 1, periodDays: 7 });
+    http.expectOne('/api/v1/media/products?ids=item').flush({ item: [{ id: 'photo', productId: 'item',
+      cardUrl: '/photo.jpg', detailUrl: '/photo.jpg', width: 300, height: 300, sortOrder: 0, primary: true }] });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Perceuse');
+    expect(fixture.nativeElement.textContent).toContain('12');
+    expect(fixture.nativeElement.querySelector('.product-stats-photo img')?.getAttribute('src')).toBe('/photo.jpg');
+    fixture.componentInstance.selectDays(30);
+    const monthly = http.expectOne(r => r.url === '/api/v1/admin/catalog/product-views');
+    expect(monthly.request.params.get('days')).toBe('30');
+    monthly.flush({ items: [], page: 0, size: 20, totalElements: 0,
+      totalViews: 0, viewedProducts: 0, periodDays: 30 });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Aucune vue enregistrée');
+    fixture.componentInstance.query = 'TEST-01';
+    fixture.componentInstance.search();
+    const searched = http.expectOne(r => r.url === '/api/v1/admin/catalog/product-views');
+    expect(searched.request.params.get('q')).toBe('TEST-01');
+    searched.flush({ items: [], page: 0, size: 20, totalElements: 0,
+      totalViews: 0, viewedProducts: 0, periodDays: 30 });
+  });
+  it('shows real confirmed orders on the dashboard and exposes contact details in the order view', async () => {
+    TestBed.inject(SessionState).account.set({
+      id: 'manager', email: 'manager@example.invalid', roles: ['ORDER_MANAGER'], active: true,
+    });
+    const harness = await RouterTestingHarness.create('/gestion');
+    const recent = http.expectOne(r => r.url === '/api/v1/admin/orders' && r.params.get('status') === 'CONFIRMED');
+    recent.flush([{ id: 'order-1', status: 'CONFIRMED', createdAt: '2026-10-14T12:00:00Z',
+      summary: { address: { recipient: 'Client test', city: 'Tunis', phone: '+21620123456' },
+        total: { amount: '42.000', currency: 'TND' } } }]);
+    harness.detectChanges();
+    expect(harness.routeNativeElement?.textContent).toContain('Client test');
+    expect(harness.routeNativeElement?.textContent).toContain('42.000 TND');
+    expect(harness.routeNativeElement?.textContent).not.toContain('Produits');
+    await harness.navigateByUrl('/gestion?section=commandes');
+    http.expectOne(r => r.url === '/api/v1/admin/orders').flush([]);
+  });
+  it('edits the social URLs through the protected content endpoint', () => {
+    const f = TestBed.createComponent(AdminSocialLinks);
+    f.detectChanges();
+    http.expectOne('/api/v1/admin/content/social-links').flush({
+      facebookUrl: 'https://www.facebook.com/brico.comptoir.tunisie', instagramUrl: '', version: 2,
+    });
+    f.componentInstance.value()!.instagramUrl = 'https://www.instagram.com/shop/';
+    f.componentInstance.save({ invalid: false } as never);
+    http.expectOne('/api/v1/auth/csrf').flush(null, { status: 204, statusText: 'No Content' });
+    const request = http.expectOne('/api/v1/admin/content/social-links');
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body.instagramUrl).toBe('https://www.instagram.com/shop/');
+    expect(request.request.body.version).toBe(2);
+    request.flush({ ...request.request.body, version: 3 });
+    f.detectChanges();
+    expect(f.nativeElement.querySelector('[role=status]').textContent).toContain('Liens enregistrés');
+  });
   it('offers only order management to ORDER_MANAGER and blocks a direct delivery URL', async () => {
     TestBed.inject(SessionState).account.set({
       id: 'manager',
@@ -168,6 +232,7 @@ describe('Administration réelle', () => {
     const f = TestBed.createComponent(HomePage);
     f.detectChanges();
     http.expectOne('/api/v1/content/home').flush({ ...home, title: '<b>Texte</b>' });
+    http.expectOne('/api/v1/content/best-sellers').flush({ version: 0, productIds: [] });
     f.detectChanges();
     http.expectOne('/api/v1/content/hero').flush({ version: 0, slides: [] });
     http
@@ -178,6 +243,69 @@ describe('Administration réelle', () => {
     expect(f.nativeElement.querySelector('app-hero-carousel')).not.toBeNull();
     expect(f.nativeElement.querySelector('#start-title')).toBeNull();
     expect(f.nativeElement.querySelector('.pathways')).toBeNull();
+  });
+  it('shows exactly three selected real products on the home page', () => {
+    const f = TestBed.createComponent(HomePage);
+    f.detectChanges();
+    http.expectOne('/api/v1/content/home').flush(home);
+    f.detectChanges();
+    http.expectOne('/api/v1/content/hero').flush({ version: 0, slides: [] });
+    http.expectOne('/api/v1/content/best-sellers').flush({ version: 2, productIds: ['one', 'two', 'three'] });
+    for (const id of ['one', 'two', 'three'])
+      http.expectOne('/api/v1/products/' + id).flush({ id, name: 'Article ' + id, brandId: null,
+        description: '', status: 'PUBLISHED', demo: false, variants: [{ price: { amount: '12.000', currency: 'TND' } }] });
+    http.expectOne(r => r.url === '/api/v1/media/products' && r.params.get('ids') === 'one,two,three').flush({
+      one: [{ id: 'image-one', primary: true, cardUrl: '/a.jpg', detailUrl: '/a.jpg', width: 300, height: 300 }],
+      two: [{ id: 'image-two', primary: true, cardUrl: '/b.jpg', detailUrl: '/b.jpg', width: 300, height: 300 }],
+      three: [{ id: 'image-three', primary: true, cardUrl: '/c.jpg', detailUrl: '/c.jpg', width: 300, height: 300 }],
+    });
+    http.expectOne(r => r.url === '/api/v1/products').flush({ items: [], page: 0, size: 5, totalElements: 0 });
+    http.expectOne('/api/v1/brands').flush([]);
+    f.detectChanges();
+    expect(f.nativeElement.querySelectorAll('.best-sellers app-offer-card')).toHaveLength(3);
+    expect(f.nativeElement.querySelector('#best-sellers-title')?.textContent).toContain('Meilleures ventes');
+  });
+  it('keeps three selected products editable and sends the version with CSRF', () => {
+    const f = TestBed.createComponent(AdminBestSellers);
+    f.detectChanges();
+    http.expectOne('/api/v1/admin/content/best-sellers').flush({ version: 4, productIds: ['one', 'two', 'three'] });
+    for (const id of ['one', 'two', 'three'])
+      http.expectOne('/api/v1/products/' + id).flush({ id, name: 'Article ' + id,
+        variants: [{ sku: 'SKU-' + id }] });
+    http.expectOne(r => r.url === '/api/v1/media/products').flush({
+      one: [{ id: 'one-image', primary: true, cardUrl: '/a.jpg', detailUrl: '/a.jpg', width: 300, height: 300 }],
+      two: [{ id: 'two-image', primary: true, cardUrl: '/a.jpg', detailUrl: '/a.jpg', width: 300, height: 300 }],
+      three: [{ id: 'three-image', primary: true, cardUrl: '/a.jpg', detailUrl: '/a.jpg', width: 300, height: 300 }],
+    });
+    f.componentInstance.move(2, -1);
+    f.componentInstance.save();
+    http.expectOne('/api/v1/auth/csrf').flush(null, { status: 204, statusText: 'No Content' });
+    const write = http.expectOne('/api/v1/admin/content/best-sellers');
+    expect(write.request.method).toBe('PUT');
+    expect(write.request.body).toEqual({ version: 4, productIds: ['one', 'three', 'two'] });
+    write.flush({}, { status: 409, statusText: 'Conflict' });
+    expect(f.componentInstance.value()?.productIds).toEqual(['one', 'three', 'two']);
+    expect(f.componentInstance.error()).toContain('Conflit');
+  });
+  it('saves four professional favorites separately from home best sellers', () => {
+    const f = TestBed.createComponent(AdminBestSellers);
+    f.componentInstance.kind = 'professionalFavorites';
+    f.detectChanges();
+    http.expectOne('/api/v1/admin/content/professional-favorites').flush({ version: 2, productIds: [] });
+    for (const id of ['one', 'two', 'three', 'four'])
+      f.componentInstance.add({ id, name: 'Article ' + id, variants: [] } as never);
+    for (const id of ['one', 'two', 'three', 'four'])
+      http.expectOne(r => r.url === '/api/v1/media/products' && r.params.get('ids') === id).flush({});
+    http.expectOne('/sqes-image-fallback.json').flush({});
+    f.detectChanges();
+    expect(f.nativeElement.querySelector('.selection-count')?.textContent).toContain('4 produit(s) sur 4');
+    f.componentInstance.save();
+    http.expectOne('/api/v1/auth/csrf').flush(null, { status: 204, statusText: 'No Content' });
+    const write = http.expectOne('/api/v1/admin/content/professional-favorites');
+    expect(write.request.method).toBe('PUT');
+    expect(write.request.body).toEqual({ version: 2, productIds: ['one', 'two', 'three', 'four'] });
+    write.flush({ version: 3, productIds: ['one', 'two', 'three', 'four'] });
+    expect(f.componentInstance.success()).toContain('enregistrée');
   });
   it('uploads selected photos with CSRF and displays a denied operation without replacing metadata', () => {
     const f = TestBed.createComponent(CatalogComponent);
@@ -202,6 +330,7 @@ describe('Administration réelle', () => {
     }] };
     http.expectOne('/api/v1/admin/content/hero').flush(original);
     f.detectChanges();
+    expect(f.nativeElement.querySelector('option[value="brico-online"]')).not.toBeNull();
     expect(f.nativeElement.querySelector('option[value="brico-projects"]')).not.toBeNull();
     expect(f.nativeElement.querySelector('option[value="brico-workshop"]')).not.toBeNull();
     f.componentInstance.value()!.slides[0].title = 'Un projet modifié';

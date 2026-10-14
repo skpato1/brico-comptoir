@@ -215,4 +215,29 @@
       }
     </section>
   }
+  @if (!packMode && recommendations().length === 3) {
+    <section class="professional-favorites" aria-labelledby="professional-favorites-title">
+      <div class="professional-favorites-heading">
+        <div>
+          <p class="eyebrow">LA SÉLECTION DU COMPTOIR</p>
+          <h2 id="professional-favorites-title">Autres produits favoris des professionnels</h2>
+          <p>Une sélection de notre équipe pour compléter vos achats.</p>
+        </div>
+        <a routerLink="/catalogue" class="favorites-catalogue-link">Voir tout le catalogue <span aria-hidden="true">↗</span></a>
+      </div>
+      <div class="professional-favorites-track" #recommendationTrack>
+        @for (recommendation of recommendations(); track recommendation.id) {
+          <app-offer-card [offer]="recommendation" [description]="recommendation.description"
+            [image]="recommendationImage(recommendation.id)" [brandName]="recommendationBrandName(recommendation.brandId)" />
+        }
+      </div>
+      <div class="professional-favorites-footer">
+        <span>Découvrez les produits proposés par notre équipe.</span>
+        <div class="favorites-controls" aria-label="Parcourir les produits proposés">
+          <button type="button" class="secondary" (click)="scrollRecommendations(-1)" aria-label="Produit précédent">←</button>
+          <button type="button" class="secondary" (click)="scrollRecommendations(1)" aria-label="Produit suivant">→</button>
+        </div>
+      </div>
+    </section>
+  }
 }

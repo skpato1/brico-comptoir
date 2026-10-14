@@ -1,5 +1,6 @@
 package tn.bricocomptoir.content.domain;
 
+import java.net.URI;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -8,6 +9,52 @@ import java.util.regex.Pattern;
 
 public final class ManagedContent {
     private ManagedContent() { }
+
+    public record SocialLinks(String facebookUrl, String instagramUrl, long version) {
+        public SocialLinks checked() {
+            if (version < 0) throw new IllegalArgumentException("Invalid social links version");
+            return new SocialLinks(checkedUrl(facebookUrl, "facebook.com"),
+                    checkedUrl(instagramUrl, "instagram.com"), version);
+        }
+
+        private static String checkedUrl(String value, String domain) {
+            if (value == null || value.length() > 300) throw new IllegalArgumentException("Invalid social URL");
+            String trimmed = value.trim();
+            if (trimmed.isEmpty()) return "";
+            try {
+                URI uri = URI.create(trimmed);
+                String host = uri.getHost();
+                if (!"https".equalsIgnoreCase(uri.getScheme()) || host == null
+                        || !(host.equalsIgnoreCase(domain) || host.equalsIgnoreCase("www." + domain))
+                        || uri.getUserInfo() != null || uri.getPort() != -1 || uri.getFragment() != null
+                        || uri.getRawPath() == null || uri.getRawPath().isBlank() || uri.getRawPath().equals("/"))
+                    throw new IllegalArgumentException("Use a secure social profile URL");
+                return trimmed;
+            } catch (IllegalArgumentException error) {
+                throw new IllegalArgumentException("Invalid social profile URL", error);
+            }
+        }
+    }
+
+    public record BestSellers(long version, List<UUID> productIds) {
+        public BestSellers checked() {
+            if (version < 0 || productIds == null || (productIds.size() != 0 && productIds.size() != 3)
+                    || productIds.stream().anyMatch(java.util.Objects::isNull)
+                    || new HashSet<>(productIds).size() != productIds.size())
+                throw new IllegalArgumentException("Select exactly three distinct products or clear the selection");
+            return new BestSellers(version, List.copyOf(productIds));
+        }
+    }
+
+    public record ProfessionalFavorites(long version, List<UUID> productIds) {
+        public ProfessionalFavorites checked() {
+            if (version < 0 || productIds == null || (productIds.size() != 0 && productIds.size() != 4)
+                    || productIds.stream().anyMatch(java.util.Objects::isNull)
+                    || new HashSet<>(productIds).size() != productIds.size())
+                throw new IllegalArgumentException("Select exactly four distinct products or clear the selection");
+            return new ProfessionalFavorites(version, List.copyOf(productIds));
+        }
+    }
 
     public record Hero(long version, List<Slide> slides) {
         public Hero checked() {
@@ -30,7 +77,7 @@ public final class ManagedContent {
         private static final Pattern LINK = Pattern.compile("/(solutions|packs|catalogue|produits/[0-9a-fA-F-]{36}|packs/[0-9a-fA-F-]{36})");
         public Slide checked() {
             if (id == null || image == null || !Set.of("kits", "hardware", "tools",
-                    "brico-projects", "brico-workshop").contains(image))
+                    "brico-online", "brico-projects", "brico-workshop").contains(image))
                 throw new IllegalArgumentException("Unknown banner image");
             if (link == null || !LINK.matcher(link).matches())
                 throw new IllegalArgumentException("Invalid internal banner link");

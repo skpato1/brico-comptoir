@@ -76,7 +76,7 @@ class IdentityIT {
     @Autowired MailDispatcher dispatcher;
 
     @Test
-    void registrationCannotAssignAdminAndSessionRotatesAndLogsOut() throws Exception {
+    void publicRegistrationIsClosedAndSessionRotatesAndLogsOut() throws Exception {
         Browser browser = new Browser();
         assertThat(browser.post("/auth/register", "{}", false).statusCode()).isEqualTo(403);
         browser.csrf();
@@ -85,10 +85,10 @@ class IdentityIT {
         String email = freshEmail();
         var registered = browser.post("/auth/register", "{\"email\":\"" + email + "\",\"password\":\""
                 + GOOD_PASSWORD + "\",\"roles\":[\"ADMIN\"]}", true);
-        assertThat(registered.statusCode()).isEqualTo(201);
-        assertThat(registered.body()).contains("CUSTOMER").doesNotContain("ADMIN", "passwordHash");
+        assertThat(registered.statusCode()).isEqualTo(410);
         assertThat(browser.post("/auth/register", credentials(email, GOOD_PASSWORD), true).statusCode())
-                .isEqualTo(409);
+                .isEqualTo(410);
+        identity.register(email, GOOD_PASSWORD);
         assertThat(browser.get("/admin/internal-accounts").statusCode()).isEqualTo(401);
         assertThat(browser.post("/auth/login", credentials(email, "wrong-password-2026"), true).statusCode())
                 .isEqualTo(401);
@@ -117,8 +117,7 @@ class IdentityIT {
         Browser customer = new Browser();
         customer.csrf();
         String customerEmail = freshEmail();
-        var registered = customer.post("/auth/register", credentials(customerEmail, GOOD_PASSWORD), true);
-        UUID customerId = id(registered.body());
+        UUID customerId = identity.register(customerEmail, GOOD_PASSWORD).id();
         customer.post("/auth/login", credentials(customerEmail, GOOD_PASSWORD), true);
 
         assertThat(customer.get("/accounts/" + admin.id()).statusCode()).isEqualTo(403);
@@ -185,7 +184,7 @@ class IdentityIT {
         Browser browser = new Browser();
         browser.csrf();
         String email = freshEmail();
-        browser.post("/auth/register", credentials(email, GOOD_PASSWORD), true);
+        identity.register(email, GOOD_PASSWORD);
         browser.post("/auth/login", credentials(email, GOOD_PASSWORD), true);
         browser.csrf();
         clearInvocations(mail);
@@ -197,8 +196,8 @@ class IdentityIT {
         var captured = org.mockito.ArgumentCaptor.forClass(Mail.class);
         verify(mail).send(captured.capture());
         String text = captured.getValue().text();
-        assertThat(text).contains("/compte#reset=");
-        String token = text.substring(text.indexOf("/compte#reset=") + 14).split("\\s")[0];
+        assertThat(text).contains("/acces-equipe#reset=");
+        String token = text.substring(text.indexOf("/acces-equipe#reset=") + 20).split("\\s")[0];
         assertThat(browser.post("/auth/password-reset/complete", "{\"token\":\"" + token
                 + "\",\"password\":\"Replacement-2026!\"}", true).statusCode()).isEqualTo(204);
         assertThat(browser.get("/auth/me").statusCode()).isEqualTo(401);
@@ -216,7 +215,7 @@ class IdentityIT {
         var expiredMail = org.mockito.ArgumentCaptor.forClass(Mail.class);
         verify(mail).send(expiredMail.capture());
         String expiredText = expiredMail.getValue().text();
-        String expiredToken = expiredText.substring(expiredText.indexOf("/compte#reset=") + 14).split("\\s")[0];
+        String expiredToken = expiredText.substring(expiredText.indexOf("/acces-equipe#reset=") + 20).split("\\s")[0];
         jdbc.update("UPDATE identity_password_reset SET expires_at = now() - interval '1 second' "
                 + "WHERE account_id = (SELECT id FROM identity_account WHERE email = ?)", email);
         assertThat(browser.post("/auth/password-reset/complete", "{\"token\":\"" + expiredToken

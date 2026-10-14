@@ -57,6 +57,8 @@
   object-position: center;
   transform: none;
 }
+.online-banner .photo { background: #f7f5f1; }
+.online-banner .photo img { object-fit: cover; object-position: center top; }
 .promotional .caption {
   display: flex;
   align-items: center;
@@ -86,6 +88,7 @@
   overflow: hidden;
   background: var(--hero-base);
 }
+.photo picture { display: block; width: 100%; height: 100%; }
 .photo::after {
   content: '';
   position: absolute;
@@ -297,6 +300,8 @@ a:focus-visible {
   .promotional .photo {
     height: 52vw;
   }
+  .online-banner .photo { height: min(125vw, 650px); }
+  .online-banner .photo img { object-fit: contain; object-position: center top; }
   .promotional .photo::after {
     display: none;
   }
@@ -344,6 +349,7 @@ a:focus-visible {
     top: calc(26vw - 22px);
     bottom: auto;
   }
+  .online-active .arrow { top: calc(min(125vw, 650px) - 68px); bottom: auto; }
   .previous {
     left: auto;
     right: 80px;

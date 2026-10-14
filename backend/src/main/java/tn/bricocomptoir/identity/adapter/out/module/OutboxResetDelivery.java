@@ -18,7 +18,7 @@ public class OutboxResetDelivery implements ResetDelivery {
     }
     @Override public void send(String email,String token,Instant expiry) {
         notifications.enqueue(new NotificationOperations.Email("RESET:"+hash(token),email,"BricoComptoir — réinitialisation du mot de passe",
-            "Ouvrez ce lien avant "+expiry+" : "+publicUrl+"/compte#reset="+token
+            "Ouvrez ce lien avant "+expiry+" : "+publicUrl+"/acces-equipe#reset="+token
                 +"\nSi vous n'avez rien demandé, ignorez ce message.\n",hash(email),expiry));
     }
     @Override public void cancel(String email) { notifications.cancelReset(hash(email)); }

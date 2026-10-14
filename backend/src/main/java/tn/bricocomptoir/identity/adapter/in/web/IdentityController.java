@@ -56,10 +56,8 @@ public class IdentityController {
     }
 
     @PostMapping("/auth/register")
-    public ResponseEntity<AccountView> register(@Valid @RequestBody Credentials input, HttpServletRequest request) {
-        limit("register", request, 5, Duration.ofHours(1));
-        Account account = identity.register(input.email(), input.password());
-        return ResponseEntity.status(HttpStatus.CREATED).body(AccountView.of(account));
+    public void register() {
+        throw new ResponseStatusException(HttpStatus.GONE, "Customer registration is closed; place an order as a guest");
     }
 
     @PostMapping("/auth/login")

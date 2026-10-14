@@ -125,9 +125,9 @@ class FoundationIT {
     }
 
     @Test
-    void baselineMigrationIsAppliedOnceAndCanBeValidatedAgain() {
-        assertThat(flyway.info().applied()).filteredOn(info -> info.getVersion() != null).hasSize(15);
-        assertThat(flyway.info().current().getVersion().toString()).isEqualTo("15");
+    void migrationsAreAppliedOnceAndCanBeValidatedAgain() {
+        assertThat(flyway.info().applied()).filteredOn(info -> info.getVersion() != null).hasSize(20);
+        assertThat(flyway.info().current().getVersion().toString()).isEqualTo("20");
         flyway.validate();
         assertThat(flyway.migrate().migrationsExecuted).isZero();
     }

@@ -3,6 +3,10 @@
 @use './app/mobile-shortcuts';
 @use './app/browse-picker';
 @use './app/catalog-discovery';
+@use './app/admin-dashboard';
+@use './app/admin-orders';
+@use './app/professional-favorites';
+@use './app/product-stats';
 
 :root {
   font-family:
@@ -34,13 +38,30 @@ body {
 .topline {
   background: #282521;
   color: #fff;
-  padding: 8px max(calc((100vw - 1192px) / 2), 24px);
+  padding: 4px max(calc((100vw - 1192px) / 2), 24px);
   font-size: 0.72rem;
   display: flex;
   justify-content: space-between;
   gap: 12px;
+  align-items: center;
 }
-.topline a { margin-left: 16px; text-underline-offset: 3px; }
+.topline-right { display: flex; align-items: center; gap: 14px; }
+.topline-desktop-message a { margin-left: 16px; text-underline-offset: 3px; }
+.topline-mobile-message { display: none; }
+.topline-social { display: flex; align-items: center; gap: 6px; }
+.topline-social a {
+  width: 40px; height: 40px; display: inline-grid; place-items: center;
+  border: 1px solid rgb(255 255 255 / 18%);
+  border-radius: 50%; color: #fff; background: rgb(255 255 255 / 7%);
+  transition: background .2s, border-color .2s, transform .2s;
+}
+.topline-social a:hover { background: rgb(255 255 255 / 20%); border-color: rgb(255 255 255 / 45%); transform: translateY(-1px); }
+.topline-social a:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.topline-social svg { width: 19px; height: 19px; }
+@media (prefers-reduced-motion: reduce) {
+  .topline-social a { transition: none; }
+  .topline-social a:hover { transform: none; }
+}
 .skip-link {
   position: absolute;
   top: -100px;
@@ -50,9 +71,11 @@ body {
   padding: 12px;
 }
 .skip-link:focus { top: 12px; }
-@media (max-width: 440px) {
-  .topline > span:first-child, .topline a { display: none; }
-  .topline { justify-content: center; }
+@media (max-width: 740px) {
+  .topline-tagline, .topline-desktop-message { display: none; }
+  .topline-mobile-message { display: inline; }
+  .topline { padding: 4px 16px; }
+  .topline-right { width: 100%; justify-content: space-between; }
 }
 a {
   color: inherit;

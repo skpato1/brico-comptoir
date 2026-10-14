@@ -10,8 +10,8 @@ import { CheckoutComponent } from '../checkout/checkout';
   imports: [FormsModule, RouterLink, CheckoutComponent],
   template: `
     <div class="content-narrow">
-      <p class="eyebrow">VOTRE ESPACE</p>
-      <h1>Mon compte</h1>
+      <p class="eyebrow">ACCÈS SÉCURISÉ</p>
+      <h1>Connexion à l’administration</h1>
       @if (session.account(); as account) {
         <p class="account-status">Connecté à BricoComptoir : <strong>{{ account.email }}</strong></p>
         <p><a routerLink="/mes-donnees">Mes données et mon choix marketing</a></p>
@@ -25,18 +25,16 @@ import { CheckoutComponent } from '../checkout/checkout';
             <a class="button secondary" routerLink="/gestion">Ouvrir l’administration</a>
           }
         </div>
-        <app-checkout [account]="account" [historyOnly]="true" />
+        @if (account.roles.includes('CUSTOMER')) {
+          <p>Ce compte client existant peut encore consulter ses commandes. Les nouveaux achats se font sans création de compte.</p>
+          <app-checkout [account]="account" [historyOnly]="true" />
+        }
       } @else {
-        <p>
-          Retrouvez votre panier et vos commandes. Vous pouvez aussi
-          <a routerLink="/panier">commander sans compte</a>.
-        </p>
+        <p>Accès réservé aux membres de l’équipe. Pour acheter, <a routerLink="/panier">passez commande sans compte</a>.</p>
         <div class="auth-card">
         <h2>
           {{
-            mode() === 'register'
-              ? 'Créer un compte'
-              : mode() === 'request'
+            mode() === 'request'
                 ? 'Mot de passe oublié'
                 : mode() === 'complete'
                   ? 'Nouveau mot de passe'
@@ -91,9 +89,7 @@ import { CheckoutComponent } from '../checkout/checkout';
             {{
               busy()
                 ? 'Patientez…'
-                : mode() === 'register'
-                  ? 'Créer mon compte'
-                  : mode() === 'request'
+                : mode() === 'request'
                     ? 'Envoyer le lien'
                     : mode() === 'complete'
                       ? 'Modifier le mot de passe'
@@ -104,9 +100,6 @@ import { CheckoutComponent } from '../checkout/checkout';
         <div class="actions auth-links">
           @if (mode() !== 'login') {
             <button class="secondary" (click)="show('login')">Connexion</button>
-          }
-          @if (mode() !== 'register') {
-            <button class="secondary" (click)="show('register')">Créer un compte</button>
           }
           @if (mode() !== 'request') {
             <button class="secondary" (click)="show('request')">Mot de passe oublié</button>
@@ -149,7 +142,7 @@ import { CheckoutComponent } from '../checkout/checkout';
 export class AccountPage {
   readonly session = inject(SessionState);
   private readonly api = inject(IdentityApi);
-  readonly mode = signal<'login' | 'register' | 'request' | 'complete'>(
+  readonly mode = signal<'login' | 'request' | 'complete'>(
     location.hash.startsWith('#reset=') ? 'complete' : 'login',
   );
   readonly busy = signal(false);
@@ -157,7 +150,7 @@ export class AccountPage {
   email = '';
   password = '';
   private token = location.hash.startsWith('#reset=') ? location.hash.slice(7) : '';
-  show(mode: 'login' | 'register' | 'request' | 'complete') {
+  show(mode: 'login' | 'request' | 'complete') {
     this.mode.set(mode);
     this.password = '';
     this.message.set('');
@@ -173,9 +166,7 @@ export class AccountPage {
     this.message.set('');
     const mode = this.mode();
     const operation: Observable<Account | void> =
-      mode === 'register'
-        ? this.api.register(this.email, this.password)
-        : mode === 'request'
+      mode === 'request'
           ? this.api.requestReset(this.email)
           : mode === 'complete'
             ? this.api.completeReset(this.token, this.password)
@@ -185,10 +176,7 @@ export class AccountPage {
         this.busy.set(false);
         this.password = '';
         if (mode === 'login') this.session.set(value as Account);
-        else if (mode === 'register') {
-          this.mode.set('login');
-          this.message.set('Compte créé. Connectez-vous.');
-        } else if (mode === 'request')
+        else if (mode === 'request')
           this.message.set('Si ce compte existe, un lien de récupération sera envoyé.');
         else {
           history.replaceState(null, '', location.pathname);
