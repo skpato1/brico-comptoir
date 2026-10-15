@@ -83,7 +83,7 @@ export async function addPack(page, data) {
   await expect(page.getByRole('heading', { name: data.pack.name })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Ce qui n’est pas inclus' })).toBeVisible();
   await expect(page.locator('.composition')).toContainText('2 ×');
-  await page.getByRole('button', { name: 'Ajouter au panier' }).click();
+  await page.locator('form.buy').getByRole('button', { name: /Ajouter au panier/ }).click();
   await page.getByRole('link', { name: 'Voir mon panier' }).click();
 }
 export async function checkout(page, email, total) {
@@ -104,10 +104,10 @@ export async function checkout(page, email, total) {
   expect(response.ok()).toBeTruthy();
   const order = await response.json();
   await expect(page).toHaveURL(new RegExp('/confirmation/' + order.id));
-  await expect(page.getByRole('heading', { name: 'Merci pour votre commande.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Votre commande est confirmée.' })).toBeVisible();
   await expect(page.locator('.receipt .total')).toContainText(`${total} TND`);
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Merci pour votre commande.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Votre commande est confirmée.' })).toBeVisible();
   return order;
 }
 export async function mail(api, recipient, contains) {

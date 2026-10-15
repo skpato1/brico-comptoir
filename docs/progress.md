@@ -1953,3 +1953,25 @@ Java 21 et PostgreSQL Testcontainers a d'abord trouvé une assertion du test
 complète a ensuite réussi : 60 tests unitaires et 65 tests d'intégration,
 dont 4 ignorés par leur configuration. Aucun déploiement de production n'a
 été effectué.
+
+## 14 octobre 2026 — Correction du job navigateur de la PR #8
+
+La PR #8 a réussi les jobs frontend et backend, mais son job navigateur a
+échoué sur des sélecteurs Playwright devenus ambigus ou périmés après les
+changements d'interface. Le helper choisit maintenant le bouton du formulaire
+d'achat plutôt que les deux boutons homonymes présents sur mobile, et attend
+le titre réel de la page de confirmation. Les scénarios de commande utilisent
+les libellés actuels de la liste des commandes dans l'administration.
+
+Le scénario « nouveau client connecté » créait un compte via
+`POST /auth/register`, route désormais fermée avec `410`. Il est remplacé par
+une commande invitée comprenant pack et produit commun ; les vérifications de
+réservation cumulée, expédition, email et stock sont conservées. Le scénario
+invité simple et le test de panne SMTP restent présents.
+
+Vérifications locales avant commit : `node --check` sur les deux fichiers E2E
+modifiés, découverte Playwright des quatre scénarios, contrôle dépôt de 20
+migrations et `git diff --check` réussis. La pile Docker E2E locale n'a pas été
+reconstruite : les images présentes datent de septembre et le disque C: ne
+dispose que d'environ 0,4 Go libre. Le job navigateur de GitHub Actions doit
+confirmer le parcours complet sur les images construites depuis la PR.
