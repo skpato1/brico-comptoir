@@ -1975,3 +1975,10 @@ migrations et `git diff --check` réussis. La pile Docker E2E locale n'a pas ét
 reconstruite : les images présentes datent de septembre et le disque C: ne
 dispose que d'environ 0,4 Go libre. Le job navigateur de GitHub Actions doit
 confirmer le parcours complet sur les images construites depuis la PR.
+
+La première relance du job navigateur a confirmé que les parcours desktop
+passent. Les deux parcours mobiles restaient bloqués sur l'ancien libellé
+« Rechercher » du formulaire du catalogue, désormais « Afficher les résultats ».
+Le sélecteur Playwright suit ce libellé actuel. `node --check` et la découverte
+des quatre scénarios Playwright réussissent localement ; `git diff --check` ne
+signale aucune erreur. Une nouvelle relance CI doit vérifier le parcours complet.

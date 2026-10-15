@@ -28,7 +28,7 @@ for (const mixedCart of [false, true]) {
           url.searchParams.get('q') === data.product.name &&
           response.request().method() === 'GET';
       });
-      await page.locator('form.filters').getByRole('button', { name: 'Rechercher', exact: true }).click();
+      await page.locator('form.filters').getByRole('button', { name: 'Afficher les résultats', exact: true }).click();
       const searchResponse = await searched;
       expect(searchResponse.ok()).toBeTruthy();
       await expect(page.locator('.result-count')).toHaveText('1 produit(s) trouvé(s)');
