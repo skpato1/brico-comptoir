@@ -40,8 +40,13 @@ existants et corrèle les emails transactionnels à un périmètre opaque.
 - Panier visiteur : références/quantités uniquement en stockage local. Les
   coordonnées et mots de passe de ces écrans ne sont pas persistés dans le
   navigateur. Les saisies sensibles de la page de données sont effacées après
-  utilisation et à sa destruction. Aucun traceur publicitaire ou outil d’analytics
-  n’est installé dans l’application.
+  utilisation et à sa destruction. Aucun traceur publicitaire ou service
+  d’analytics tiers n’est installé dans l’application. Les ouvertures de fiches
+  produit sont comptées par produit et jour UTC pour orienter le choix éditorial
+  des publicités. La base ne conserve pour cette mesure ni cookie dédié, ni
+  compte, session, IP, empreinte ou événement individuel. Les agrégats de plus
+  de 30 jours sont supprimés quotidiennement ; les vues des comptes équipe sont
+  exclues.
 - Les listes administratives de commandes ne transmettent plus le destinataire,
   le téléphone, la rue ou l’e-mail. Les coordonnées utiles se consultent en ouvrant
   une fiche, avec `ORDER_MANAGER` ou `ADMIN`. `CATALOG_MANAGER` n’y accède pas.

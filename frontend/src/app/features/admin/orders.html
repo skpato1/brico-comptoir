@@ -1,7 +1,8 @@
-<h2>Commandes</h2>
-<form (ngSubmit)="load()">
-  <label
-    >État<select name="status" [(ngModel)]="filter">
+<div class="orders-workspace">
+<div class="workspace-heading"><div><p class="eyebrow">VENTES · SUIVI</p><h2>Commandes</h2>
+  <p>Coordonnées, articles et état de chaque commande sont disponibles ici.</p></div></div>
+<form class="orders-toolbar" (ngSubmit)="load()">
+  <label>Afficher<select name="status" [(ngModel)]="filter">
       <option value="">Tous</option>
       @for (
         status of ['CONFIRMED', 'PREPARING', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
@@ -9,8 +10,8 @@
       ) {
         <option [value]="status">{{ statuses[status] }}</option>
       }
-    </select></label
-  ><button [disabled]="busy()">Rechercher les commandes</button>
+    </select></label>
+  <button [disabled]="busy()">Actualiser la liste</button>
 </form>
 @if (error()) {
   <p role="alert" class="error">{{ error() }}</p>
@@ -24,7 +25,7 @@
 @if (!busy() && !error() && !items().length) {
   <p>Aucune commande pour ces critères.</p>
 }
-<div class="table-scroll">
+<div class="table-scroll orders-table-wrap">
   <table>
     <caption>
       Commandes — page
@@ -34,8 +35,8 @@
     </caption>
     <thead>
       <tr>
-        <th>Référence / date</th>
-        <th>Destinataire</th>
+        <th>Commande</th>
+        <th>Client et contact</th>
         <th>État</th>
         <th>Total TND</th>
         <th>Action</th>
@@ -44,13 +45,13 @@
     <tbody>
       @for (entry of items(); track entry.id) {
         <tr>
-          <td>{{ entry.id }}<br />{{ entry.createdAt | date: 'dd/MM/yyyy HH:mm' : '+0100' }}</td>
-          <td>{{ entry.summary.address.recipient }}</td>
-          <td>{{ statuses[entry.status] }}</td>
-          <td>{{ entry.summary.total.amount }}</td>
-          <td>
+          <td data-label="Commande"><strong class="order-ref">{{ entry.id }}</strong><small>{{ entry.createdAt | date: 'dd/MM/yyyy HH:mm' }}</small></td>
+          <td data-label="Client"><strong>{{ entry.summary.address.recipient }}</strong><small>{{ entry.summary.address.phone }}</small></td>
+          <td data-label="État"><span class="order-status" [attr.data-status]="entry.status">{{ statuses[entry.status] }}</span></td>
+          <td data-label="Total"><strong>{{ entry.summary.total.amount }} TND</strong></td>
+          <td data-label="Action">
             <button class="secondary" (click)="open(entry)" [disabled]="busy()">
-              Ouvrir
+              Voir le détail
             </button>
           </td>
         </tr>
@@ -67,15 +68,16 @@
   </button>
 </nav>
 @if (selected(); as entry) {
-  <section class="admin-detail">
-    <h3>Commande {{ entry.id }}</h3>
-    <p>{{ statuses[entry.status] }} · Paiement à la livraison</p>
-    <p>
-      {{ entry.summary.address.recipient }} · {{ entry.summary.address.phone }}<br />{{
-        entry.summary.address.street
-      }}, {{ entry.summary.address.postalCode }} {{ entry.summary.address.city }} ·
-      {{ entry.summary.address.governorate }}
-    </p>
+  <section class="admin-detail order-detail">
+    <div class="order-detail-heading"><div><p class="eyebrow">DÉTAIL DE LA COMMANDE</p><h3>{{ entry.id }}</h3></div>
+      <span class="order-status" [attr.data-status]="entry.status">{{ statuses[entry.status] }}</span></div>
+    <div class="order-detail-grid"><div><h4>Coordonnées du client</h4>
+      <dl><div><dt>Nom</dt><dd>{{ entry.summary.address.recipient }}</dd></div>
+        <div><dt>Téléphone</dt><dd><a [href]="'tel:' + entry.summary.address.phone">{{ entry.summary.address.phone }}</a></dd></div>
+        @if (entry.summary.address.email) { <div><dt>E-mail</dt><dd><a [href]="'mailto:' + entry.summary.address.email">{{ entry.summary.address.email }}</a></dd></div> }
+        <div><dt>Adresse</dt><dd>{{ entry.summary.address.street }}<br />{{ entry.summary.address.postalCode }} {{ entry.summary.address.city }} · {{ entry.summary.address.governorate }}</dd></div></dl>
+    </div><div><h4>Règlement</h4><p>Paiement à la livraison</p><h4>Total à collecter</h4><p class="order-total">{{ entry.summary.total.amount }} TND</p></div></div>
+    <h4>Articles commandés</h4>
     <ul>
       @for (line of entry.summary.items; track line.kind + line.offerId) {
         <li>
@@ -88,10 +90,7 @@
         </li>
       }
     </ul>
-    <p>
-      Livraison : {{ entry.summary.delivery.amount }} TND · Total :
-      {{ entry.summary.total.amount }} TND
-    </p>
+    <p>Livraison : {{ entry.summary.delivery.amount }} TND · Total : {{ entry.summary.total.amount }} TND</p>
     <div class="actions">
       @if (entry.status === 'CONFIRMED') {
         <button (click)="transition(entry, 'prepare')" [disabled]="busy()">Préparer</button>
@@ -112,3 +111,4 @@
     </div>
   </section>
 }
+</div>

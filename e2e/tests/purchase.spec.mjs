@@ -1,10 +1,10 @@
 import { test, expect } from '@playwright/test';
 import { writeFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
-import { adminApi, fixture, addPack, checkout, mail, managerPage, save, login, password } from '../support.mjs';
+import { adminApi, fixture, addPack, checkout, mail, managerPage, save } from '../support.mjs';
 
-for (const connected of [false, true]) {
-  test(connected ? 'Client : pack + produit commun, réservation cumulée et expédition' : 'Invité : pack, confirmation, email, notification et annulation', async ({ page, browser, playwright }) => {
+for (const mixedCart of [false, true]) {
+  test(mixedCart ? 'Invité : pack + produit commun, réservation cumulée et expédition' : 'Invité : pack, confirmation, email, notification et annulation', async ({ page, browser, playwright }) => {
     const admin = await adminApi(playwright);
     const data = await fixture(admin);
     const manager = await managerPage(browser, admin);
@@ -14,19 +14,7 @@ for (const connected of [false, true]) {
       const errors = [], mediaRequests = [];
       page.on('pageerror', error => errors.push(error.message));
       page.on('request', request => { if (request.url().includes('/api/v1/media/')) mediaRequests.push(request.url()); });
-      if (connected) {
-        // Fill a guest cart, then verify its persisted, idempotent recovery on login.
-        await addPack(page, data);
-        const secret = password();
-        await save(page.request, '/auth/register', { email, password: secret });
-        await login(page, email, secret);
-        await page.goto('/panier');
-        await expect(page.getByText('Panier enregistré sur votre compte.')).toBeVisible();
-        await expect(page.locator('app-cart .items > li')).toHaveCount(1);
-        const persisted = await (await page.request.get('/api/v1/cart')).json();
-        expect(persisted.items).toHaveLength(1);
-        expect(persisted.items[0].quantity).toBe(1);
-      } else await addPack(page, data);
+      await addPack(page, data);
 
       // Cards request only compressed derivatives; the detail uses srcset/lazy loading.
       await page.goto('/catalogue');
@@ -40,7 +28,7 @@ for (const connected of [false, true]) {
           url.searchParams.get('q') === data.product.name &&
           response.request().method() === 'GET';
       });
-      await page.locator('form.filters').getByRole('button', { name: 'Rechercher', exact: true }).click();
+      await page.locator('form.filters').getByRole('button', { name: 'Afficher les résultats', exact: true }).click();
       const searchResponse = await searched;
       expect(searchResponse.ok()).toBeTruthy();
       await expect(page.locator('.result-count')).toHaveText('1 produit(s) trouvé(s)');
@@ -58,47 +46,41 @@ for (const connected of [false, true]) {
       expect(mediaRequests.filter(url => /\/media\/[0-9a-f-]+\//.test(url)).every(url => /\/(card|detail)$/.test(url))).toBe(true);
       expect((await page.request.get(`/api/v1/media/${data.image.id}/original`)).status()).toBeGreaterThanOrEqual(400);
       expect((await page.request.get('http://localhost:19000/bricocomptoir-media')).status()).toBe(403);
-      if (connected) {
-        // A full-page navigation cancels pending requests, including the CSRF
-        // lookup before PUT. Wait for the real persisted cart before reloading.
-        const savedCart = page.waitForResponse(response =>
-          new URL(response.url()).pathname === '/api/v1/cart' && response.request().method() === 'PUT');
-        await page.getByRole('button', { name: 'Ajouter au panier' }).click();
-        const response = await savedCart;
-        expect(response.status()).toBe(200);
-        expect((await response.json()).items).toHaveLength(2);
+      if (mixedCart) {
+        await page.locator('form.buy').getByRole('button', { name: /Ajouter au panier/ }).click();
+        await expect(page.getByRole('link', { name: 'Voir mon panier' })).toBeVisible();
       }
       await page.goto('/panier');
-      await expect(page.locator('app-cart .items > li')).toHaveCount(connected ? 2 : 1);
-      const order = await checkout(page, connected ? null : email, connected ? '20.000' : '15.000');
-      expect(order.summary.items).toHaveLength(connected ? 2 : 1);
+      await expect(page.locator('app-cart .items > li')).toHaveCount(mixedCart ? 2 : 1);
+      const order = await checkout(page, email, mixedCart ? '20.000' : '15.000');
+      expect(order.summary.items).toHaveLength(mixedCart ? 2 : 1);
       expect(order.paymentMethod).toBe('CASH_ON_DELIVERY');
-      expect(order.summary.items.flatMap(line => line.components).reduce((sum, component) => sum + component.quantity, 0)).toBe(connected ? 3 : 2);
-      expect(await (await admin.get(`/api/v1/admin/stock/${data.sku.id}`)).json()).toMatchObject({ onHand: 20, reserved: connected ? 3 : 2 });
+      expect(order.summary.items.flatMap(line => line.components).reduce((sum, component) => sum + component.quantity, 0)).toBe(mixedCart ? 3 : 2);
+      expect(await (await admin.get(`/api/v1/admin/stock/${data.sku.id}`)).json()).toMatchObject({ onHand: 20, reserved: mixedCart ? 3 : 2 });
 
       await expect(manager.page.getByRole('link', { name: '1 nouvelle(s) commande(s) · Ouvrir' })).toBeVisible();
       await manager.page.getByRole('link', { name: '1 nouvelle(s) commande(s) · Ouvrir' }).click();
-      await manager.page.getByRole('button', { name: 'Rechercher les commandes' }).click();
+      await manager.page.getByRole('button', { name: 'Actualiser la liste' }).click();
       const row = manager.page.getByRole('row').filter({ hasText: order.id });
       await expect(row).toBeVisible();
-      await row.getByRole('button', { name: 'Ouvrir', exact: true }).click();
+      await row.getByRole('button', { name: 'Voir le détail' }).click();
       await expect(manager.page.locator('.admin-detail')).toContainText(data.pack.name);
-      if (connected) await expect(manager.page.locator('.admin-detail')).toContainText(data.product.name);
+      if (mixedCart) await expect(manager.page.locator('.admin-detail')).toContainText(data.product.name);
       const confirmationMail = await mail(admin, email, order.id);
       expect(confirmationMail.Text).toContain(order.summary.total.amount);
 
-      if (connected) {
+      if (mixedCart) {
         await manager.page.getByRole('button', { name: 'Préparer', exact: true }).click();
         await expect(manager.page.getByText('Opération enregistrée.', { exact: true })).toBeVisible();
         await manager.page.locator('app-admin-orders').getByRole('combobox').selectOption('PREPARING');
-        await manager.page.getByRole('button', { name: 'Rechercher les commandes' }).click();
-        await manager.page.getByRole('row').filter({ hasText: order.id }).getByRole('button', { name: 'Ouvrir', exact: true }).click();
+        await manager.page.getByRole('button', { name: 'Actualiser la liste' }).click();
+        await manager.page.getByRole('row').filter({ hasText: order.id }).getByRole('button', { name: 'Voir le détail' }).click();
         await expect(manager.page.getByRole('button', { name: 'Expédier et sortir le stock' })).toBeVisible();
         await manager.page.getByRole('button', { name: 'Expédier et sortir le stock' }).click();
         await expect(manager.page.getByText('Opération enregistrée.', { exact: true })).toBeVisible();
         await manager.page.locator('app-admin-orders').getByRole('combobox').selectOption('SHIPPED');
-        await manager.page.getByRole('button', { name: 'Rechercher les commandes' }).click();
-        await manager.page.getByRole('row').filter({ hasText: order.id }).getByRole('button', { name: 'Ouvrir', exact: true }).click();
+        await manager.page.getByRole('button', { name: 'Actualiser la liste' }).click();
+        await manager.page.getByRole('row').filter({ hasText: order.id }).getByRole('button', { name: 'Voir le détail' }).click();
         await expect(manager.page.getByRole('button', { name: 'Marquer livrée' })).toBeVisible();
         expect(await (await admin.get(`/api/v1/admin/stock/${data.sku.id}`)).json()).toMatchObject({ onHand: 17, reserved: 0 });
         await mail(admin, email, `Commande ${order.id} : expédiée.`);
@@ -107,7 +89,7 @@ for (const connected of [false, true]) {
         await manager.page.getByRole('button', { name: 'Annuler et libérer le stock' }).click();
         await expect(manager.page.getByText('Opération enregistrée.', { exact: true })).toBeVisible();
         await manager.page.locator('app-admin-orders').getByRole('combobox').selectOption('CANCELLED');
-        await manager.page.getByRole('button', { name: 'Rechercher les commandes' }).click();
+        await manager.page.getByRole('button', { name: 'Actualiser la liste' }).click();
         await expect(manager.page.getByRole('row').filter({ hasText: order.id })).toContainText('Annulée');
         expect(await (await admin.get(`/api/v1/admin/stock/${data.sku.id}`)).json()).toMatchObject({ onHand: 20, reserved: 0 });
         await mail(admin, email, `Commande ${order.id} : annulée.`);

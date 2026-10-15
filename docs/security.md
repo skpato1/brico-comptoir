@@ -14,7 +14,7 @@ expiration après 30 minutes d'inactivité. Le filtre relit état actif et versi
 du compte : retrait de rôle, désactivation ou nouveau mot de passe révoquent
 les sessions précédentes.
 
-Les mutations exigent un CSRF, y compris connexion, inscription, checkout
+Les mutations exigent un CSRF, y compris connexion, route d'inscription fermée, checkout
 invité et récupération. Angular demande `GET /api/v1/auth/csrf`, lit
 `XSRF-TOKEN` et renvoie `X-XSRF-TOKEN`. `spa()` est appliqué avant le dépôt
 personnalisé pour conserver les attributs du cookie derrière la terminaison TLS.
@@ -23,8 +23,8 @@ de session. Même origine `/api/v1` via Nginx ; pas de CORS permissif.
 
 Le reverse proxy remplace les en-têtes fournis par le client. En production,
 `TRUSTED_PROXY_PATTERN` identifie uniquement ses pairs réels et le port backend
-reste privé. HTTPS est requis. La limitation des essais de connexion,
-inscription et récupération utilise l'adresse reconnue par cette chaîne.
+reste privé. HTTPS est requis. La limitation des essais de connexion et de
+récupération utilise l'adresse reconnue par cette chaîne.
 Les sessions et compteurs sont en mémoire d'une instance : un redémarrage
 déconnecte les utilisateurs ; plusieurs instances nécessitent un stockage partagé.
 
@@ -37,8 +37,8 @@ de récupération n'est renvoyé par l'API.
 
 Les rôles internes sont cumulables. `ADMIN` n'implique pas `CUSTOMER` ; un
 administrateur peut attribuer ce rôle explicitement après création. Une
-inscription publique réussie crée uniquement `CUSTOMER` et rejette un champ
-de rôle ajouté au corps.
+inscription publique est fermée (`410`) ; les nouveaux clients commandent en
+invité. Les comptes `CUSTOMER` existants restent utilisables.
 La création initiale d'un compte interne refuse `CUSTOMER`. Aucun endpoint
 public ne crée un administrateur.
 

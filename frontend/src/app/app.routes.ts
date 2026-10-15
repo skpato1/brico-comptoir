@@ -52,7 +52,12 @@ export const routes: Routes = [
   {
     path: 'compte',
     loadComponent: () => import('./features/store/account').then((m) => m.AccountPage),
-    title: 'Mon compte | BricoComptoir',
+    title: 'Accès sécurisé | BricoComptoir',
+  },
+  {
+    path: 'acces-equipe',
+    loadComponent: () => import('./features/store/account').then((m) => m.AccountPage),
+    title: 'Accès équipe | BricoComptoir',
   },
   {
     path: 'gestion',

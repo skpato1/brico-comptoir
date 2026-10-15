@@ -1,0 +1,49 @@
+.orders-workspace .orders-toolbar { display: flex; align-items: end; gap: 11px; flex-wrap: wrap; padding: 16px; margin: 19px 0; border: 1px solid #e4e8ed; border-radius: 11px; background: #f8f9fa; }
+.orders-workspace .orders-toolbar label { margin: 0; min-width: 180px; color: #586474; font-size: .78rem; font-weight: 700; }
+.orders-workspace .orders-toolbar select { display: block; width: 100%; min-height: 42px; margin-top: 5px; border: 1px solid #cbd2db; border-radius: 8px; background: white; }
+.orders-workspace .orders-toolbar button { min-height: 42px; }
+.orders-workspace .orders-table-wrap { border: 1px solid #e4e8ed; border-radius: 11px; margin: 0; }
+.orders-workspace table { border-collapse: collapse; width: 100%; min-width: 650px; }
+.orders-workspace caption { padding: 12px 15px; color: #657181; font-size: .77rem; }
+.orders-workspace th { padding: 11px 15px; background: #f7f8fa; color: #657181; border-bottom: 1px solid #e4e8ed; text-align: left; text-transform: uppercase; font-size: .67rem; letter-spacing: .06em; }
+.orders-workspace td { padding: 15px; border-bottom: 1px solid #edf0f3; vertical-align: middle; font-size: .83rem; }
+.orders-workspace tr:last-child td { border-bottom: 0; }
+.orders-workspace td strong, .orders-workspace td small { display: block; }
+.orders-workspace td small { margin-top: 4px; color: #75808e; font-size: .73rem; }
+.orders-workspace .order-ref { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: ui-monospace, monospace; font-size: .78rem; }
+.orders-workspace td button { min-height: 35px; padding: 7px 11px; font-size: .76rem; }
+.orders-workspace .order-status { display: inline-flex; align-items: center; padding: 6px 9px; border-radius: 99px; background: #edf2f7; color: #3e5269; font-size: .71rem; font-weight: 750; white-space: nowrap; }
+.orders-workspace .order-status[data-status='CONFIRMED'] { background: #fff2df; color: #895716; }
+.orders-workspace .order-status[data-status='PREPARING'] { background: #e8efff; color: #33599f; }
+.orders-workspace .order-status[data-status='SHIPPED'] { background: #efeafe; color: #5c4a98; }
+.orders-workspace .order-status[data-status='DELIVERED'] { background: #e6f4eb; color: #236c41; }
+.orders-workspace .order-status[data-status='CANCELLED'] { background: #f4f0f0; color: #725c5c; }
+.orders-workspace .admin-detail { margin-top: 25px; padding: clamp(16px, 2vw, 24px); border: 1px solid #dfe4e9; border-radius: 12px; background: #fafbfc; }
+.orders-workspace .order-detail-heading { display: flex; justify-content: space-between; align-items: start; gap: 15px; }
+.orders-workspace .order-detail-heading h3 { margin: 3px 0 20px; overflow-wrap: anywhere; font-size: 1.05rem; }
+.orders-workspace .order-detail-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(200px, 1fr); gap: 16px; margin-bottom: 20px; }
+.orders-workspace .order-detail-grid > div { padding: 17px; border: 1px solid #e4e8ed; border-radius: 10px; background: white; }
+.orders-workspace .order-detail h4 { margin: 0 0 13px; font-size: .87rem; }
+.orders-workspace .order-detail dl { display: grid; gap: 9px; margin: 0; }
+.orders-workspace .order-detail dl > div { display: grid; grid-template-columns: 90px minmax(0, 1fr); gap: 10px; }
+.orders-workspace .order-detail dt { color: #6e7986; font-size: .78rem; }
+.orders-workspace .order-detail dd { margin: 0; overflow-wrap: anywhere; font-size: .82rem; }
+.orders-workspace .order-detail a { color: #9e2027; text-underline-offset: 3px; }
+.orders-workspace .order-total { font-size: 1.2rem; font-weight: 800; }
+.orders-workspace .order-detail > ul { padding-left: 20px; font-size: .83rem; }
+.orders-workspace .order-detail > ul > li { margin: 9px 0; }
+@media (max-width: 720px) {
+  .orders-workspace .order-detail-grid { grid-template-columns: 1fr; }
+  .orders-workspace .orders-toolbar { display: grid; }
+  .orders-workspace .orders-table-wrap { overflow: visible; border: 0; }
+  .orders-workspace table { display: block; min-width: 0; }
+  .orders-workspace caption { display: block; text-align: left; }
+  .orders-workspace thead { display: none; }
+  .orders-workspace tbody { display: grid; gap: 12px; }
+  .orders-workspace tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 14px; border: 1px solid #e4e8ed; border-radius: 11px; }
+  .orders-workspace td { display: block; min-width: 0; padding: 0; border: 0; }
+  .orders-workspace td:first-child, .orders-workspace td:nth-child(2), .orders-workspace td:last-child { grid-column: 1 / -1; }
+  .orders-workspace td::before { content: attr(data-label); display: block; margin-bottom: 4px; color: #75808e; font-size: .64rem; font-weight: 750; text-transform: uppercase; letter-spacing: .06em; }
+  .orders-workspace td:last-child button { width: 100%; margin-top: 4px; }
+  .orders-workspace .order-ref { max-width: none; overflow-wrap: anywhere; white-space: normal; }
+}

@@ -1637,3 +1637,348 @@ fictifs dans un test ; après retrait de ce cas, les quatre tests et
 E2E complète n'ont pas été relancés car aucun code métier Java ni composant
 Angular n'a changé. Aucun déploiement ni modification de la production n'a
 été effectué pour cette préparation.
+
+## 13 octobre 2026 — Refonte UX progressive de la boutique (branche locale)
+
+La branche locale `codex/storefront-ux-redesign` part de la préparation VS Code
+existante. L'[audit UX](storefront-ux-audit.md) documente les routes, contrats,
+priorités et limites des données avant les changements. Aucun backend, contrat
+API, base locale ou environnement de production n'a été modifié.
+
+Le parcours public Angular utilise désormais des tokens visuels communs, une
+recherche plus lisible, un accès aux catégories et une navigation inférieure
+mobile. L'accueil propose quatre entrées de recherche réellement disponibles et
+une fiche publiée mise en avant, alimentée par le catalogue ;
+les cartes montrent la marque quand elle existe, le nom, le prix et une action
+explicite. Le catalogue affiche les filtres dans une colonne sur ordinateur,
+les replie sur mobile, montre les critères appliqués, un chargement en
+squelettes et des pistes de recherche après zéro résultat. La fiche garde prix
+et achat visibles sur mobile, synchronisés avec
+la variante, la quantité et la disponibilité. Le panier et le checkout rendent
+le sous-total, les frais encore à calculer puis le total vérifié plus clairs ;
+le récapitulatif serveur, la clé d'idempotence et la commande invitée sont
+conservés. Confirmation, compte et contact ont été harmonisés. Le libellé
+source « Default Title » est masqué uniquement comme segment de variante.
+
+Vérifications : `npm.cmd run test:ci` (74 tests réussis après les changements
+fonctionnels d'interface), `npm.cmd run build` (réussi ; avertissements de
+budget CSS préexistants sur l'administration et le hero, sans échec de compilation),
+Playwright local sur 320, 375, 390, 430, 768, 1024, 1280, 1440 et 1920 px
+(accueil, catalogue, fiche, panier ; aucun débordement horizontal ni erreur
+JavaScript), ouverture du panneau de filtres mobile et parcours invité jusqu'à
+la prévisualisation : 42.000 TND d'article + 8.000 TND de livraison =
+50.000 TND. Aucune commande n'a été confirmée pendant cette vérification.
+Les captures de revue restent ignorées sous `.local/ux-audit/`.
+
+Limites connues : l'API de liste ne fournit ni stock ni classement des ventes ;
+le panier ne fournit pas de lien fiable vers une photo ; aucun avis, remise,
+délai, ville normalisée ou note de commande n'est disponible dans les contrats.
+Ces éléments ne sont pas simulés. Aucun test de production ni mesure de
+conversion réelle n'a été effectué.
+
+## 13 octobre 2026 — Recherche et filtres du catalogue
+
+Le catalogue public montre maintenant neuf entrées visuelles : huit rayons
+thématiques et « Autres catégories ». Chaque rayon mène à des familles
+repliables puis aux catégories réelles. La recherche de catégorie retrouve
+également les 358 intitulés de l'API, y compris ceux issus des marques et des
+collections. Sur mobile, ces rayons sont accessibles directement avant les
+résultats et dans le menu « Rayons » ; sélectionner une catégorie depuis la
+bande de rayons applique aussitôt le filtre. Les listes natives de 358
+catégories et 323 marques ont été remplacées par deux sélecteurs recherchables
+avec panneaux adaptés au mobile. La recherche d'en-tête propose jusqu'à cinq
+produits publiés via l'API existante, puis laisse ouvrir la page complète des
+résultats. La taxonomie de présentation ne modifie ni la base ni les contrats
+du backend ; le filtrage transmet toujours un identifiant de catégorie réel.
+
+Vérifications : `npm.cmd run test:ci` (76 tests réussis), `npm.cmd run build`
+(réussi après séparation des styles ; avertissements de budget CSS existants
+sur l'administration et le carrousel), `node scripts/check-repository.mjs`
+(15 migrations) et `node scripts/check-release.mjs` (réussi). Playwright local
+à 375, 768 et 1280 px : choix de catégorie et de marque présent dans l'URL,
+choix direct par rayon opérationnel, cinq suggestions pour « perceuse », aucun
+débordement horizontal ni erreur JavaScript. Les captures restent sous
+`.local/ux-audit/`, ignoré par Git. Aucune donnée ni page de production n'a
+été modifiée. Les doublons et catégories de marque issus de l'import restent
+visibles dans la recherche de catégorie ; leur fusion demanderait un chantier
+de qualité des données séparé.
+`git diff --check` ne signale pas d'erreur (Git indique seulement une future
+normalisation CRLF du présent journal).
+
+## 14 octobre 2026 — Meilleures ventes éditables
+
+L'accueil affiche une section « Meilleures ventes » avec trois fiches produit
+réelles lorsque le gestionnaire a enregistré une sélection complète. Sur mobile,
+les cartes défilent horizontalement avec accroche et indication de geste ; sur
+ordinateur, elles occupent trois colonnes. L'administration ajoute une tâche
+« Meilleures ventes » aux rôles CATALOG_MANAGER et ADMIN : recherche de produits
+publiés, ajout, retrait, changement d'ordre, enregistrement ou masquage. Le
+serveur valide trois identifiants distincts et visibles, protège l'écriture par
+session/CSRF et version optimiste, puis masque la section publique si une fiche
+cesse d'être publiée. Flyway V16 stocke les identifiants et l'ordre dans le
+module `content`, sans copier prix, photos ni entités du catalogue.
+
+L'exploitant a autorisé trois produits choisis au hasard pour commencer. Dans
+la seule base locale `bricocomptoir_prodlocal`, trois produits publiés et
+non démo avec photos ont été enregistrés : « Bouton Encastré Rond de Meuble
+21388 – 30 mm – SN », « Baguette Profilé Aluminium Marbre Marron 2,5 m FBS
+GROUP » et « Moustiquaire Métallique Plastifiée 1,2 m – Vendue au Mètre ».
+Ce choix local n'est pas une migration ni une donnée Git ; les autres bases
+gardent la section masquée jusqu'à la sélection d'un gestionnaire. Le libellé
+ne repose pas sur des statistiques de ventes, indisponibles dans l'API.
+
+Vérifications : `npm.cmd run test:ci` (78 tests réussis), `npm.cmd run build`
+(réussi), Maven ciblé `ManagedContentRulesTest,ArchitectureTest,AdministrationIT`
+(13 tests réussis avec PostgreSQL Testcontainers), `node scripts/check-repository.mjs`
+(16 migrations), `node scripts/check-release.mjs` (réussi), `git diff --check`
+(aucune erreur). L'API locale renvoie les trois identifiants ; vérification
+visuelle dans le navigateur local à 375 et 1280 px, sans débordement horizontal.
+Les avertissements de budget CSS existants sur l'administration et le hero
+restent non bloquants. Aucun déploiement ou test en production n'a été fait.
+
+## 14 octobre 2026 — Liens sociaux du bandeau
+
+Le bandeau supérieur charge désormais ses liens Facebook et Instagram depuis
+le module `content`. Une tâche « Réseaux sociaux » permet aux rôles
+CATALOG_MANAGER et ADMIN de modifier les deux URL ; l'API exige une session,
+un jeton CSRF et une version à jour. Le domaine Java limite les adresses à
+HTTPS sur les domaines Facebook et Instagram attendus. Flyway V17 initialise
+Facebook à l'adresse communiquée par l'exploitant
+(`https://www.facebook.com/brico.comptoir.tunisie`) et laisse Instagram vide.
+Une icône sans URL n'apparaît pas. Le bandeau mobile conserve les icônes.
+
+Vérifications exécutées : build Angular réussi (avec les avertissements CSS
+préexistants), 80 tests frontend réussis, compilation Java et 8 tests de règles
+métier/architecture réussis, contrôle dépôt réussi avec 17 migrations, contrôle
+release réussi, `git diff --check` sans erreur. Le test d'intégration
+`AdministrationIT` a été lancé mais ne peut pas démarrer PostgreSQL Testcontainers :
+Docker Desktop répond HTTP 500 et son service Windows est arrêté ; la tentative
+de démarrage du service a été refusée par le système. Le serveur local 8080
+tourne encore avec l'ancien code et renvoie 401 sur le nouvel endpoint. Il faut
+restaurer Docker puis relancer le backend pour appliquer V17 et vérifier le
+parcours complet sur 4200. Aucun déploiement ni changement en production.
+Un contrôle navigateur local avec réponse sociale simulée a confirmé les deux
+icônes accessibles et aucun débordement horizontal à 320, 375, 768 et 1280 px ;
+il ne remplace pas le test du backend réel, toujours bloqué par Docker.
+
+## 14 octobre 2026 — Reprise de Docker Desktop local
+
+Docker Desktop restait sur « starting » après un disque C: presque plein
+(environ 0,2 Go libres). Les journaux montraient un VHD WSL déjà attaché et
+un échec de bootstrap sur `/dev/sdd`. Des traces temporaires Windows anciennes
+(environ 1,7 Go) ont été déplacées, sans suppression, vers
+`D:\BricoComptoirTools\docker-recovery-20261014\rd-client-traces`. Après arrêt
+des seuls processus Docker bloqués et `wsl --shutdown`, un socket du composant
+optionnel Model Runner empêchait encore le démarrage ; `docker desktop disable
+model-runner` l'a désactivé. Le VHD Docker original n'a pas été déplacé ou
+supprimé.
+
+Vérification : Docker Desktop indique `running`, le moteur répond (`29.6.1`),
+les conteneurs locaux PostgreSQL, MinIO et Mailpit sont sains et leurs volumes
+existent toujours. Le test PostgreSQL/Spring Security `AdministrationIT`, bloqué
+plus haut, a ensuite réussi (7 tests). Le backend local répond sur 8080. Il
+reste environ 1,7 Go libres sur C: ; prévoir davantage d'espace ou déplacer
+l'image disque Docker vers D: par le réglage officiel avant une nouvelle
+croissance du VHD. Un redémarrage contrôlé de Docker Desktop a ensuite réussi ;
+les conteneurs, arrêtés par ce redémarrage, ont été remis en route avec
+`docker compose up --detach --wait postgres minio mailpit`. Les trois sont de
+nouveau sains et l'API locale répond 200. Le catalogue local répond avec 6 620
+produits et 323 marques, confirmant l'accès aux données conservées. Aucun
+changement en production.
+
+## 14 octobre 2026 — Vérification locale du bandeau social
+
+Le backend Spring local a été relancé avec le code courant ; Flyway V17 a été
+appliqué. L'API publique répond maintenant sur 8080 et via le proxy Angular
+sur 4200 avec l'URL Facebook officielle et une URL Instagram vide. Les deux
+anciens serveurs Angular en mode surveillance servaient encore une feuille de
+style périmée ; ils ont été remplacés par un seul serveur local à jour.
+
+Le bandeau noir utilise désormais une cible circulaire de 40 px par icône,
+avec état de survol et focus clavier visibles. L'éditeur « Réseaux sociaux »
+dans l'administration présente des cartes distinctes pour Facebook et
+Instagram, leur état configuré/masqué et une validation des URL. Le profil
+Instagram n'ayant pas encore d'adresse officielle, son champ reste vide et
+son icône publique reste masquée jusqu'à sa configuration.
+
+Vérifications exécutées : build Angular réussi, 80 tests frontend réussis,
+`AdministrationIT` PostgreSQL/Spring Security réussi (7 tests, après la
+reprise de Docker), API publique réelle vérifiée sur 8080 et 4200, contrôle
+navigateur à 320, 375, 768 et 1280 px sans débordement, inspection visuelle
+à 375 et 1280 px, `git diff --check` sans erreur. Les avertissements de
+budget CSS existants restent non bloquants. Aucun commit, push ou changement
+en production.
+
+## 14 octobre 2026 — Console moderne et commande sans compte
+
+L'administration `/gestion` dispose d'une console visuellement distincte de la
+boutique, avec navigation latérale sur ordinateur, menu refermable sur mobile,
+raccourcis selon le rôle, déconnexion et liste des commandes confirmées issues
+de l'API existante. Aucun chiffre de vente fictif n'est affiché. La liste des
+commandes devient une série de cartes sur petit écran ; le détail présente
+nom, téléphone, adresse et e-mail éventuel, avec liens d'appel et de courrier.
+La table `sales_order_contact` conserve déjà ces coordonnées par commande ;
+aucune fiche client distincte ni copie de données n'a été ajoutée.
+
+La navigation publique ne présente plus « Mon compte » ni création de compte.
+Le checkout invité existant conserve nom, téléphone et adresse obligatoires,
+avec e-mail facultatif selon le choix de l'exploitant. `POST /auth/register`
+répond maintenant `410 Gone` après CSRF ; la création de comptes internes par
+ADMIN reste possible. La connexion des comptes clients préexistants et leurs
+commandes historiques restent accessibles par l'ancienne route `/compte`, sans
+lien dans la navigation publique. L'accès équipe est sur `/acces-equipe`,
+également utilisé par les nouveaux liens de récupération.
+
+Vérifications finales : build Angular réussi, 81 tests frontend réussis,
+`IdentityIT` (3 tests) et `OrderIT` (6 tests) réussis avec PostgreSQL
+Testcontainers. Le premier essai d'`OrderIT` a échoué uniquement sur une
+assertion ajoutée qui attendait `+21620123456` ; le serveur normalise
+correctement ce téléphone en `20123456`, et la suite a réussi après correction
+de l'assertion. Le backend local relancé répond 200 en santé et 410 sur
+l'inscription avec CSRF. Contrôle navigateur de la console à 375, 768 et
+1280 px sans débordement, menu mobile et détail des coordonnées vérifiés avec
+des données de test simulées dans le navigateur. `check-repository` et
+`git diff --check` réussis. Les avertissements CSS préexistants du build restent
+non bloquants. Aucun commit, push, déploiement ou commande de démonstration
+dans la base locale.
+
+## 14 octobre 2026 — Favoris des professionnels sur la fiche produit
+
+La fiche produit affiche « Autres produits favoris des professionnels » sous les
+caractéristiques, avec trois cartes de vrais produits, prix et photos du
+catalogue, lien vers chaque fiche et défilement horizontal tactile sur mobile.
+La fiche consultée est exclue. La disponibilité des variantes est relue avant
+affichage ; le quatrième produit sélectionné sert de repli si l'un des trois
+premiers est épuisé. Sans trois produits disponibles, la section reste masquée.
+
+La rubrique Boutique → Favoris des professionnels permet à CATALOG_MANAGER et
+ADMIN de rechercher, choisir, ordonner ou masquer quatre produits publiés.
+L'API publique renvoie une liste vide si l'un des quatre cesse d'être publié ;
+l'écriture admin exige session, rôle, CSRF et version courante. Flyway V18
+conserve seulement les identifiants et leur ordre dans `content`, sans copie du
+catalogue. `architecture.md`, `administration.md` et `storefront.md` décrivent
+le nouveau contrat.
+
+La base **locale** `bricocomptoir_prodlocal` a été initialisée avec quatre
+articles réels publiés, avec photo et 25 pièces disponibles au moment du choix :
+« Mètre Ruban KAPRO 5 m – LD-577E », « Serre-joint Réversible à Serrage Rapide
+100 mm VALEX 1454625 », « Scie Sauteuse Pendulaire VALEX S665EPQ 500W –
+1411134 » et « Détecteur de tension sans contact ACEM DT10 12–1000 V ». Cette
+sélection locale est dans le volume PostgreSQL, pas dans Git ; une nouvelle
+base reste sans sélection jusqu'à un choix dans l'administration. La base de
+production n'a pas été modifiée.
+
+Vérifications : 84 tests Angular réussis et build réussi (avertissements CSS
+préexistants sur le hero et l'administration), 17 tests Java réussis dont
+`ManagedContentRulesTest`, `ArchitectureTest` et `AdministrationIT` avec
+PostgreSQL Testcontainers/Spring Security. `check-repository` réussi avec 18
+migrations ; `check-release` réussi, sans vérification réseau des 39 liens
+externes. API locale sur 8080 et via le proxy 4200 vérifiée ; Chromium à 375
+et 1280 px confirme trois cartes avec photos réelles et aucun débordement de
+page. `git diff --check` réussi. Aucun commit, push ni déploiement.
+
+## 14 octobre 2026 — Statistiques de consultation des produits
+
+La console d'administration propose `Ventes → Statistiques produits` aux rôles
+CATALOG_MANAGER et ADMIN. Elle affiche le classement des produits publiés,
+leurs vues sur 7 ou 30 jours, une recherche nom/SKU, des pages de 20 et les
+photos réelles si disponibles. Les totaux correspondent au filtre choisi.
+Ce sont des **ouvertures de fiches**, ni des visiteurs uniques, ni des ventes.
+Les anciennes visites ne sont pas reconstituées.
+
+La fiche Angular enregistre une ouverture après le chargement réussi de la
+fiche, sans compter les cartes ni les recommandations. Le serveur valide la
+visibilité du produit et exclut les comptes équipe. Les agrégats PostgreSQL
+par produit et jour UTC sont ajoutés par Flyway V19 ; aucune adresse IP,
+session, identité ou ligne d'événement n'est conservée pour cette mesure.
+La purge quotidienne retire les jours dépassant la fenêtre de 30 jours.
+Le contrat et la collecte sont décrits dans `administration.md`,
+`architecture.md`, `storefront.md` et `privacy-decisions.md`.
+
+Vérifications exécutées : build Angular réussi et 85 tests frontend passés ;
+`ProductViewServiceTest` (2 tests) et `CatalogIT` (1 scénario PostgreSQL/
+Spring Security incluant rôles, CSRF et périodes) réussis. Le backend local a
+redémarré et appliqué Flyway V19 ; une vraie fiche du catalogue local, ouverte
+dans Chromium sur `4200`, a reçu `204` pour l'enregistrement de sa vue.
+Contrôle visuel de la page admin à 375 et 1280 px sans débordement, avec des
+réponses API simulées uniquement dans le navigateur pour vérifier le style.
+`check-repository` (19 migrations) et `check-release` réussis ; ce dernier ne
+vérifie pas les 39 liens externes. Les avertissements CSS du hero et de
+l'administration restent non bloquants. Aucun commit, push ou déploiement.
+
+## 14 octobre 2026 — Nouvelle bannière principale « Commande en ligne »
+
+La photo fournie par l'exploitant est intégrée comme première bannière de la
+sélection d'accueil initiale. Une retouche a retiré les encarts « Paiement
+Sécurisé », « Livraison Rapide » et « Retrait en Agence », ainsi que les prix et
+produits de démonstration visibles dans le téléphone : ces mentions ne sont
+pas confirmées par le parcours actuel. Le logo, le titre « Commande en ligne »
+et l'univers outillage sont conservés. Trois JPEG optimisés sont livrés :
+720/1440 px pour le bureau et une composition verticale 720×900 px pour le
+mobile. Les images sont illustratives ; la disponibilité réelle reste dans les
+fiches produit.
+
+Flyway V20 autorise l'image et ajoute la bannière en premier uniquement si les
+trois diapositives initiales n'avaient pas été personnalisées. Les sélections
+modifiées restent intactes et l'image peut être choisie dans l'éditeur admin.
+Le backend local a appliqué V20 ; `GET /api/v1/content/hero` confirme la
+nouvelle première diapositive. Aucun changement en production.
+
+Vérifications exécutées : build Angular réussi et 85 tests frontend passés ;
+17 tests Java réussis (`ManagedContentRulesTest`, `AdministrationIT` avec
+PostgreSQL/Spring Security, `ArchitectureTest`). Chromium a chargé la bannière
+réelle sur l'accueil local à 375, 768 et 1280 px, la version mobile dédiée à
+375 px, sans débordement horizontal ; les captures ont été examinées et les
+flèches mobiles déplacées sous le titre. `check-repository` valide 20 migrations
+et `check-release` réussit sans vérification réseau des 39 liens externes.
+Les avertissements de budget CSS préexistants restent non bloquants. Aucun
+commit, push ni déploiement.
+
+## 14 octobre 2026 — Préparation de la branche boutique et administration
+
+Les changements locaux de la boutique et de l'administration ont été regroupés
+sur `codex/storefront-admin-updates-20261014`, créée depuis la branche locale
+`codex/storefront-ux-redesign`. Le commit inclut les fonctionnalités, les
+migrations Flyway V16 à V20, leurs tests, la documentation et les trois rendus
+de la nouvelle bannière. Les brouillons Shopify et les documents de migration
+non suivis, qui concernent un chantier distinct, restent hors de ce commit.
+
+Vérifications avant commit : `npm.cmd run test:ci` (85 tests réussis),
+`npm.cmd run build` (réussi avec les deux avertissements de budget CSS déjà
+signalés), `node scripts/check-repository.mjs` (20 migrations),
+`node scripts/check-release.mjs` (réussi ; 39 liens externes non vérifiés par
+ce script), et `git diff --check` (aucune erreur). `mvnw.cmd -B verify` sous
+Java 21 et PostgreSQL Testcontainers a d'abord trouvé une assertion du test
+`FoundationIT` restée à 15 migrations ; elle a été corrigée pour 20. La suite
+complète a ensuite réussi : 60 tests unitaires et 65 tests d'intégration,
+dont 4 ignorés par leur configuration. Aucun déploiement de production n'a
+été effectué.
+
+## 14 octobre 2026 — Correction du job navigateur de la PR #8
+
+La PR #8 a réussi les jobs frontend et backend, mais son job navigateur a
+échoué sur des sélecteurs Playwright devenus ambigus ou périmés après les
+changements d'interface. Le helper choisit maintenant le bouton du formulaire
+d'achat plutôt que les deux boutons homonymes présents sur mobile, et attend
+le titre réel de la page de confirmation. Les scénarios de commande utilisent
+les libellés actuels de la liste des commandes dans l'administration.
+
+Le scénario « nouveau client connecté » créait un compte via
+`POST /auth/register`, route désormais fermée avec `410`. Il est remplacé par
+une commande invitée comprenant pack et produit commun ; les vérifications de
+réservation cumulée, expédition, email et stock sont conservées. Le scénario
+invité simple et le test de panne SMTP restent présents.
+
+Vérifications locales avant commit : `node --check` sur les deux fichiers E2E
+modifiés, découverte Playwright des quatre scénarios, contrôle dépôt de 20
+migrations et `git diff --check` réussis. La pile Docker E2E locale n'a pas été
+reconstruite : les images présentes datent de septembre et le disque C: ne
+dispose que d'environ 0,4 Go libre. Le job navigateur de GitHub Actions doit
+confirmer le parcours complet sur les images construites depuis la PR.
+
+La première relance du job navigateur a confirmé que les parcours desktop
+passent. Les deux parcours mobiles restaient bloqués sur l'ancien libellé
+« Rechercher » du formulaire du catalogue, désormais « Afficher les résultats ».
+Le sélecteur Playwright suit ce libellé actuel. `node --check` et la découverte
+des quatre scénarios Playwright réussissent localement ; `git diff --check` ne
+signale aucune erreur. Une nouvelle relance CI doit vérifier le parcours complet.

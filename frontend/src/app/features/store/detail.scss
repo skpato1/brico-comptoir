@@ -2,6 +2,10 @@
   display: grid;
   gap: 32px;
 }
+.visual { min-width: 0; }
+.offer-info { min-width: 0; }
+.brand-link { display: inline-block; color: var(--red); font-size: .78rem; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; text-underline-offset: 4px; margin-bottom: 8px; }
+.reference { margin: 0 0 16px; color: var(--muted); font-size: .79rem; overflow-wrap: anywhere; }
 .offer-info h1 {
   font-size: clamp(1.8rem, 3vw, 2.6rem);
 }
@@ -76,6 +80,7 @@
   padding-top: 18px;
   color: #666;
 }
+.mobile-buy-bar { display: none; }
 .thumbnails {
   display: flex;
   gap: 10px;
@@ -176,4 +181,26 @@ dd {
   .composition {
     grid-template-columns: 1.3fr 1fr;
   }
+}
+@media (max-width: 799px) {
+  .detail-layout { gap: 20px; }
+  .offer-info h1 { font-size: 1.65rem; }
+  .variants { margin-top: 22px; }
+  .mobile-buy-bar {
+    position: fixed;
+    z-index: 11;
+    inset: auto 0 calc(58px + env(safe-area-inset-bottom));
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 16px;
+    background: #fff;
+    border-top: 1px solid var(--line);
+    box-shadow: 0 -6px 20px rgb(35 30 24 / 8%);
+  }
+  .mobile-buy-bar span { display: grid; gap: 2px; min-width: 0; }
+  .mobile-buy-bar small { color: var(--muted); font-size: .68rem; }
+  .mobile-buy-bar strong { white-space: nowrap; font-size: .9rem; }
+  .mobile-buy-bar button { min-width: 0; padding: 10px 12px; font-size: .78rem; }
 }

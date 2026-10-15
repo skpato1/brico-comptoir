@@ -13,6 +13,7 @@ import { Address, OrderApi } from '../../core/order-api';
       <p class="eyebrow">VOS DONNÉES</p><h1>Mes données personnelles</h1>
       <p>Le compte utilise votre e-mail. Une commande demande le nom du destinataire, un téléphone et une adresse en Tunisie pour la livraison. L’e-mail invité reste facultatif. Aucun numéro d’identité ni donnée bancaire n’est demandé.</p>
       <p>Commander ou recevoir un message de suivi ne vous inscrit pas au marketing. Le panier visiteur garde uniquement les références et les quantités dans ce navigateur. Les cookies de session et de sécurité permettent le compte et les commandes.</p>
+      <p>Les ouvertures des fiches produit sont comptées par produit et par jour pour aider à choisir les références à promouvoir. Cette mesure ne conserve pas d’identifiant de visiteur ; ses totaux sont effacés après 30 jours.</p>
       @if (session.account()) {
         @if (view(); as data) {
           <p>Compte : {{ data.account.email }}</p>
@@ -30,7 +31,7 @@ import { Address, OrderApi } from '../../core/order-api';
         </form>
         @if (token) { <button (click)="confirmEmail()" [disabled]="busy()">Confirmer ma nouvelle adresse e-mail</button> }
       } @else {
-        <p><a routerLink="/compte">Connectez-vous</a> pour accéder aux données de votre compte. Les opérations invitées ci-dessous concernent uniquement les commandes de votre session courante.</p>
+        <p>Les opérations invitées ci-dessous concernent uniquement les commandes de votre session courante. Pour une demande hors de cette session, <a routerLink="/contact">contactez-nous</a> avec votre référence de commande.</p>
       }
       <section><h2>Consulter et exporter</h2>
         <p>L’export JSON comprend les coordonnées encore nécessaires, les commandes, et le panier du compte. Les archives de conservation légale restent réservées à une procédure auprès de l’exploitant.</p>

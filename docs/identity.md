@@ -35,8 +35,10 @@ ports Java internes ; le panier suit [cart.md](cart.md) et le checkout invité/c
 la propriété des commandes et leurs transitions suivent [checkout.md](checkout.md).
 La matrice complète, incluant contenu, notifications et confidentialité, est
 dans [security.md](security.md).
-Les routes inconnues restent fermées. Un client ne peut
-pas fournir de rôle à l'inscription : le serveur crée toujours `CUSTOMER`. Seul
+Les routes inconnues restent fermées. L'inscription publique est fermée :
+`POST /auth/register` répond 410 après le contrôle CSRF et ne crée aucun compte.
+Les clients commandent en invité ; les comptes clients existants conservent la
+connexion et leur historique. Seul
 `ADMIN` peut créer un compte interne, avec au moins un rôle interne. Pour lire
 `GET /accounts/{id}`, le serveur vérifie que l'identifiant est celui de la
 session ou que le rôle `ADMIN` est présent. Un refus de rôle vaut 403 ; une
@@ -54,7 +56,7 @@ session absente vaut 401 ; un compte introuvable après autorisation vaut 404.
   publie `XSRF-TOKEN`, lisible par Angular, qui renvoie `X-XSRF-TOKEN`. Les jetons
   différés et la protection BREACH utilisent la configuration SPA Spring Security
   7. Après connexion/déconnexion, Angular demande un nouveau jeton. Toutes les
-  mutations, y compris inscription et récupération, exigent le CSRF.
+  mutations, y compris la route d'inscription fermée et la récupération, exigent le CSRF.
   La configuration applique `spa()` avant le dépôt personnalisé : le cookie
   CSRF conserve ainsi `SameSite=Lax` et `Secure` hors local/test, même si le
   proxy termine TLS et contacte le backend en HTTP.
@@ -75,8 +77,8 @@ session absente vaut 401 ; un compte introuvable après autorisation vaut 404.
   panne SMTP déclenche des reprises bornées sans supprimer la demande validée.
   Voir [notifications.md](notifications.md). La production exige une configuration
   SMTP et une URL publique injectées au déploiement.
-- Limite en mémoire par adresse réseau : 10 tentatives de connexion/15 minutes,
-  5 inscriptions/heure et 5 demandes de récupération/heure. Nginx écrase les
+- Limite en mémoire par adresse réseau : 10 tentatives de connexion/15 minutes
+  et 5 demandes de récupération/heure. Nginx écrase les
   en-têtes de transfert fournis par le client ; Spring les interprète uniquement
   depuis les pairs de confiance. `TRUSTED_PROXY_PATTERN` doit identifier la
   passerelle de production et le backend doit rester privé. En multi-instance,
@@ -97,7 +99,7 @@ Préfixe `/api/v1`. Toutes les mutations JSON utilisent `X-XSRF-TOKEN` obtenu pa
 | Méthode et route | Corps | Succès | Accès |
 | --- | --- | --- | --- |
 | `GET /auth/csrf` | — | 204 + cookie | Public |
-| `POST /auth/register` | `{email,password}` | 201 + compte CUSTOMER | Public, CSRF |
+| `POST /auth/register` | — | 410, inscription fermée | Public, CSRF |
 | `POST /auth/login` | `{email,password}` | 200 + compte, session | Public, CSRF |
 | `POST /auth/logout` | — | 204 | Authentifié, CSRF |
 | `GET /auth/me` | — | 200 + compte | Authentifié |
@@ -108,7 +110,7 @@ Préfixe `/api/v1`. Toutes les mutations JSON utilisent `X-XSRF-TOKEN` obtenu pa
 | `PUT /admin/accounts/{id}/roles` | `{roles}` | 200 + compte | ADMIN, CSRF |
 | `PATCH /admin/accounts/{id}/active` | `{active}` | 200 + compte | ADMIN, CSRF |
 
-Inscription et création interne rejettent un email déjà présent (409). Les
+La création interne rejette un email déjà présent (409). Les
 identifiants de connexion invalides donnent le même 401. Les jetons expirés ou
 réutilisés donnent 400. Les limitations donnent 429. Le refus de supprimer le
 dernier administrateur donne 409.

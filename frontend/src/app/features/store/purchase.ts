@@ -14,15 +14,16 @@ import { CartState } from '../../core/cart-state';
 import { OrderApi, OrderView } from '../../core/order-api';
 import { CartComponent } from '../cart/cart';
 import { CheckoutComponent } from '../checkout/checkout';
+import { offerLabel } from '../../shared/offer-label';
 @Component({
   selector: 'app-cart-page',
   imports: [CartComponent, RouterLink],
-  template: ` <div class="content-narrow">
+  template: ` <div class="purchase-content">
     <nav class="breadcrumb" aria-label="Étapes d’achat">
       <strong aria-current="step">1. Panier</strong><span>→</span><span>2. Livraison</span
       ><span>→</span><span>3. Confirmation</span>
     </nav>
-    <h1>Votre panier.</h1>
+    <h1>Votre panier</h1>
     <app-cart [account]="session.account()" [manageSession]="false" />
     <div class="actions purchase-actions">
       <a class="button secondary" routerLink="/catalogue">Continuer mes achats</a>
@@ -43,6 +44,11 @@ import { CheckoutComponent } from '../checkout/checkout';
         margin-top: 25px;
         justify-content: space-between;
       }
+      .purchase-content { max-width: 1120px; margin-inline: auto; }
+      @media (max-width: 600px) {
+        .purchase-actions { display: grid; }
+        .purchase-actions .button:not(.secondary) { order: -1; }
+      }
     `,
   ],
 })
@@ -53,17 +59,14 @@ export class CartPage {
 @Component({
   selector: 'app-checkout-page',
   imports: [CheckoutComponent, RouterLink],
-  template: ` <div class="content-narrow">
+  template: ` <div class="checkout-content">
     <nav class="breadcrumb" aria-label="Étapes d’achat">
       <a routerLink="/panier">1. Panier</a><span>→</span
       ><strong aria-current="step">2. Livraison</strong><span>→</span><span>3. Confirmation</span>
     </nav>
     <h1>On vous livre où ?</h1>
     @if (!session.account()) {
-      <p>
-        Commandez en invité, ou <a routerLink="/compte">connectez-vous</a> pour retrouver vos
-        commandes.
-      </p>
+      <p>Pas de compte à créer : indiquez vos coordonnées, vérifiez le total puis confirmez votre commande.</p>
     }
     @if (!cart.view().items.length && !cart.busy()) {
       <div class="state-box">
@@ -73,6 +76,7 @@ export class CartPage {
     }
     <app-checkout [account]="session.account()" (placed)="confirmed($event)" />
   </div>`,
+  styles: [`.checkout-content { max-width: 1080px; margin-inline: auto; }`],
 })
 export class CheckoutPage {
   readonly session = inject(SessionState);
@@ -108,7 +112,7 @@ export class CheckoutPage {
         <h1>Commande inaccessible</h1>
         <p>{{ error() }}</p>
         <button (click)="load()">Réessayer</button>
-        <p><a routerLink="/compte">Se connecter à mon compte</a></p>
+        <p>Pour toute question concernant une commande invitée, <a routerLink="/contact">contactez-nous</a> avec sa référence.</p>
       </div>
     } @else if (order(); as order) {
       <div class="confirmation-heading">
@@ -120,7 +124,9 @@ export class CheckoutPage {
           {{
             order.status === 'CANCELLED'
               ? 'Votre commande est annulée.'
-              : 'Merci pour votre commande.'
+              : order.status === 'CONFIRMED'
+                ? 'Votre commande est confirmée.'
+                : 'Votre commande est en cours.'
           }}
         </h1>
         <p>
@@ -140,11 +146,11 @@ export class CheckoutPage {
         <ul>
           @for (line of order.summary.items; track line.kind + line.offerId) {
             <li>
-              <strong>{{ line.quantity }} × {{ line.label }}</strong
+              <strong>{{ line.quantity }} × {{ offerLabel(line.label) }}</strong
               ><span>{{ line.lineTotal.amount }} TND</span>
               <ul>
                 @for (c of line.components; track c.skuId) {
-                  <li>{{ c.quantity }} × {{ c.label }} par unité achetée</li>
+                  <li>{{ c.quantity }} × {{ offerLabel(c.label) }} par unité achetée</li>
                 }
               </ul>
             </li>
@@ -179,6 +185,7 @@ export class CheckoutPage {
           </button>
         }
         <a class="button" routerLink="/">Retour à l’accueil</a>
+        <a class="button secondary" routerLink="/contact">Une question ? Nous contacter</a>
       </div>
     }
   </div>`,
@@ -237,6 +244,7 @@ export class CheckoutPage {
   ],
 })
 export class ConfirmationPage implements OnInit {
+  readonly offerLabel = offerLabel;
   readonly session = inject(SessionState);
   private readonly api = inject(OrderApi);
   private readonly route = inject(ActivatedRoute);

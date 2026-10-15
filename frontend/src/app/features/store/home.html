@@ -12,7 +12,52 @@
     <div class="loading-lines" aria-hidden="true"><span></span><span></span><span></span></div>
   </div>
 }
-<app-brand-showcase />
+<section class="project-entry" aria-labelledby="project-entry-title">
+  <div>
+    <p class="eyebrow">TROUVEZ LA BONNE PIÈCE</p>
+    <h2 id="project-entry-title">De quoi avez-vous besoin ?</h2>
+    <p>Commencez par un nom de produit, puis affinez votre recherche dans le catalogue.</p>
+  </div>
+  <div class="project-links">
+    <a routerLink="/catalogue" [queryParams]="{ q: 'peinture' }">Peinture <span aria-hidden="true">↗</span></a>
+    <a routerLink="/catalogue" [queryParams]="{ q: 'perceuse' }">Perceuses <span aria-hidden="true">↗</span></a>
+    <a routerLink="/catalogue" [queryParams]="{ q: 'robinet' }">Robinetterie <span aria-hidden="true">↗</span></a>
+    <a routerLink="/catalogue" [queryParams]="{ q: 'serrure' }">Serrures <span aria-hidden="true">↗</span></a>
+  </div>
+</section>
+<app-brand-showcase (brandsLoaded)="brands.set($event)" />
+@if (bestSellers().length === 3) {
+  <section class="best-sellers" aria-labelledby="best-sellers-title">
+    <div class="section-heading best-sellers-heading">
+      <div>
+        <p class="eyebrow">LA SÉLECTION DU COMPTOIR</p>
+        <h2 id="best-sellers-title">Meilleures ventes</h2>
+        <p>Trois références à retrouver dans notre catalogue.</p>
+      </div>
+      <a class="text-link" routerLink="/catalogue">Explorer le catalogue <span aria-hidden="true">→</span></a>
+    </div>
+    <div class="best-sellers-grid">
+      @for (product of bestSellers(); track product.id) {
+        <app-offer-card [offer]="product" [description]="product.description"
+          [image]="bestSellerImage(product.id)" [brandName]="brandName(product.brandId)" />
+      }
+    </div>
+    <p class="best-sellers-swipe">Faites glisser pour découvrir les trois produits <span aria-hidden="true">→</span></p>
+  </section>
+}
+@if (products()[0]; as featured) {
+  <section class="featured-product" aria-labelledby="featured-title">
+    <div class="featured-image"><app-product-photo [image]="primaryImage(featured.id)" [detail]="true" [alt]="featured.name" /></div>
+    <div class="featured-content">
+      <p class="eyebrow">UN ARTICLE À DÉCOUVRIR</p>
+      @if (brandName(featured.brandId)) { <p class="featured-brand">{{ brandName(featured.brandId) }}</p> }
+      <h2 id="featured-title">{{ featured.name }}</h2>
+      @if (featured.description) { <p>{{ featured.description }}</p> }
+      @if (featured.variants.length) { <p class="featured-price"><small>À partir de</small><strong>{{ minimumPrice(featured) }} TND</strong></p> }
+      <a class="button" [routerLink]="['/produits', featured.id]">Voir le produit <span aria-hidden="true">→</span></a>
+    </div>
+  </section>
+}
 <section aria-labelledby="discover-title">
   <div class="section-heading">
     <div>
@@ -37,11 +82,12 @@
     </div>
   } @else {
     <div class="offer-grid">
-      @for (product of products(); track product.id) {
+      @for (product of products().slice(1); track product.id) {
         <app-offer-card
           [offer]="product"
           [description]="product.description"
           [image]="primaryImage(product.id)"
+          [brandName]="brandName(product.brandId)"
         />
       }
     </div>

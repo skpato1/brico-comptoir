@@ -3,8 +3,10 @@ import {
   computed,
   DestroyRef,
   ElementRef,
+  EventEmitter,
   inject,
   OnInit,
+  Output,
   signal,
   ViewChild,
 } from '@angular/core';
@@ -77,6 +79,7 @@ const logoGroups: { title: string; logos: Logo[] }[] = [
 })
 export class BrandShowcase implements OnInit {
   @ViewChild('logoRail') private logoRail?: ElementRef<HTMLElement>;
+  @Output() brandsLoaded = new EventEmitter<Brand[]>();
 
   private readonly api = inject(CatalogApi);
   private readonly destroy = inject(DestroyRef);
@@ -135,6 +138,9 @@ export class BrandShowcase implements OnInit {
     this.api
       .brands()
       .pipe(takeUntilDestroyed(this.destroy))
-      .subscribe({ next: (brands) => this.availableBrands.set(brands), error: () => {} });
+      .subscribe({ next: (brands) => {
+        this.availableBrands.set(brands);
+        this.brandsLoaded.emit(brands);
+      }, error: () => {} });
   }
 }

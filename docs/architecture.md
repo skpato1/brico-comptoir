@@ -22,14 +22,23 @@ notamment dans [inventory.md](inventory.md), [packs.md](packs.md),
 BricoComptoir vend des articles de quincaillerie aux particuliers en Tunisie,
 à l'unité ou sous forme de packs composés de produits individuels.
 
+Le module `catalog` possède également les statistiques de consultation des
+fiches produit : son cas d'usage Java orchestre le contrôle de visibilité et un
+port de stockage ; l'adaptateur JDBC agrège les ouvertures par produit et jour
+UTC dans PostgreSQL (Flyway V19). L'API REST compte uniquement les ouvertures
+explicites d'une fiche publique et réserve le rapport aux rôles de gestion du
+catalogue. Aucun événement individuel ni identifiant de visiteur n'est stocké.
+
 Décisions pour le premier périmètre :
 
 - Une boutique, un dépôt de stock, une devise TND, interface française initiale.
 - Quantités entières dans l'unité de vente du produit : une boîte de vis peut
   être un produit. Vente au poids ou à la découpe hors premier périmètre.
 - Packs virtuels, sans stock propre, sans packs imbriqués ni substitutions.
-- Consultation publique ; commande invitée ou via compte client. La propriété
-  invitée repose sur la session serveur, détaillée dans [checkout.md](checkout.md).
+- Consultation publique ; les nouveaux clients commandent sans créer de compte.
+  La propriété invitée repose sur la session serveur, détaillée dans
+  [checkout.md](checkout.md). Les comptes clients existants conservent leur
+  accès historique et le checkout connecté pour compatibilité.
 - Panier visiteur conservé dans le navigateur avec uniquement références,
   quantités et identifiant de fusion ; panier client persisté par compte dans
   PostgreSQL. Reprise après connexion idempotente, décrite dans
@@ -197,7 +206,7 @@ panier. La navigation desktop reste séparée.
 | `media` | Métadonnées des photos de produit et de pack, ordre et image principale ; aucun binaire en base | Téléverser, ordonner, servir les rendus des offres visibles | `MediaStore`, `PackImageStore`, `ObjectStorage`, `ImageProcessor`, `CatalogProductLookup`, `PackPhotoLookup` |
 | `inventory` | Quantités physiques et réservées par variante, réservations, mouvements | `InventoryOperations`, `InventoryAvailabilityQueries`, `InventoryOrderOperations` | `InventoryStore`, `VariantReferencePort` |
 | `sales` | Panier client, commandes figées, coordonnées, livraison et idempotence | Estimer/fusionner/modifier le panier, prévisualiser, placer et traiter une commande ; `PersonalSales` | `CartStore`, `OrderStore`, `OfferLookup`, `CheckoutOffers`, `OrderStock`, `StockLookup`, `DeliveryFees`, `DeliverySettingsStore`, `OrderNotifications`, `CustomerContact`, `OrderEventFeed` |
-| `content` | Textes structurés de l'accueil, sans HTML ni URL libre | Lire et modifier la fiche d'accueil versionnée | `HomeContentStore` |
+| `content` | Textes structurés de l'accueil, bannières, contact et sélection de trois produits | Lire et modifier les contenus versionnés | `HomeContentStore`, `ManagedContentStore`, `BestSellerProductLookup` |
 | `notifications` | Outbox chiffrée, reprises email, journal durable des nouvelles commandes | `NotificationOperations`, `OrderEventQueries` | `EmailProvider`, `OutboxStore` |
 | `privacy` | Préférence marketing, historique des choix, vérification de rectification email, conservation configurable et opérations sur les données | Consultation, export, rectification et retrait du périmètre courant ; archives et gels réservés à ADMIN | `PrivacyStore`, `PersonalData` adapté vers les ports publics des modules propriétaires |
 
@@ -219,7 +228,7 @@ Adaptateurs livrés :
 
 Graphe intermodules autorisé : `sales -> inventory -> catalog`,
 `sales -> catalog`, `sales -> packs`, `packs -> catalog`, `packs -> inventory`
-et `media -> catalog`, `media -> packs`, toujours via les ports entrants publics des modules
+et `media -> catalog`, `media -> packs`, `content -> catalog`, toujours via les ports entrants publics des modules
 appelés. S'ajoutent `sales -> identity`, `sales -> notifications` et
 `identity -> notifications`. `notifications` reste indépendant ; le flux SSE
 est un adaptateur entrant de `sales`, qui vérifie ses gestionnaires via un port
@@ -232,7 +241,7 @@ client. La commande mémorise son `customerId`, sans importer le domaine identit
 Le catalogue ne dépend pas du stock. Angular combine la lecture des offres et
 leur disponibilité indicative ; la commande vérifie de nouveau le stock réel.
 Les mutations de réservation ne sont pas exposées directement en HTTP.
-Le module `content` est indépendant. L'administration routée et sa matrice de
+Le module `content` lit la visibilité des produits via le port public de `catalog` pour sa sélection de vitrine. L'administration routée et sa matrice de
 permissions sont détaillées dans [administration.md](administration.md).
 `sales` possède désormais `DeliverySettingsStore` : réglages versionnés en base
 après le premier enregistrement, configuration d'environnement auparavant.
@@ -312,7 +321,8 @@ limiteur de connexion entre tous les clients ou d'accepter une adresse forgée.
 Une chaîne de plusieurs proxies exige une configuration de confiance explicite
 à chaque couche, détaillée dans le README.
 
-CSRF actif sur toutes les mutations, y compris connexion, inscription et logout.
+CSRF actif sur toutes les mutations, y compris connexion, route d'inscription
+fermée et logout.
 `GET /auth/csrf` délivre le cookie `XSRF-TOKEN`, lisible par Angular ; celui-ci
 renvoie `X-XSRF-TOKEN`. Le cookie de session reste inaccessible à JavaScript.
 Obtenir un nouveau jeton après connexion/déconnexion et utiliser l'intégration
@@ -330,7 +340,7 @@ Les mots de passe sont hachés via `DelegatingPasswordEncoder` et un encodeur
 adaptatif Argon2id ; ses paramètres devront être mesurés sur le serveur cible ; le format stocké
 permet une évolution des paramètres. Aucune cryptographie maison. Référence :
 [stockage des mots de passe Spring Security](https://docs.spring.io/spring-security/reference/features/authentication/password-storage.html).
-Limiter les essais de connexion et d'inscription, retourner une erreur de
+Limiter les essais de connexion, retourner une erreur de
 connexion générique, borner la taille des entrées et ne jamais sérialiser les
 identifiants techniques sensibles.
 
@@ -505,7 +515,8 @@ et téléphone. Sauvegardes et restauration testée sont requises avant ouvertur
 - Corps strictement validés et bornés ; maximum initial de 100 lignes par achat
   et 1 à 999 unités par ligne, contrôlés avant et après fusion des doublons.
   Rejeter les champs sensibles inconnus, notamment
-  `roles` à l'inscription, `customerId`, prix imposé ou statut dans une commande.
+  `customerId`, prix imposé ou statut dans une commande. L'inscription publique
+  est fermée et ne traite plus de corps de création de compte.
 - Prix et stock sont calculés par le serveur. Les versions/total attendus
   envoyés par le navigateur expriment un accord, jamais une valeur de confiance.
 - `201` + `Location` pour une création, `200` pour lecture ou transition retournant
@@ -525,7 +536,7 @@ contrôleurs. Les documents de module détaillent les corps, filtres et réponse
 | Méthode et chemin | Entrée / résultat principal | Accès |
 | --- | --- | --- |
 | `GET /auth/csrf` | `204`, délivre/renouvelle le cookie CSRF | Public |
-| `POST /auth/register` | `{email,password}` -> `201` compte ; aucune connexion implicite | Public + CSRF |
+| `POST /auth/register` | `410`, inscription publique fermée | Public + CSRF |
 | `POST /auth/login` | `{email,password}` -> `200` profil + session | Public + CSRF |
 | `POST /auth/logout` | Invalide la session -> `204` | Session + CSRF |
 | `GET /auth/me`, `GET /accounts/{id}` | `{id,email,roles,active}` ; accès ciblé propriétaire ou ADMIN | Connecté |
@@ -550,6 +561,8 @@ contrôleurs. Les documents de module détaillent les corps, filtres et réponse
 | `/admin/catalog/products/{id}/images`, `GET /media/{id}/card`, `/detail` | Upload/ordre réservé ; dérivés publics si produit publié | Catalogue ou ADMIN pour écriture |
 | `POST /admin/catalog/imports/preview`, `/apply` | CSV validé avant application atomique | Catalogue ou ADMIN |
 | `GET /content/home`, `GET/PUT /admin/content/home` | Contenus principaux versionnés ; voir [administration.md](administration.md) | Lecture publique ; catalogue ou ADMIN pour gestion |
+| `GET /content/best-sellers`, `GET/PUT /admin/content/best-sellers` | Trois identifiants de produits publiés, ordre et version ; voir [administration.md](administration.md) | Lecture publique ; catalogue ou ADMIN pour gestion |
+| `GET /content/professional-favorites`, `GET/PUT /admin/content/professional-favorites` | Quatre identifiants éditoriaux de produits publiés, ordre et version ; voir [administration.md](administration.md) | Lecture publique ; catalogue ou ADMIN pour gestion |
 | `GET/PUT /admin/delivery` | Forfait et zones ; voir [checkout.md](checkout.md) | `ADMIN` |
 | `GET /admin/order-events`, `/stream` | Événements durables et SSE ; voir [notifications.md](notifications.md) | Commandes ou ADMIN |
 | `/admin/mail-outbox`, `POST /admin/mail-outbox/{id}/retry` | État paginé et reprise contrôlée | `ADMIN` |
@@ -666,8 +679,8 @@ internes et les champs texte ; l'application orchestre le port de stockage ;
 l'adaptateur JDBC porte les versions optimistes, les pages SQL et les
 transactions PostgreSQL. Aucun champ de contact ou de bannière ne contient du
 HTML interprété. L'authentification, le CSRF et le RBAC restent à la frontière
-HTTP de Spring Security. Les images de bannière sont cinq ressources statiques
-intégrées : trois illustrations d'ambiance et deux visuels promotionnels fournis
+HTTP de Spring Security. Les images de bannière sont six ressources statiques
+intégrées : trois illustrations d'ambiance et trois visuels promotionnels fournis
 par l'exploitant. Le frontend sert ces derniers en JPEG responsif (720/1440 px),
 sans le bandeau inférieur de promesses commerciales non vérifiées. Un gabarit
 dédié montre l'image sans voile ni texte superposé et garde un lien de
@@ -676,9 +689,46 @@ remplace deux diapositives initiales uniquement si la vitrine n'a jamais été
 personnalisée (`content_hero.version = 0`). Les photos produit restent dans
 `media`.
 
+Flyway V20 ajoute une bannière « Commande en ligne » en première position de la
+sélection initiale non modifiée, et l'autorise toujours dans l'éditeur. Son
+visuel horizontal fourni a été retouché pour retirer les promesses de paiement
+en ligne, de retrait en agence et de délai de livraison non confirmées, ainsi
+que les prix fictifs sur la maquette de téléphone. Une composition verticale
+JPEG dédiée au mobile conserve la lecture du titre et de l'identité visuelle.
+
+Flyway V16 ajoute une sélection versionnée de trois produits pour « Meilleures
+ventes ». `content` ne stocke que leurs identifiants et leur ordre ; son
+adaptateur interroge le port public de `catalog` pour accepter uniquement des
+produits publiés avec variante publiée et masquer la section si un produit
+cesse d'être visible. Les détails, prix et photos restent dans leurs modules
+propriétaires. Une sélection vide masque la section. Le serveur ne calcule
+pas de classement de ventes ; l'exploitant choisit les références mises en
+avant.
+
 Le support ADMIN lit un compte via le contrat public `identity` avec recherche
 par email exact, puis son panier via le contrat `sales` en lecture seule. Aucun
 module ne joint directement les tables d'un autre. Les paniers visiteurs ne
 quittent pas le navigateur. Les messages de contact forment un traitement
 personnel distinct de l'export de compte, avec conservation configurable et
 une procédure de droits à définir avant exploitation commerciale.
+
+### Exploration publique du catalogue
+
+La vitrine Angular regroupe les catégories publiques à plat dans huit rayons
+visuels et un rayon de secours « Autres catégories ». Chaque rayon contient des
+familles repliables ; une recherche conserve l'accès à tous les intitulés
+publiés, même ceux qui ne correspondent pas aux règles de regroupement. Cette
+taxonomie est une aide à la navigation côté présentation : elle ne modifie ni
+les identifiants, ni la hiérarchie persistée, ni le contrat de filtrage. Le
+choix final transmet toujours un `categoryId` réel au backend. Les marques
+restent un filtre distinct et recherchable. La recherche de l'en-tête interroge
+le même endpoint public de produits avec une limite de cinq suggestions ; la
+page de résultats conserve le filtrage et la pagination serveur. Les doublons
+issus de l'import restent dans la base et demanderaient une réconciliation de
+catalogue séparée avant toute fusion de catégories.
+
+Les liens de réseaux sociaux du bandeau passent par le module `content` :
+lecture publique, édition par CATALOG_MANAGER ou ADMIN, validation des domaines
+Facebook/Instagram dans le domaine Java, version optimiste et persistance
+PostgreSQL via Flyway V17. Angular n'affiche que les URL configurées ; la
+présentation mobile conserve l'accès aux icônes du bandeau.

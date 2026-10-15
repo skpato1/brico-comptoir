@@ -11,7 +11,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.http.converter.HttpMessageNotReadableException;
 
 @org.springframework.core.annotation.Order(0)
-@RestControllerAdvice(assignableTypes = {CatalogController.class, CatalogImportController.class})
+@RestControllerAdvice(assignableTypes = {CatalogController.class, CatalogImportController.class, ProductViewController.class})
 public class CatalogErrors {
     @ExceptionHandler(IllegalArgumentException.class)
     ResponseEntity<ProblemDetail> invalid(IllegalArgumentException error) {

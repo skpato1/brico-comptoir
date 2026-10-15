@@ -1,10 +1,13 @@
 <section class="checkout" aria-labelledby="checkout-title">
-  <p class="eyebrow">COMMANDE</p><h2 id="checkout-title">{{ historyOnly ? 'Vos commandes' : 'Livraison en Tunisie' }}</h2>
+  @if (!historyOnly) { <p class="eyebrow">ÉTAPE 2 SUR 3 · LIVRAISON</p> }
+  <h2 id="checkout-title">{{ historyOnly ? 'Vos commandes' : 'Votre adresse de livraison' }}</h2>
   @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
   @if (busy()) { <p role="status">Traitement en cours…</p> }
   @if (!historyOnly && buyer() && cart.view().items.length && !order()) {
-    <p>Paiement uniquement à la livraison. Les coordonnées restent en mémoire jusqu’à la commande.</p>
+    <p>Renseignez votre adresse pour voir les frais exacts et le total avant de confirmer. Paiement à la livraison.</p>
+    <div class="checkout-layout">
     <form #addressForm="ngForm" (ngSubmit)="submitAddress(addressForm)">
+      <h3>Coordonnées du destinataire</h3>
       <fieldset [disabled]="busy() || uncertain()">
         @if (!account) {
           <label>E-mail pour le suivi (facultatif)<input name="email" [(ngModel)]="address.email" (ngModelChange)="resetPreview()" type="email" email maxlength="254" autocomplete="email" #email="ngModel" [attr.aria-invalid]="email.invalid && (email.touched || addressForm.submitted)" aria-describedby="order-email-help" /></label>
@@ -22,14 +25,34 @@
       </fieldset>
       <button type="submit" [disabled]="busy() || uncertain() || cart.busy() || cart.recoveryPending()">Vérifier le récapitulatif</button>
     </form>
+    <aside class="checkout-estimate" aria-label="Estimation avant livraison">
+      <h3>Votre commande</h3>
+      <button type="button" class="estimate-toggle secondary" (click)="estimateOpen.set(!estimateOpen())"
+        [attr.aria-expanded]="estimateOpen()" aria-controls="estimate-details">
+        {{ estimateOpen() ? 'Masquer le résumé' : 'Voir le résumé' }}
+      </button>
+      <div id="estimate-details" [class.collapsed]="!estimateOpen()">
+      <p>{{ cart.view().items.length }} ligne(s) dans le panier</p>
+      @if (cart.view().subtotalEstimate; as subtotal) {
+        <p class="estimate-row"><span>Articles estimés</span><strong>{{ subtotal.amount }} TND</strong></p>
+      }
+      <p class="estimate-row"><span>Livraison</span><strong>{{ summary()?.delivery?.amount ? summary()?.delivery?.amount + ' TND' : 'À calculer' }}</strong></p>
+      @if (summary(); as currentSummary) {
+        <p class="estimate-row"><span>Total vérifié</span><strong>{{ currentSummary.total.amount }} TND</strong></p>
+      } @else {
+        <p>Le serveur vérifie le prix, le stock et les frais lorsque vous demandez le récapitulatif.</p>
+      }
+      </div>
+    </aside>
+    </div>
   }
   @if (summary(); as recap) {
-    <div class="recap"><h3>Récapitulatif final</h3>
+    <div id="final-recap" tabindex="-1" class="recap"><p class="eyebrow">ÉTAPE 3 SUR 3 · VÉRIFICATION</p><h3>Récapitulatif final</h3>
       <p>{{ recap.address.recipient }} · {{ recap.address.phone }}<br />{{ recap.address.street }}, {{ recap.address.postalCode }} {{ recap.address.city }} · {{ recap.address.governorate }} · Tunisie</p>
       <ul>@for (line of recap.items; track line.kind + line.offerId) {
-        <li><strong>{{ line.quantity }} × {{ line.label }}</strong> — {{ line.lineTotal.amount }} TND
+        <li><strong>{{ line.quantity }} × {{ offerLabel(line.label) }}</strong> — {{ line.lineTotal.amount }} TND
           <ul>@for (component of line.components; track component.skuId) {
-            <li>{{ component.quantity }} × {{ component.label }} ({{ component.sku }}) par unité achetée</li>
+            <li>{{ component.quantity }} × {{ offerLabel(component.label) }} ({{ component.sku }}) par unité achetée</li>
           }</ul>
         </li>
       }</ul>
@@ -59,7 +82,7 @@
     <ul class="orders">@for (entry of orders(); track entry.id) {
       <li><strong class="reference">{{ entry.id }}</strong> · {{ statuses[entry.status] }} · {{ entry.summary.total.amount }} TND
         <p>{{ entry.summary.address.recipient }} · {{ entry.summary.address.phone }} · {{ entry.summary.address.street }}, {{ entry.summary.address.city }}</p>
-        <ul>@for (line of entry.summary.items; track line.kind + line.offerId) { <li>{{ line.quantity }} × {{ line.label }}</li> }</ul>
+        <ul>@for (line of entry.summary.items; track line.kind + line.offerId) { <li>{{ line.quantity }} × {{ offerLabel(line.label) }}</li> }</ul>
         @if (entry.status === 'CONFIRMED' || manager() && entry.status === 'PREPARING') { <button (click)="transition(entry, 'cancel', manager())" [disabled]="busy()">Annuler</button> }
         @if (manager()) {
           @if (entry.status === 'CONFIRMED') { <button (click)="transition(entry, 'prepare', true)" [disabled]="busy()">Préparer</button> }

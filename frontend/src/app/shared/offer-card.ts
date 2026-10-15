@@ -29,55 +29,60 @@ export function minimumPrice(offer: Product | Pack): string {
       }
     </a>
     <div class="card-body">
-      <span class="kind">{{ pack ? 'LA SOLUTION EN PACK' : 'À L’UNITÉ' }}</span>
+      <span class="kind">{{ brandName || (pack ? 'PACK' : 'PRODUIT') }}</span>
       @if (offer.demo) {
         <span class="badge">DÉMO</span>
       }
       <h3>
         <a [routerLink]="[pack ? '/packs' : '/produits', offer.id]">{{ offer.name }}</a>
       </h3>
-      <p>{{ description }}</p>
+      @if (description) { <p class="description">{{ description }}</p> }
       <div class="price">
-        <span
-          ><small>À partir de</small><strong>{{ price() }} <small>TND</small></strong></span
-        ><a
-          class="open"
-          [routerLink]="[pack ? '/packs' : '/produits', offer.id]"
-          [attr.aria-label]="'Choisir ' + offer.name"
-          >↗</a
-        >
+        <span><small>À partir de</small><strong>{{ price() }} <small>TND</small></strong></span>
       </div>
+      <a class="open" [routerLink]="[pack ? '/packs' : '/produits', offer.id]">
+        Voir {{ pack ? 'le pack' : 'le produit' }} <span aria-hidden="true">→</span>
+      </a>
     </div>
   </article>`,
   styles: [
     `
       article {
         height: 100%;
-        border: 1px solid #e4e4e4;
-        border-radius: 7px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
         overflow: hidden;
         background: #fff;
+        display: flex;
+        flex-direction: column;
+        transition: box-shadow .2s ease, transform .2s ease;
       }
+      article:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
       article > a {
         display: block;
         text-decoration: none;
       }
       .card-body {
-        padding: 20px;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
       }
       .kind {
-        font-size: 0.6rem;
-        letter-spacing: 1.4px;
-        color: #777;
-        font-weight: 650;
+        font-size: 0.68rem;
+        letter-spacing: .7px;
+        color: var(--muted);
+        font-weight: 750;
+        text-transform: uppercase;
       }
       .badge {
         margin-left: 10px;
       }
       h3 {
-        font-size: 1.15rem;
+        font-size: 1rem;
         margin: 12px 0 7px;
         line-height: 1.35;
+        min-height: 2.7em;
       }
       h3 a {
         text-decoration: none;
@@ -85,10 +90,10 @@ export function minimumPrice(offer: Product | Pack): string {
       h3 a:hover {
         text-decoration: underline;
       }
-      p {
+      .description {
         font-size: 0.82rem;
-        color: #666;
-        margin: 0 0 20px;
+        color: var(--muted);
+        margin: 0 0 14px;
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
@@ -98,6 +103,8 @@ export function minimumPrice(offer: Product | Pack): string {
         display: flex;
         justify-content: space-between;
         align-items: end;
+        margin-top: auto;
+        padding-top: 12px;
       }
       .price span > small {
         display: block;
@@ -106,24 +113,29 @@ export function minimumPrice(offer: Product | Pack): string {
         margin-bottom: 4px;
       }
       .price strong {
-        font-size: 1.2rem;
+        font-size: 1.25rem;
       }
       .price strong small {
         font-size: 0.75rem;
         font-weight: 500;
       }
       .open {
-        display: grid;
-        place-items: center;
-        min-width: 44px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         min-height: 44px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
+        margin-top: 14px;
+        padding: 9px 12px;
+        border: 1px solid var(--line);
+        border-radius: 7px;
         text-decoration: none;
-        color: #b51f24;
+        color: var(--red);
+        font-size: .84rem;
+        font-weight: 750;
       }
       .open:hover {
         background: #fff0f0;
+        border-color: var(--red);
       }
       .pack-art {
         aspect-ratio: 4/3;
@@ -156,6 +168,7 @@ export class OfferCard {
   @Input() pack = false;
   @Input() image?: ProductImage | PackImage;
   @Input() description = '';
+  @Input() brandName = '';
   price(): string {
     return minimumPrice(this.offer);
   }

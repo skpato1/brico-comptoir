@@ -1,25 +1,61 @@
 <a class="skip-link" href="#content">Aller au contenu</a>
 <div class="topline">
-  <span>Votre quincaillerie, simplement.</span><span>Tunisie · Prix en TND</span>
+  <span class="topline-tagline">Les bonnes pièces pour vos projets</span>
+  <div class="topline-right">
+    <span class="topline-desktop-message">Tunisie · Prix en TND · Paiement à la livraison <a routerLink="/contact">Nous contacter</a></span>
+    <span class="topline-mobile-message">Tunisie · Prix en TND</span>
+    @if (socialLinks()?.facebookUrl || socialLinks()?.instagramUrl) {
+      <nav class="topline-social" aria-label="Réseaux sociaux">
+        @if (socialLinks()?.facebookUrl) {
+          <a [href]="socialLinks()!.facebookUrl" target="_blank" rel="noopener noreferrer" aria-label="Facebook de BricoComptoir, ouvre un nouvel onglet">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M22 12a10 10 0 1 0-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.5 1.49-3.89 3.77-3.89 1.1 0 2.24.2 2.24.2v2.47h-1.26c-1.25 0-1.64.78-1.64 1.57V12h2.78l-.45 2.89h-2.33v6.99A10 10 0 0 0 22 12Z"/></svg>
+          </a>
+        }
+        @if (socialLinks()?.instagramUrl) {
+          <a [href]="socialLinks()!.instagramUrl" target="_blank" rel="noopener noreferrer" aria-label="Instagram de BricoComptoir, ouvre un nouvel onglet">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="2.5" y="2.5" width="19" height="19" rx="5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="17.7" cy="6.4" r="1.2" fill="currentColor"/></svg>
+          </a>
+        }
+      </nav>
+    }
+  </div>
 </div>
 <header class="site-header">
   <a class="brand" routerLink="/" aria-label="BricoComptoir, accueil"
     ><span class="brand-mark" aria-hidden="true">bc</span
     ><span>Brico<span>Comptoir</span><small>DE L’IDÉE AU PROJET</small></span></a
   >
-  <form class="header-search" role="search" (ngSubmit)="search()">
-    <label class="sr-only" for="global-search">Rechercher un produit</label
-    ><input
-      id="global-search"
-      name="q"
-      [(ngModel)]="query"
-      placeholder="Un produit, une référence…"
-      type="search"
-      maxlength="120"
-    /><button type="submit" aria-label="Rechercher">⌕</button>
-  </form>
+  <div class="header-search-wrap">
+    <form class="header-search" role="search" (ngSubmit)="search()">
+      <label class="sr-only" for="global-search">Rechercher un produit</label
+      ><input
+        id="global-search"
+        name="q"
+        [(ngModel)]="query"
+        (ngModelChange)="onSearchInput($event)"
+        placeholder="Quel produit cherchez-vous ?"
+        type="search"
+        autocomplete="off"
+        maxlength="120"
+        aria-controls="search-suggestions"
+      /><button type="submit" aria-label="Lancer la recherche">Rechercher</button>
+    </form>
+    @if (query.trim().length >= 2) {
+      <div id="search-suggestions" class="header-suggestions" role="region" aria-label="Suggestions de produits">
+        @if (searchBusy()) {
+          <p role="status">Recherche en cours…</p>
+        } @else {
+          @for (product of searchSuggestions(); track product.id) {
+            <a [routerLink]="['/produits', product.id]">{{ product.name }} <span>Voir le produit ›</span></a>
+          } @empty {
+            <p>Aucune suggestion. Lancez la recherche pour voir tous les résultats.</p>
+          }
+          <button type="button" (click)="search()">Voir tous les résultats pour « {{ query.trim() }} »</button>
+        }
+      </div>
+    }
+  </div>
   <div class="header-actions">
-    <a class="account-link" routerLink="/compte" routerLinkActive="active">Mon compte</a>
     <a class="cart-link" routerLink="/panier" routerLinkActive="active"
       [attr.aria-label]="count() + ' article' + (count() > 1 ? 's' : '') + ' dans le panier'">
       <span class="cart-label">Panier</span>
@@ -33,10 +69,24 @@
   </div>
 </header>
 <nav class="main-nav" aria-label="Navigation principale">
-  <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Accueil</a
-  ><a routerLink="/solutions" routerLinkActive="active">Je cherche une solution</a
-  ><a routerLink="/catalogue" routerLinkActive="active">Je cherche un produit</a
-  ><a routerLink="/packs" routerLinkActive="active">Tous les packs</a>
+  <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Accueil</a>
+  <button type="button" (click)="openMenu()" [attr.aria-expanded]="menuOpen()" aria-controls="mobile-navigation">Catégories <span aria-hidden="true">⌄</span></button>
+  <a routerLink="/catalogue" routerLinkActive="active">Tous les produits</a>
+  <a routerLink="/packs" routerLinkActive="active">Packs</a>
+  <a routerLink="/solutions" routerLinkActive="active">Trouver une solution</a>
+</nav>
+<nav class="mobile-shortcuts" aria-label="Accès rapide">
+  <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+    <span aria-hidden="true">⌂</span>Accueil
+  </a>
+  <button type="button" (click)="openMenu()" [attr.aria-expanded]="menuOpen()" aria-controls="mobile-navigation">
+    <span aria-hidden="true">☷</span>Rayons
+  </button>
+  <button type="button" (click)="focusSearch()"><span aria-hidden="true">⌕</span>Recherche</button>
+  <a routerLink="/panier" routerLinkActive="active">
+    <span aria-hidden="true">▣</span>Panier @if (count()) {<small>{{ count() }}</small>}
+  </a>
+  <a routerLink="/contact" routerLinkActive="active"><span aria-hidden="true">✉</span>Contact</a>
 </nav>
 <dialog #mobileDialog id="mobile-navigation" class="mobile-menu" aria-labelledby="mobile-menu-title"
   (close)="onMenuClosed()" (click)="onDialogClick($event)">
@@ -67,78 +117,56 @@
         } @else if (categoryLoaded()) {
           @if (menuQuery().trim()) {
             @if (categoryMatches().length) {
+              <p class="menu-hint">{{ categoryMatches().length }} catégorie(s) correspondante(s)</p>
               <ul class="menu-search-results">
-                @for (node of categoryMatches(); track node.category.id) {
+                @for (node of categoryMatches().slice(0, 40); track node.category.id) {
                   <li><a routerLink="/catalogue" [queryParams]="{ categoryId: node.category.id }"
                     (click)="closeMenu()">{{ node.path }}</a></li>
                 }
               </ul>
+              @if (categoryMatches().length > 40) { <p class="menu-hint">Précisez votre recherche pour voir les autres catégories.</p> }
             } @else {
               <p class="menu-state">Aucune catégorie trouvée.</p>
             }
-          } @else {
-            @for (branch of categoryMenu().branches; track branch.category.id) {
-              <details class="menu-branch">
-                <summary>{{ branch.category.name }} <span aria-hidden="true">⌄</span></summary>
-                <div class="menu-branch-content">
-                  <a class="menu-parent-link" routerLink="/catalogue"
-                    [queryParams]="{ categoryId: branch.category.id }" (click)="closeMenu()">
-                    Voir toute la catégorie {{ branch.category.name }}
-                  </a>
-                  <ng-container [ngTemplateOutlet]="categoryTree"
-                    [ngTemplateOutletContext]="{ $implicit: branch.children }" />
-                </div>
+          } @else if (activeDepartment(); as department) {
+            <button class="department-back" type="button" (click)="activeDepartmentId.set('')">← Tous les rayons</button>
+            <h3 class="department-title"><app-department-icon [kind]="department.icon" />{{ department.name }}</h3>
+            @for (group of department.groups; track group.name) {
+              <details class="department-group">
+                <summary>{{ group.name }} <small>{{ group.nodes.length }} catégories</small></summary>
+                <ul>
+                  @for (node of group.nodes; track node.category.id) {
+                    <li><a routerLink="/catalogue" [queryParams]="{ categoryId: node.category.id }"
+                      (click)="closeMenu()">{{ node.path }}</a></li>
+                  }
+                </ul>
               </details>
             }
-            @if (categoryMenu().alphabet.length) {
-              <p class="menu-index-title">Toutes les catégories · A–Z</p>
-              @for (group of categoryMenu().alphabet; track group.letter) {
-                <details class="menu-letter">
-                  <summary>{{ group.letter }} <span>{{ group.nodes.length }}</span></summary>
-                  <ul>
-                    @for (node of group.nodes; track node.category.id) {
-                      <li><a routerLink="/catalogue" [queryParams]="{ categoryId: node.category.id }"
-                        (click)="closeMenu()">{{ node.category.name }}</a></li>
-                    }
-                  </ul>
-                </details>
+          } @else {
+            <p class="menu-hint">Choisissez un rayon, puis une catégorie précise.</p>
+            <div class="department-grid">
+              @for (department of departments(); track department.id) {
+                <button type="button" (click)="activeDepartmentId.set(department.id)">
+                  <app-department-icon [kind]="department.icon" />
+                  <span>{{ department.name }}</span>
+                  <small>{{ department.count }} catégories</small>
+                </button>
               }
-            } @else if (!categoryMenu().branches.length) {
+            </div>
+            @if (!departments().length) {
               <p class="menu-state">Aucune catégorie disponible.</p>
             }
           }
         }
       </div>
       <div class="menu-secondary-links">
-        <a routerLink="/compte" (click)="closeMenu()">Mon compte</a>
         <a routerLink="/panier" (click)="closeMenu()">Mon panier</a>
+        <a routerLink="/commande" (click)="closeMenu()">Passer commande</a>
         <a routerLink="/contact" (click)="closeMenu()">Nous contacter</a>
       </div>
     </nav>
   </div>
 </dialog>
-<ng-template #categoryTree let-nodes>
-  <ul class="menu-tree">
-    @for (node of nodes; track node.category.id) {
-      <li>
-        @if (node.children.length) {
-          <details>
-            <summary>{{ node.category.name }} <span aria-hidden="true">⌄</span></summary>
-            <a class="menu-parent-link" routerLink="/catalogue"
-              [queryParams]="{ categoryId: node.category.id }" (click)="closeMenu()">
-              Voir toute la catégorie {{ node.category.name }}
-            </a>
-            <ng-container [ngTemplateOutlet]="categoryTree"
-              [ngTemplateOutletContext]="{ $implicit: node.children }" />
-          </details>
-        } @else {
-          <a routerLink="/catalogue" [queryParams]="{ categoryId: node.category.id }"
-            (click)="closeMenu()">{{ node.category.name }}</a>
-        }
-      </li>
-    }
-  </ul>
-</ng-template>
 <main id="content" tabindex="-1">
   @if (session.error()) {
     <div class="state-box" role="alert">
@@ -166,7 +194,7 @@
   </div>
   <div class="footer-bottom">
     Quincaillerie pour particuliers · Tunisie
-    <a routerLink="/compte">Votre compte et vos commandes</a>
+    <a routerLink="/acces-equipe">Accès équipe</a>
     <a routerLink="/mes-donnees">Vos données personnelles</a>
     <a routerLink="/contact">Nous contacter</a>
   </div>

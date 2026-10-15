@@ -57,8 +57,13 @@
       @if (pack()?.demo || product()?.demo) {
         <p class="badge">DÉMO — exemple non validé commercialement</p>
       }
+      @if (brandName()) {
+        <a class="brand-link" routerLink="/catalogue" [queryParams]="{ brandId: product()?.brandId }">{{ brandName() }}</a>
+      }
       <h1>{{ packMode ? pack()?.name : product()?.name }}</h1>
-      <p class="muted">{{ packMode ? pack()?.slogan : product()?.description }}</p>
+      @if (packMode ? pack()?.slogan : product()?.description) {
+        <p class="muted">{{ packMode ? pack()?.slogan : product()?.description }}</p>
+      }
       <fieldset class="variants">
         <legend>Choisissez votre variante</legend>
         @for (v of packMode ? pack()?.variants : product()?.variants; track v.id) {
@@ -70,13 +75,14 @@
               [(ngModel)]="selected"
               (ngModelChange)="onVariantChanged()"
             /><span
-              >{{ v.label }}<strong>{{ v.price.amount }} TND</strong></span
+              >{{ variantLabel(v.label) }}<strong>{{ v.price.amount }} TND</strong></span
             ></label
           >
         }
       </fieldset>
       @if (variant(); as v) {
         <p class="offer-price">{{ v.price.amount }} <small>TND</small></p>
+        @if (selectedSku(); as sku) { <p class="reference">Référence : {{ sku }}</p> }
       }
       @if (packVariant(); as pv) {
         <p [class.error]="pv.available === 0">
@@ -106,14 +112,7 @@
             aria-describedby="quantity-help" /></label
         ><button
           type="submit"
-          [disabled]="
-            quantityForm.invalid ||
-            cart.busy() ||
-            cart.recoveryPending() ||
-            !canBuy() ||
-            (packMode && packVariant()?.available === 0) ||
-            (!packMode && !productCanAdd())
-          "
+          [disabled]="quantityForm.invalid || !canAdd()"
         >
           {{ !packMode && available() === 0 ? 'Épuisé' : 'Ajouter au panier →' }}
         </button>
@@ -136,6 +135,14 @@
       <p class="delivery-note">Paiement à la livraison · Frais calculés avec votre adresse.</p>
     </div>
   </div>
+  @if (variant(); as selectedVariant) {
+    <div class="mobile-buy-bar">
+      <span><small>Prix unitaire</small><strong>{{ selectedVariant.price.amount }} TND</strong></span>
+      <button type="button" (click)="add()" [disabled]="!canAdd()">
+        {{ !packMode && available() === 0 ? 'Épuisé' : 'Ajouter au panier' }}
+      </button>
+    </div>
+  }
   @if (packVariant(); as pv) {
     <section class="composition">
       <div>
@@ -206,6 +213,31 @@
           </dl>
         }
       }
+    </section>
+  }
+  @if (!packMode && recommendations().length === 3) {
+    <section class="professional-favorites" aria-labelledby="professional-favorites-title">
+      <div class="professional-favorites-heading">
+        <div>
+          <p class="eyebrow">LA SÉLECTION DU COMPTOIR</p>
+          <h2 id="professional-favorites-title">Autres produits favoris des professionnels</h2>
+          <p>Une sélection de notre équipe pour compléter vos achats.</p>
+        </div>
+        <a routerLink="/catalogue" class="favorites-catalogue-link">Voir tout le catalogue <span aria-hidden="true">↗</span></a>
+      </div>
+      <div class="professional-favorites-track" #recommendationTrack>
+        @for (recommendation of recommendations(); track recommendation.id) {
+          <app-offer-card [offer]="recommendation" [description]="recommendation.description"
+            [image]="recommendationImage(recommendation.id)" [brandName]="recommendationBrandName(recommendation.brandId)" />
+        }
+      </div>
+      <div class="professional-favorites-footer">
+        <span>Découvrez les produits proposés par notre équipe.</span>
+        <div class="favorites-controls" aria-label="Parcourir les produits proposés">
+          <button type="button" class="secondary" (click)="scrollRecommendations(-1)" aria-label="Produit précédent">←</button>
+          <button type="button" class="secondary" (click)="scrollRecommendations(1)" aria-label="Produit suivant">→</button>
+        </div>
+      </div>
     </section>
   }
 }

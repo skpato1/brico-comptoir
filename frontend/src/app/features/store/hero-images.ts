@@ -1,4 +1,4 @@
-export const PROMOTIONAL_HERO_IMAGES = ['brico-projects', 'brico-workshop'] as const;
+export const PROMOTIONAL_HERO_IMAGES = ['brico-online', 'brico-projects', 'brico-workshop'] as const;
 
 export function isPromotionalHeroImage(image: string): boolean {
   return PROMOTIONAL_HERO_IMAGES.some(value => value === image);

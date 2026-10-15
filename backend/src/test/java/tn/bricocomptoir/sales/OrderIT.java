@@ -81,6 +81,9 @@ class OrderIT {
         assertThat(count("inventory_reservation_line", "reservation_id", id)).isEqualTo(1);
         assertThat(jdbc.queryForObject("SELECT quantity FROM inventory_reservation_line WHERE reservation_id=?", Long.class, id)).isEqualTo(3);
         assertThat(guest.get("/orders/" + id).statusCode()).isEqualTo(200);
+        Browser manager = internal(Role.ORDER_MANAGER);
+        assertThat(manager.get("/admin/orders/" + id).body())
+                .contains("Client test", "20123456", "Rue test", "Tunis", "1000");
         Browser other = new Browser(); other.csrf();
         assertThat(other.place(confirmed, UUID.randomUUID()).body()).contains("OFFER_CHANGED");
         assertThat(other.get("/orders/" + id).statusCode()).isEqualTo(404);

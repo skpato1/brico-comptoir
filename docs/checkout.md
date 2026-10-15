@@ -5,6 +5,11 @@ invité ou un compte `CUSTOMER`. Seul `CASH_ON_DELIVERY` existe ; aucun paiement
 en ligne ni encaissement simulé. Le compte obligatoire de l'architecture
 initiale est remplacé par ce choix explicite.
 
+Décision du 14 octobre 2026 : les nouveaux clients passent commande en invité,
+sans inscription publique. Les comptes clients déjà créés restent utilisables
+pour leurs commandes historiques. Nom, téléphone et adresse restent obligatoires
+à chaque nouvelle commande ; l'e-mail invité est facultatif.
+
 Les coordonnées de livraison sont validées à la commande : destinataire, téléphone tunisien à
 huit chiffres (avec `+216` facultatif), rue, ville, code postal à quatre
 chiffres, gouvernorat parmi les 24 codes tunisiens, pays `TN`. Il s'agit d'une

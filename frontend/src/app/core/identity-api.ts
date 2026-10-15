@@ -13,10 +13,6 @@ export class IdentityApi {
   csrf() { return this.http.get<void>(`${this.root}/auth/csrf`); }
   me() { return this.http.get<Account>(`${this.root}/auth/me`); }
 
-  register(email: string, password: string) {
-    return this.csrf().pipe(switchMap(() => this.http.post<Account>(`${this.root}/auth/register`, { email, password })));
-  }
-
   login(email: string, password: string) {
     return this.csrf().pipe(switchMap(() => this.http.post<Account>(`${this.root}/auth/login`, { email, password })),
       switchMap((account) => this.csrf().pipe(map(() => account))));

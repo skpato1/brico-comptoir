@@ -1,6 +1,7 @@
 <section
   class="carousel"
   [class.promotional-active]="isPromotionalHeroImage(slides()[active()].image)"
+  [class.online-active]="slides()[active()].image === 'brico-online'"
   aria-roledescription="carrousel"
   aria-label="Kits, quincaillerie et outils pour vos projets"
   (mouseenter)="hovered.set(true)"
@@ -17,6 +18,7 @@
         class="slide"
         [class.active]="active() === i"
         [class.promotional]="isPromotionalHeroImage(slide.image)"
+        [class.online-banner]="slide.image === 'brico-online'"
         [attr.aria-hidden]="active() !== i"
         [attr.inert]="active() !== i ? '' : null"
         role="group"
@@ -25,12 +27,16 @@
       >
         <div class="photo">
           @if (!failedImages().has(i)) {
+            <picture>
+              @if (slide.image === 'brico-online') {
+                <source media="(max-width: 699px)" srcset="/images/hero/brico-online-mobile.jpg" type="image/jpeg" />
+              }
             <img
               [src]="heroImageUrl(slide.image, 1440)"
               [srcset]="heroImageUrl(slide.image, 720) + ' 720w, ' + heroImageUrl(slide.image, 1440) + ' 1440w'"
               sizes="100vw"
               width="1440"
-              [attr.height]="slide.image === 'brico-workshop' ? 693 : isPromotionalHeroImage(slide.image) ? 745 : 960"
+              [attr.height]="slide.image === 'brico-online' ? 810 : slide.image === 'brico-workshop' ? 693 : isPromotionalHeroImage(slide.image) ? 745 : 960"
               [alt]="slide.alt"
               [attr.fetchpriority]="i === 0 ? 'high' : 'low'"
               [attr.loading]="i === 0 ? 'eager' : 'lazy'"
@@ -38,6 +44,7 @@
               draggable="false"
               (error)="imageFailed(i)"
             />
+            </picture>
           }
         </div>
         <div class="caption">

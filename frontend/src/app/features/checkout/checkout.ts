@@ -3,15 +3,18 @@ import { FormsModule, NgForm } from '@angular/forms';
 import { Account } from '../../core/identity-api';
 import { CartState } from '../../core/cart-state';
 import { Address, checkoutItems, OrderApi, OrderView, PlaceInput, PreviewInput, Summary } from '../../core/order-api';
+import { offerLabel } from '../../shared/offer-label';
 
 @Component({ selector: 'app-checkout', imports: [FormsModule], templateUrl: './checkout.html', styleUrl: './checkout.scss' })
 export class CheckoutComponent implements OnChanges {
+  readonly offerLabel = offerLabel;
   @Input() account: Account | null = null;
   @Input() historyOnly = false;
   @Output() placed = new EventEmitter<OrderView>();
   readonly busy = signal(false);
   readonly error = signal('');
   readonly summary = signal<Summary | null>(null);
+  readonly estimateOpen = signal(false);
   readonly order = signal<OrderView | null>(null);
   readonly orders = signal<OrderView[]>([]);
   readonly uncertain = signal(false);
@@ -52,6 +55,7 @@ export class CheckoutComponent implements OnChanges {
       next: summary => { if (generation === this.generation) {
         this.summary.set(summary); this.input = { ...input, quoteHash: summary.quoteHash };
         this.key = crypto.randomUUID(); this.busy.set(false);
+        setTimeout(() => document.getElementById('final-recap')?.focus());
       } },
       error: response => { if (generation === this.generation) { this.busy.set(false); this.error.set(this.message(response)); } },
     });

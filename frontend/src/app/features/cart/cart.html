@@ -10,16 +10,18 @@
   }
   @if (cart.busy()) { <p role="status">Mise à jour du panier…</p> }
   @if (!cart.view().items.length && !cart.busy()) {
-    <p>Votre panier est vide. Ajoutez un article ou une variante de pack depuis le catalogue.</p>
+    <div class="empty-cart"><span aria-hidden="true">▣</span><h3>Votre panier est vide.</h3>
+      <p>Explorez le catalogue pour choisir vos articles ou vos packs.</p></div>
   }
   @if (cart.view().items.length) {
+    <div class="cart-layout">
     <ul class="items">
       @for (item of cart.view().items; track item.kind + item.offerId) {
         <li>
-          <div><strong>{{ item.label ?? 'Offre indisponible ou non publiée' }}</strong>
+          <div><strong>{{ offerLabel(item.label ?? 'Offre indisponible ou non publiée') }}</strong>
             <span class="kind">{{ item.kind === 'PACK' ? 'Pack' : 'Article' }}</span>
             @if (item.unitPrice) { <span>{{ item.unitPrice.amount }} TND l’unité</span> }
-            @if (item.lineEstimate) { <span>Estimation : {{ item.lineEstimate.amount }} TND</span> }
+            @if (item.lineEstimate) { <strong class="line-total">{{ item.lineEstimate.amount }} TND</strong> }
           </div>
           <div class="quantity">
             <label [for]="'quantity-' + item.kind + item.offerId">Quantité</label>
@@ -31,15 +33,20 @@
         </li>
       }
     </ul>
+    <aside class="cart-summary" aria-label="Résumé du panier">
+      <h3>Résumé de votre sélection</h3>
+      <p>{{ cart.view().items.length }} ligne(s) dans le panier</p>
+      @if (cart.view().subtotalEstimate; as subtotal) {
+        <div class="subtotal"><span>Sous-total estimé</span><strong>{{ subtotal.amount }} {{ subtotal.currency }}</strong></div>
+      } @else {
+        <p>Estimation indisponible : une offre a changé ou n’est plus publiée.</p>
+      }
+      <p class="delivery-line">Livraison <strong>Calculée avec votre adresse</strong></p>
+      <p class="notice">Prix et disponibilité vérifiés au moment de la commande. Aucun article n’est encore réservé.</p>
+    </aside>
+    </div>
     @if (cart.view().shortages.length) {
       <p class="error" role="alert">Certains articles ne sont pas disponibles dans les quantités demandées. Réduisez les quantités ou retirez une ligne ; un même article peut être présent dans plusieurs packs.</p>
     }
-    @if (cart.view().subtotalEstimate; as subtotal) {
-      <p class="subtotal">Sous-total estimé : {{ subtotal.amount }} {{ subtotal.currency }}</p>
-    } @else {
-      <p>Estimation indisponible : une offre a changé ou n’est plus publiée.</p>
-    }
-    <p class="notice">Prix, composition et disponibilité seront recalculés par le serveur lors de la commande.
-      Les frais de livraison ne sont pas encore calculés et aucune unité n’est réservée.</p>
   }
 </section>

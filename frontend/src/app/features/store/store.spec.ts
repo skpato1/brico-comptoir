@@ -159,13 +159,19 @@ describe('Storefront routes and real API contracts', () => {
   });
   it('shows zero-stock products as sold out and prevents adding them to the cart', async () => {
     const page = await harness.navigateByUrl('/produits/item', DetailPage);
+    http.expectOne('/api/v1/brands').flush([]);
     http.expectOne('/api/v1/products/item').flush({
       id: 'item', categoryId: 'category', brandId: null, name: 'Vis test', description: '',
       characteristics: {}, status: 'PUBLISHED', demo: false, version: 0,
       variants: [{ id: 'variant', sku: 'BC-TEST', label: 'Unité', unit: 'unité', options: {},
         price: { amount: '21.000', currency: 'TND' }, status: 'PUBLISHED', version: 0 }],
     });
+    http.expectOne('/api/v1/auth/csrf').flush(null, { status: 204, statusText: 'No Content' });
+    const viewRequest = http.expectOne('/api/v1/products/item/views');
+    expect(viewRequest.request.method).toBe('POST');
+    viewRequest.flush(null, { status: 204, statusText: 'No Content' });
     http.expectOne('/api/v1/availability/variant').flush({ variantId: 'variant', available: 0 });
+    http.expectOne('/api/v1/content/professional-favorites').flush({ version: 0, productIds: [] });
     http.expectOne('/api/v1/media/products?ids=item').flush({});
     http.expectOne('/sqes-image-fallback.json').flush({});
     harness.detectChanges();
@@ -175,6 +181,65 @@ describe('Storefront routes and real API contracts', () => {
     expect(harness.routeNativeElement?.textContent).toContain('ce produit n’est pas disponible');
     page.add();
     http.expectNone('/api/v1/cart/estimate');
+  });
+  it('shows three editorial products on product details and excludes the viewed product', async () => {
+    await harness.navigateByUrl('/produits/item', DetailPage);
+    http.expectOne('/api/v1/brands').flush([]);
+    http.expectOne('/api/v1/products/item').flush({
+      id: 'item', categoryId: 'category', brandId: null, name: 'Produit consulté', description: '',
+      characteristics: {}, status: 'PUBLISHED', demo: false, version: 0,
+      variants: [{ id: 'variant', sku: 'SKU', label: 'Unité', unit: 'pièce', options: {},
+        price: { amount: '8.000', currency: 'TND' }, status: 'PUBLISHED', version: 0 }],
+    });
+    http.expectOne('/api/v1/auth/csrf').flush(null, { status: 204, statusText: 'No Content' });
+    http.expectOne('/api/v1/products/item/views').flush(null, { status: 204, statusText: 'No Content' });
+    http.expectOne('/api/v1/availability/variant').flush({ variantId: 'variant', available: 25 });
+    http.expectOne('/api/v1/media/products?ids=item').flush({});
+    http.expectOne('/sqes-image-fallback.json').flush({});
+    http.expectOne('/api/v1/content/professional-favorites').flush({
+      version: 1, productIds: ['item', 'one', 'two', 'three'],
+    });
+    for (const id of ['one', 'two', 'three'])
+      http.expectOne('/api/v1/products/' + id).flush({ id, name: 'Article ' + id, description: '',
+        brandId: null, status: 'PUBLISHED', demo: false,
+        variants: [{ id: 'variant-' + id, price: { amount: '12.000', currency: 'TND' } }] });
+    http.expectOne(r => r.url === '/api/v1/media/products' && r.params.get('ids') === 'one,two,three').flush({});
+    for (const id of ['one', 'two', 'three'])
+      http.expectOne('/api/v1/availability/variant-' + id).flush({ variantId: 'variant-' + id, available: 25 });
+    harness.detectChanges();
+    expect(harness.routeNativeElement?.querySelectorAll('.professional-favorites app-offer-card')).toHaveLength(3);
+    expect(harness.routeNativeElement?.textContent).toContain('Autres produits favoris des professionnels');
+    expect(harness.routeNativeElement?.querySelector('.professional-favorites')?.textContent).not.toContain('Produit consulté');
+  });
+  it('uses the fourth editorial product when an earlier recommendation is out of stock', async () => {
+    await harness.navigateByUrl('/produits/item', DetailPage);
+    http.expectOne('/api/v1/brands').flush([]);
+    http.expectOne('/api/v1/products/item').flush({
+      id: 'item', name: 'Produit consulté', brandId: null, description: '', characteristics: {},
+      variants: [{ id: 'current', sku: 'SKU-CURRENT', label: 'Unité', unit: 'pièce', options: {},
+        price: { amount: '8.000', currency: 'TND' } }],
+    });
+    http.expectOne('/api/v1/auth/csrf').flush(null, { status: 204, statusText: 'No Content' });
+    http.expectOne('/api/v1/products/item/views').flush(null, { status: 204, statusText: 'No Content' });
+    http.expectOne('/api/v1/availability/current').flush({ variantId: 'current', available: 25 });
+    http.expectOne('/api/v1/media/products?ids=item').flush({});
+    http.expectOne('/sqes-image-fallback.json').flush({});
+    http.expectOne('/api/v1/content/professional-favorites').flush({
+      version: 1, productIds: ['one', 'two', 'three', 'four'],
+    });
+    for (const id of ['one', 'two', 'three', 'four'])
+      http.expectOne('/api/v1/products/' + id).flush({ id, name: 'Article ' + id, brandId: null,
+        description: '', status: 'PUBLISHED', demo: false,
+        variants: [{ id: 'variant-' + id, price: { amount: '12.000', currency: 'TND' } }] });
+    http.expectOne(r => r.url === '/api/v1/media/products' && r.params.get('ids') === 'one,two,three,four').flush({});
+    for (const id of ['one', 'two', 'three', 'four'])
+      http.expectOne('/api/v1/availability/variant-' + id).flush({ variantId: 'variant-' + id,
+        available: id === 'one' ? 0 : 25 });
+    harness.detectChanges();
+    const section = harness.routeNativeElement?.querySelector('.professional-favorites');
+    expect(section?.querySelectorAll('app-offer-card')).toHaveLength(3);
+    expect(section?.textContent).not.toContain('Article one');
+    expect(section?.textContent).toContain('Article four');
   });
   it('reloads a confirmation using owner protected API and never fabricates an inaccessible receipt', async () => {
     const page = await harness.navigateByUrl('/confirmation/private', ConfirmationPage);

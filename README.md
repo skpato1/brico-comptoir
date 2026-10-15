@@ -36,7 +36,7 @@ Pour reprendre : lire [AGENTS.md](AGENTS.md),
 [architecture.md](docs/architecture.md), [security.md](docs/security.md) et
 [deployment.md](docs/deployment.md). Aucun compte/mot de passe universel n'est
 livré. Le premier ADMIN local est créé par la commande ci-dessous ; les autres
-comptes internes sont créés par un ADMIN et les clients par inscription.
+comptes internes sont créés par un ADMIN. Les nouveaux clients commandent sans compte.
 
 Lire [l'architecture](docs/architecture.md), la [roadmap](docs/roadmap.md), les
 [règles de contribution](AGENTS.md) et les [vérifications réalisées](docs/progress.md).
@@ -51,8 +51,8 @@ La boutique locale s'ouvre sur l'accueil : `/solutions` et `/packs` pour les
 besoins, `/catalogue` pour les produits et la recherche, puis `/panier` et
 `/commande`. `/confirmation/:id` relit la commande autorisée par la session.
 Les liens des fiches et les filtres du catalogue peuvent être partagés ;
-les coordonnées et commandes restent privées. Le compte et les accès de
-gestion sont disponibles depuis `/compte`.
+les coordonnées et commandes restent privées. L'accès équipe est disponible
+depuis `/acces-equipe`, puis l'administration depuis `/gestion`.
 
 ## Démarrage complet avec Docker
 
@@ -103,7 +103,8 @@ affiche une indisponibilité en cas de réponse incorrecte, d'erreur HTTP/résea
 de délai dépassé après cinq secondes. Le catalogue et les packs publiés sont
 publics ; leurs écritures exigent `CATALOG_MANAGER` ou `ADMIN`. Les autres routes API restent
 fermées par défaut, sauf les routes `identity` documentées. Aucun compte de test ni mot de
-passe Spring généré n'est disponible. L'inscription crée seulement un client.
+passe Spring généré n'est disponible. L'inscription publique est fermée ; les
+commandes invitées demandent les coordonnées de livraison.
 
 ## Premier administrateur local et comptes
 
@@ -129,7 +130,7 @@ avec une session `ADMIN` via l'API ; `CATALOG_MANAGER` et `ORDER_MANAGER` ne
 donnent aucun droit d'administration des comptes. La matrice est dans
 [identity.md](docs/identity.md).
 
-La page Angular permet l'inscription, la connexion, la déconnexion et la
+La page Angular d'accès équipe permet la connexion, la déconnexion et la
 récupération du mot de passe. Mailpit reçoit le lien local sur
 http://localhost:8025. Le lien expire au bout de 30 minutes et ne fonctionne
 qu'une fois. La page demande automatiquement un jeton CSRF avant chaque

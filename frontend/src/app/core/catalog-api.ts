@@ -46,6 +46,19 @@ export interface Page<T> {
   size: number;
   totalElements: number;
 }
+export interface ProductViewRow {
+  productId: string;
+  name: string;
+  brandName: string;
+  sku: string;
+  views7: number;
+  views30: number;
+}
+export interface ProductViewReport extends Page<ProductViewRow> {
+  totalViews: number;
+  viewedProducts: number;
+  periodDays: number;
+}
 export interface ProductImage {
   id: string;
   productId: string;
@@ -140,6 +153,15 @@ export class CatalogApi {
   );
   detail(id: string) {
     return this.http.get<Product>(`${this.root}/products/${id}`);
+  }
+  recordView(id: string) {
+    return this.identity.csrf().pipe(switchMap(() =>
+      this.http.post<void>(`${this.root}/products/${id}/views`, {})));
+  }
+  productViews(days: 7 | 30, q = '', page = 0, size = 20) {
+    return this.http.get<ProductViewReport>(`${this.root}/admin/catalog/product-views`, {
+      params: { days, q, page, size },
+    });
   }
   availability(variantId: string) {
     return this.http.get<Availability>(`${this.root}/availability/${variantId}`);
